@@ -124,7 +124,7 @@ const FAQPage = () => {
         breadcrumbs={[{ label: "FAQ" }]}
       />
 
-      <div className="max-w-[900px] mx-auto px-6 py-12 space-y-8">
+      <div className="w-full max-w-[900px] mx-auto px-4 sm:px-6 py-8 sm:py-12 space-y-8">
         <div className="space-y-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />

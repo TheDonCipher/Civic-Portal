@@ -6,6 +6,8 @@ import {
   fetchConstituencyRankings,
   generateConstituencyRankings,
   fetchEngagementStats,
+  fetchTrendingIssues as fetchTrendingIssuesHelper,
+  fetchFundingStats as fetchFundingStatsHelper,
 } from "./statsHelpers";
 
 /**
@@ -124,11 +126,11 @@ export const getOverallStats = async () => {
     );
 
     // Get trending issues (most votes/comments in the last 30 days)
-    let trendingIssues = await fetchTrendingIssues();
+    let trendingIssues = await fetchTrendingIssuesHelper();
     console.log(`Fetched ${trendingIssues.length} trending issues`);
 
     // Get funding stats
-    let fundingStats = await fetchFundingStats();
+    let fundingStats = await fetchFundingStatsHelper();
     console.log(
       `Funding stats: ${fundingStats.totalRaised} raised of ${fundingStats.targetAmount} target`,
     );
@@ -178,8 +180,31 @@ export const getOverallStats = async () => {
   }
 };
 
+// Define types for report data
+interface ReportDataItem {
+  name: string;
+  value: number;
+  previousValue: number;
+}
+
+interface MonthlyTrendItem {
+  month: string;
+  issues: number;
+  resolved: number;
+  responseTime?: number;
+}
+
+interface ReportData {
+  issuesByCategory: ReportDataItem[];
+  issuesByStatus: ReportDataItem[];
+  monthlyTrends: MonthlyTrendItem[];
+  departmentPerformance?: any[];
+  budgetAllocation?: any[];
+  citizenEngagement?: any[];
+}
+
 // Get report data for the reports page
-export const getReportData = async (timeframe = "3m") => {
+export const getReportData = async (timeframe = "3m"): Promise<ReportData> => {
   try {
     console.log(`Fetching report data for timeframe: ${timeframe}`);
 
@@ -190,7 +215,7 @@ export const getReportData = async (timeframe = "3m") => {
       });
       if (!error && data) {
         console.log("Successfully fetched report data from database function");
-        return data;
+        return data as ReportData;
       }
     } catch (functionError) {
       console.warn(
@@ -201,7 +226,8 @@ export const getReportData = async (timeframe = "3m") => {
 
     // Calculate date range based on timeframe
     const now = new Date();
-    let startDate;
+    let startDate: Date;
+    let timeframeNum = 3; // Default to 3 months
 
     switch (timeframe) {
       case "1m":
@@ -210,6 +236,7 @@ export const getReportData = async (timeframe = "3m") => {
           now.getMonth() - 1,
           now.getDate(),
         );
+        timeframeNum = 1;
         break;
       case "3m":
         startDate = new Date(
@@ -217,6 +244,7 @@ export const getReportData = async (timeframe = "3m") => {
           now.getMonth() - 3,
           now.getDate(),
         );
+        timeframeNum = 3;
         break;
       case "6m":
         startDate = new Date(
@@ -224,6 +252,7 @@ export const getReportData = async (timeframe = "3m") => {
           now.getMonth() - 6,
           now.getDate(),
         );
+        timeframeNum = 6;
         break;
       case "1y":
         startDate = new Date(
@@ -231,6 +260,7 @@ export const getReportData = async (timeframe = "3m") => {
           now.getMonth(),
           now.getDate(),
         );
+        timeframeNum = 12;
         break;
       default:
         startDate = new Date(
@@ -238,13 +268,14 @@ export const getReportData = async (timeframe = "3m") => {
           now.getMonth() - 3,
           now.getDate(),
         );
+        timeframeNum = 3;
     }
 
     const startDateStr = startDate.toISOString();
     console.log(`Using start date: ${startDateStr}`);
 
     // Get issues by category
-    let issuesByCategory = [];
+    let issuesByCategory: ReportDataItem[] = [];
     try {
       const { data: categoryData, error: categoryError } = await supabase
         .from("issues")
@@ -259,7 +290,7 @@ export const getReportData = async (timeframe = "3m") => {
         const previousStartDate = new Date(startDate);
         previousStartDate.setMonth(
           previousStartDate.getMonth() -
-            (timeframe === "1y" ? 12 : parseInt(timeframe)),
+            (timeframe === "1y" ? 12 : timeframeNum),
         );
         const previousEndDate = new Date(startDate);
 
@@ -272,19 +303,23 @@ export const getReportData = async (timeframe = "3m") => {
             .group("category");
 
         // Create a map of previous period data
-        const previousCategoryMap = {};
+        const previousCategoryMap: Record<string, number> = {};
         if (!previousCategoryError && previousCategoryData) {
           previousCategoryData.forEach((item) => {
-            previousCategoryMap[item.category] = parseInt(item.count);
+            if (item.category) {
+              previousCategoryMap[item.category] = parseInt(
+                item.count?.toString() || "0",
+              );
+            }
           });
         }
 
         issuesByCategory = categoryData.map((item) => ({
-          name: item.category,
-          value: parseInt(item.count),
+          name: item.category || "Unknown",
+          value: parseInt(item.count?.toString() || "0"),
           previousValue:
-            previousCategoryMap[item.category] ||
-            Math.round(parseInt(item.count) * 0.85), // Fallback to estimate
+            (item.category && previousCategoryMap[item.category]) ||
+            Math.round(parseInt(item.count?.toString() || "0") * 0.85), // Fallback to estimate
         }));
 
         console.log(`Fetched ${issuesByCategory.length} category data points`);
@@ -294,7 +329,7 @@ export const getReportData = async (timeframe = "3m") => {
     }
 
     // Get issues by status
-    let issuesByStatus = [];
+    let issuesByStatus: ReportDataItem[] = [];
     try {
       const { data: statusData, error: statusError } = await supabase
         .from("issues")
@@ -309,7 +344,7 @@ export const getReportData = async (timeframe = "3m") => {
         const previousStartDate = new Date(startDate);
         previousStartDate.setMonth(
           previousStartDate.getMonth() -
-            (timeframe === "1y" ? 12 : parseInt(timeframe)),
+            (timeframe === "1y" ? 12 : timeframeNum),
         );
         const previousEndDate = new Date(startDate);
 
@@ -322,19 +357,21 @@ export const getReportData = async (timeframe = "3m") => {
             .group("status");
 
         // Create a map of previous period data
-        const previousStatusMap = {};
+        const previousStatusMap: Record<string, number> = {};
         if (!previousStatusError && previousStatusData) {
           previousStatusData.forEach((item) => {
-            previousStatusMap[item.status] = parseInt(item.count);
+            if (item.status) {
+              previousStatusMap[item.status] = parseInt(item.count || "0");
+            }
           });
         }
 
         issuesByStatus = statusData.map((item) => ({
-          name: item.status,
-          value: parseInt(item.count),
+          name: item.status || "Unknown",
+          value: parseInt(item.count?.toString() || "0"),
           previousValue:
-            previousStatusMap[item.status] ||
-            Math.round(parseInt(item.count) * 0.85), // Fallback to estimate
+            (item.status && previousStatusMap[item.status]) ||
+            Math.round(parseInt(item.count?.toString() || "0") * 0.85), // Fallback to estimate
         }));
 
         console.log(`Fetched ${issuesByStatus.length} status data points`);
@@ -344,16 +381,9 @@ export const getReportData = async (timeframe = "3m") => {
     }
 
     // Get monthly trends
-    let monthlyTrends = [];
+    let monthlyTrends: MonthlyTrendItem[] = [];
     try {
-      const monthsBack =
-        timeframe === "1m"
-          ? 1
-          : timeframe === "3m"
-            ? 3
-            : timeframe === "6m"
-              ? 6
-              : 12;
+      const monthsBack = timeframeNum;
 
       const { data: monthlyData, error: monthlyError } = await supabase.rpc(
         "get_monthly_issue_stats",
@@ -363,7 +393,7 @@ export const getReportData = async (timeframe = "3m") => {
       if (monthlyError) {
         console.warn("Error fetching monthly trends:", monthlyError);
         // Generate monthly data manually if RPC fails
-        const months = [];
+        const months: string[] = [];
         for (let i = 0; i < monthsBack; i++) {
           const month = new Date();
           month.setMonth(month.getMonth() - i);
@@ -379,9 +409,10 @@ export const getReportData = async (timeframe = "3m") => {
           month,
           issues: Math.floor(Math.random() * 50) + 10,
           resolved: Math.floor(Math.random() * 30) + 5,
+          responseTime: Math.floor(Math.random() * 10) + 2,
         }));
       } else if (monthlyData) {
-        monthlyTrends = monthlyData;
+        monthlyTrends = monthlyData as MonthlyTrendItem[];
       }
 
       console.log(
@@ -391,10 +422,39 @@ export const getReportData = async (timeframe = "3m") => {
       console.warn("Exception in monthly trends fetch:", error);
     }
 
+    // Generate mock data for department performance
+    const departmentPerformance = [
+      { name: "Infrastructure", resolutionRate: 78, avgResponseDays: 3.2 },
+      { name: "Environment", resolutionRate: 65, avgResponseDays: 4.5 },
+      { name: "Public Safety", resolutionRate: 82, avgResponseDays: 2.1 },
+      { name: "Education", resolutionRate: 58, avgResponseDays: 5.8 },
+      { name: "Healthcare", resolutionRate: 71, avgResponseDays: 3.9 },
+    ];
+
+    // Generate mock data for budget allocation
+    const budgetAllocation = [
+      { category: "Infrastructure", allocated: 120000, spent: 95000 },
+      { category: "Environment", allocated: 80000, spent: 62000 },
+      { category: "Public Safety", allocated: 100000, spent: 88000 },
+      { category: "Education", allocated: 90000, spent: 75000 },
+      { category: "Healthcare", allocated: 110000, spent: 92000 },
+    ];
+
+    // Generate mock data for citizen engagement
+    const citizenEngagement = monthlyTrends.map((item) => ({
+      month: item.month,
+      votes: Math.floor(Math.random() * 100) + 50,
+      comments: Math.floor(Math.random() * 80) + 30,
+      satisfaction: Math.floor(Math.random() * 30) + 60,
+    }));
+
     return {
       issuesByCategory,
       issuesByStatus,
       monthlyTrends,
+      departmentPerformance,
+      budgetAllocation,
+      citizenEngagement,
     };
   } catch (error) {
     console.error("Error fetching report data:", error);
@@ -402,19 +462,32 @@ export const getReportData = async (timeframe = "3m") => {
       issuesByCategory: [],
       issuesByStatus: [],
       monthlyTrends: [],
+      departmentPerformance: [],
+      budgetAllocation: [],
+      citizenEngagement: [],
     };
   }
 };
 
+// Define types for trending issues
+export interface TrendingIssue {
+  id: string;
+  title: string;
+  category: string;
+  votes?: number;
+  comments?: number;
+  created_at: string;
+}
+
 // Fetch trending issues (most votes/comments in the last 30 days)
-const fetchTrendingIssues = async () => {
+export const fetchTrendingIssues = async (): Promise<TrendingIssue[]> => {
   try {
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
     const { data, error } = await supabase
       .from("issues")
-      .select("id, title, category, votes, comments, created_at")
+      .select("id, title, category, votes, created_at")
       .gte("created_at", thirtyDaysAgo.toISOString())
       .order("votes", { ascending: false })
       .limit(5);
@@ -431,8 +504,22 @@ const fetchTrendingIssues = async () => {
   }
 };
 
+// Define types for funding stats
+export interface FundingStats {
+  totalRaised: number;
+  targetAmount: number;
+  recentDonations: Array<{
+    id?: string;
+    donor_name?: string;
+    amount: number;
+    created_at?: string;
+    issue_id?: string;
+    issue_title?: string;
+  }>;
+}
+
 // Fetch funding stats
-const fetchFundingStats = async () => {
+export const fetchFundingStats = async (): Promise<FundingStats> => {
   try {
     // Get total raised amount
     const { data: totalData, error: totalError } = await supabase
@@ -442,7 +529,10 @@ const fetchFundingStats = async () => {
 
     let totalRaised = 0;
     if (!totalError && totalData) {
-      totalRaised = totalData.reduce((sum, item) => sum + item.amount, 0);
+      totalRaised = totalData.reduce(
+        (sum, item) => sum + (item.amount || 0),
+        0,
+      );
     } else {
       // Fallback to demo data
       totalRaised = 125000;

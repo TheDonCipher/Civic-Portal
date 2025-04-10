@@ -117,7 +117,7 @@ const CreateIssueDialog = ({
   onOpenChange = () => {},
   onSubmit = () => {},
 }: CreateIssueDialogProps) => {
-  const { user, profile } = useAuth ? useAuth() : { user: null, profile: null };
+  const { user, profile } = useAuth() || { user: null, profile: null };
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [departments, setDepartments] = useState<Department[]>([]);
@@ -447,7 +447,7 @@ const CreateIssueDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[500px] max-h-[90vh] bg-background overflow-y-auto">
+      <DialogContent className="w-[95vw] max-w-[500px] max-h-[90vh] bg-background overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold">
             Report New Issue
@@ -690,7 +690,7 @@ const CreateIssueDialog = ({
                       </div>
 
                       {imagePreview.length > 0 ? (
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
                           {imagePreview.map((preview, index) => (
                             <div
                               key={index}

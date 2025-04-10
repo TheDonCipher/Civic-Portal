@@ -37,7 +37,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import SEOHead from "../common/SEOHead";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/components/ui/use-toast-enhanced";
 
 // Default data structure for reports
 const defaultReportData = {
@@ -109,7 +109,7 @@ export const ReportsPage = () => {
 
         // Get citizen satisfaction from the latest month
         const lastEngagementItem =
-          safeData?.citizenEngagement && safeData?.citizenEngagement?.length > 0
+          safeData?.citizenEngagement?.length > 0
             ? safeData.citizenEngagement[safeData.citizenEngagement.length - 1]
             : null;
 
@@ -246,14 +246,8 @@ export const ReportsPage = () => {
                 </div>
                 <p className="text-sm text-green-600">
                   {reportData?.monthlyTrends?.length > 1 &&
-                  reportData?.monthlyTrends[
-                    reportData.monthlyTrends.length - 2
-                  ] &&
                   reportData?.monthlyTrends[reportData.monthlyTrends.length - 2]
                     ?.responseTime !== undefined &&
-                  reportData?.monthlyTrends[
-                    reportData.monthlyTrends.length - 1
-                  ] &&
                   reportData?.monthlyTrends[reportData.monthlyTrends.length - 1]
                     ?.responseTime !== undefined
                     ? `-${(reportData.monthlyTrends[reportData.monthlyTrends.length - 2].responseTime - reportData.monthlyTrends[reportData.monthlyTrends.length - 1].responseTime).toFixed(1)} days improvement`
@@ -271,17 +265,10 @@ export const ReportsPage = () => {
                   {summaryData.citizenSatisfaction}%
                 </div>
                 <p className="text-sm text-green-600">
-                  {reportData?.citizenEngagement &&
-                  reportData?.citizenEngagement?.length > 1 &&
-                  reportData?.citizenEngagement[
-                    reportData.citizenEngagement.length - 1
-                  ] &&
+                  {reportData?.citizenEngagement?.length > 1 &&
                   reportData?.citizenEngagement[
                     reportData.citizenEngagement.length - 1
                   ]?.satisfaction !== undefined &&
-                  reportData?.citizenEngagement[
-                    reportData.citizenEngagement.length - 2
-                  ] &&
                   reportData?.citizenEngagement[
                     reportData.citizenEngagement.length - 2
                   ]?.satisfaction !== undefined

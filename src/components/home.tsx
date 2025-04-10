@@ -9,7 +9,7 @@ import IssueDetailDialog from "./issues/IssueDetailDialog";
 import type { Issue } from "./issues/IssueGrid";
 import CreateIssueDialog from "./issues/CreateIssueDialog";
 import { z } from "zod";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/components/ui/use-toast-enhanced";
 
 interface HomeProps {
   initialIssues?: Issue[];
@@ -274,7 +274,7 @@ const Home = ({ initialIssues = mockIssues }: HomeProps) => {
         let thumbnail = "";
 
         // If an image was uploaded, store it in Supabase storage
-        if (data.image) {
+        if ("image" in data && data.image) {
           const fileExt = data.image.name.split(".").pop();
           const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
           const filePath = `issue-images/${fileName}`;
@@ -334,6 +334,7 @@ const Home = ({ initialIssues = mockIssues }: HomeProps) => {
         }
 
         // Check if a similar issue already exists to prevent duplicates
+        const { supabase } = await import("@/lib/supabase");
         const { data: existingIssues, error: checkError } = await supabase
           .from("issues")
           .select("id")
@@ -465,7 +466,7 @@ const Home = ({ initialIssues = mockIssues }: HomeProps) => {
       <main className="pt-[82px] px-6 pb-6">
         <div className="max-w-[1800px] mx-auto space-y-8 px-4 sm:px-6">
           <StatCards />
-          <div className="flex gap-8">
+          <div className="flex flex-col lg:flex-row gap-8">
             <div className="flex-1 w-full">
               <IssueGrid
                 issues={activeIssues}
@@ -474,7 +475,7 @@ const Home = ({ initialIssues = mockIssues }: HomeProps) => {
                 onIssueClick={(issue) => setSelectedIssue(issue)}
               />
             </div>
-            <div className="w-[420px] hidden xl:block sticky top-[88px]">
+            <div className="w-full lg:w-[420px] hidden lg:block sticky top-[88px]">
               <LatestUpdates
                 onIssueClick={(issueId) => {
                   const issue = issues.find((i) => i.id === issueId);

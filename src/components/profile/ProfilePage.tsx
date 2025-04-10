@@ -626,7 +626,7 @@ const ProfilePage = () => {
     return (
       <div className="min-h-screen bg-background">
         <Header onCreateIssue={() => setIsCreateDialogOpen(true)} />
-        <div className="bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300 p-4 text-center sticky top-[82px] z-10">
+        <div className="bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300 p-4 text-center sticky top-[82px] z-10 text-sm sm:text-base">
           <p>
             Demo Profile: You are viewing a mock citizen profile.{" "}
             <a href="/?signin=true" className="underline">

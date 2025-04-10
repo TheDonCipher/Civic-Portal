@@ -14,13 +14,13 @@ import {
 import { Button } from "@/components/ui/button";
 import { Download, Info } from "lucide-react";
 import {
-  TooltipProvider,
   Tooltip,
   TooltipContent,
+  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import SEOHead from "../common/SEOHead";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/components/ui/use-toast-enhanced";
 import { supabase } from "@/lib/supabase";
 import { RealtimeChannel } from "@supabase/supabase-js";
 
@@ -57,35 +57,52 @@ export const ReportsPageWithRealtime = () => {
         setLoading(true);
         const data = await getReportData(timeframe);
         console.log("Fetched report data:", data);
-        setReportData(data);
+
+        // Ensure data has the expected structure
+        const safeData = {
+          ...defaultReportData,
+          ...(data || {}),
+        };
+
+        setReportData(safeData);
 
         // Calculate summary data from the fetched data
-        const totalIssues = data.issuesByCategory.reduce(
-          (sum, item) => sum + item.value,
-          0,
-        );
+        const totalIssues =
+          safeData.issuesByCategory?.reduce(
+            (sum, item) => sum + (item?.value || 0),
+            0,
+          ) || 0;
 
         const resolvedIssues =
-          data.issuesByStatus.find(
-            (item) => item.name.toLowerCase() === "resolved",
+          safeData.issuesByStatus?.find(
+            (item) => item?.name?.toLowerCase() === "resolved",
           )?.value || 0;
 
         const resolutionRate =
-          totalIssues > 0
+          totalIssues > 0 && resolvedIssues !== undefined
             ? Math.round((resolvedIssues / totalIssues) * 100)
             : 0;
 
         // Get average response time from monthly trends
+        const lastTrendItem =
+          safeData.monthlyTrends?.length > 0
+            ? safeData.monthlyTrends[safeData.monthlyTrends.length - 1]
+            : null;
+
         const avgResponseTime =
-          data.monthlyTrends.length > 0
-            ? `${data.monthlyTrends[data.monthlyTrends.length - 1].responseTime.toFixed(1)} days`
+          lastTrendItem && lastTrendItem.responseTime !== undefined
+            ? `${lastTrendItem.responseTime.toFixed(1)} days`
             : "N/A";
 
         // Get citizen satisfaction from the latest month
+        const lastEngagementItem =
+          safeData.citizenEngagement?.length > 0
+            ? safeData.citizenEngagement[safeData.citizenEngagement.length - 1]
+            : null;
+
         const citizenSatisfaction =
-          data.citizenEngagement && data.citizenEngagement.length > 0
-            ? data.citizenEngagement[data.citizenEngagement.length - 1]
-                .satisfaction
+          lastEngagementItem && lastEngagementItem.satisfaction !== undefined
+            ? lastEngagementItem.satisfaction
             : 0;
 
         setSummaryData({
@@ -117,7 +134,7 @@ export const ReportsPageWithRealtime = () => {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "issues" },
-        (payload) => {
+        (payload: any) => {
           console.log("Issue change detected in reports page:", payload);
           // Trigger a refresh of the reports data
           setRefreshTrigger((prev) => prev + 1);
@@ -134,7 +151,7 @@ export const ReportsPageWithRealtime = () => {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "comments" },
-        (payload) => {
+        (payload: any) => {
           console.log("Comment change detected in reports page:", payload);
           // Trigger a refresh of the reports data
           setRefreshTrigger((prev) => prev + 1);
@@ -143,19 +160,13 @@ export const ReportsPageWithRealtime = () => {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "issue_votes" },
-        (payload) => {
+        (payload: any) => {
           console.log("Vote change detected in reports page:", payload);
           // Trigger a refresh of the reports data
           setRefreshTrigger((prev) => prev + 1);
         },
       )
-      .subscribe((status, err) => {
-        if (err) {
-          console.error("Error setting up realtime subscription:", err);
-        } else {
-          console.log("Realtime subscription status:", status);
-        }
-      });
+      .subscribe();
 
     // Cleanup function
     return () => {
@@ -178,7 +189,7 @@ export const ReportsPageWithRealtime = () => {
       toast({
         title: "Export Complete",
         description: "Report has been downloaded successfully.",
-        variant: "success",
+        variant: "default",
       });
     }, 2000);
   };
@@ -237,8 +248,9 @@ export const ReportsPageWithRealtime = () => {
                   {summaryData.totalIssues}
                 </div>
                 <p className="text-sm text-green-600">
-                  {reportData.issuesByCategory.length > 0 &&
-                  reportData.issuesByCategory[0].previousValue
+                  {reportData.issuesByCategory &&
+                  reportData.issuesByCategory.length > 0 &&
+                  reportData.issuesByCategory[0]?.previousValue
                     ? `+${Math.round(((summaryData.totalIssues - reportData.issuesByCategory[0].previousValue) / reportData.issuesByCategory[0].previousValue) * 100)}% from last period`
                     : ""}
                 </p>
@@ -254,8 +266,9 @@ export const ReportsPageWithRealtime = () => {
                   {summaryData.resolutionRate}%
                 </div>
                 <p className="text-sm text-green-600">
-                  {reportData.issuesByStatus.length > 0 &&
-                  reportData.issuesByStatus[0].previousValue
+                  {reportData.issuesByStatus &&
+                  reportData.issuesByStatus.length > 0 &&
+                  reportData.issuesByStatus[0]?.previousValue
                     ? `+${Math.round(((summaryData.resolutionRate - reportData.issuesByStatus[0].previousValue) / reportData.issuesByStatus[0].previousValue) * 100)}% from last period`
                     : ""}
                 </p>
@@ -271,7 +284,12 @@ export const ReportsPageWithRealtime = () => {
                   {summaryData.avgResponseTime}
                 </div>
                 <p className="text-sm text-green-600">
-                  {reportData.monthlyTrends.length > 1
+                  {reportData.monthlyTrends &&
+                  reportData.monthlyTrends.length > 1 &&
+                  reportData.monthlyTrends[reportData.monthlyTrends.length - 2]
+                    ?.responseTime !== undefined &&
+                  reportData.monthlyTrends[reportData.monthlyTrends.length - 1]
+                    ?.responseTime !== undefined
                     ? `-${(reportData.monthlyTrends[reportData.monthlyTrends.length - 2].responseTime - reportData.monthlyTrends[reportData.monthlyTrends.length - 1].responseTime).toFixed(1)} days improvement`
                     : ""}
                 </p>
@@ -288,7 +306,13 @@ export const ReportsPageWithRealtime = () => {
                 </div>
                 <p className="text-sm text-green-600">
                   {reportData.citizenEngagement &&
-                  reportData.citizenEngagement.length > 1
+                  reportData.citizenEngagement.length > 1 &&
+                  reportData.citizenEngagement[
+                    reportData.citizenEngagement.length - 1
+                  ]?.satisfaction !== undefined &&
+                  reportData.citizenEngagement[
+                    reportData.citizenEngagement.length - 2
+                  ]?.satisfaction !== undefined
                     ? `+${(reportData.citizenEngagement[reportData.citizenEngagement.length - 1].satisfaction - reportData.citizenEngagement[reportData.citizenEngagement.length - 2].satisfaction).toFixed(1)}% from last period`
                     : ""}
                 </p>
@@ -331,7 +355,8 @@ export const ReportsPageWithRealtime = () => {
                   {/* The chart would be rendered here */}
                   <div className="flex items-center justify-center h-[300px]">
                     <p className="text-muted-foreground">
-                      {reportData.issuesByCategory.length === 0
+                      {!reportData.issuesByCategory ||
+                      reportData.issuesByCategory.length === 0
                         ? "No data available for the selected timeframe"
                         : "Issue distribution chart with real-time updates"}
                     </p>
@@ -347,7 +372,8 @@ export const ReportsPageWithRealtime = () => {
                   {/* The chart would be rendered here */}
                   <div className="flex items-center justify-center h-[300px]">
                     <p className="text-muted-foreground">
-                      {reportData.monthlyTrends.length === 0
+                      {!reportData.monthlyTrends ||
+                      reportData.monthlyTrends.length === 0
                         ? "No data available for the selected timeframe"
                         : "Monthly trends chart with real-time updates"}
                     </p>

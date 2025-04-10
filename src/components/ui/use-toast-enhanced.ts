@@ -1,10 +1,12 @@
 // Enhanced toast hook with better visibility and more informative messages
 import * as React from "react";
 
-import type {
-  ToastActionElement,
-  ToastProps,
-} from "@/components/ui/toast-enhanced";
+import type { ToastProps } from "@/components/ui/toast-enhanced";
+
+type ToastActionElement = React.ReactElement<
+  any,
+  string | React.JSXElementConstructor<any>
+>;
 
 const TOAST_LIMIT = 5; // Increased from 1 to show multiple toasts
 const TOAST_REMOVE_DELAY = 5000; // Reduced from 1000000 to auto-dismiss after 5 seconds

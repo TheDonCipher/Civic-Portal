@@ -5,6 +5,9 @@ import {
   setupIssueSubscriptions,
 } from "./dbFunctions";
 
+// Add Jest types
+import { jest } from "@jest/globals";
+
 // Mock the supabase client
 jest.mock("@/lib/supabase", () => ({
   supabase: {
@@ -34,7 +37,7 @@ describe("Database Functions", () => {
       const mockSolutions = [{ id: "1", title: "Test solution" }];
 
       // Setup mocks
-      supabase.from.mockImplementation((table) => {
+      (supabase.from as jest.Mock).mockImplementation((table) => {
         return {
           select: jest.fn().mockReturnThis(),
           eq: jest.fn().mockReturnThis(),

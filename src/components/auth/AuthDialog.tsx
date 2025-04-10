@@ -30,7 +30,7 @@ const AuthDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[400px] bg-background">
+      <DialogContent className="w-[95vw] max-w-[400px] bg-background">
         <DialogHeader>
           <DialogTitle className="text-center text-2xl font-bold">
             Welcome to Civic Portal

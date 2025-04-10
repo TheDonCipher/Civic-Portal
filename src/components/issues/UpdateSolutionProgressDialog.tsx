@@ -32,7 +32,12 @@ import { supabase } from "@/lib/supabase";
 import { Loader2 } from "lucide-react";
 
 const formSchema = z.object({
-  status: z.enum(["proposed", "approved", "in-progress", "completed"]),
+  status: z.enum([
+    "proposed",
+    "approved",
+    "in-progress",
+    "completed",
+  ]) as z.ZodEnum<["proposed", "approved", "in-progress", "completed"]>,
   update: z.string().min(1, "Update description is required"),
 });
 
@@ -77,7 +82,10 @@ const UpdateSolutionProgressDialog = ({
         if (error) throw error;
 
         setSolution(data);
-        form.setValue("status", data.status);
+        form.setValue(
+          "status",
+          data.status as "proposed" | "approved" | "in-progress" | "completed",
+        );
       } catch (error) {
         console.error("Error fetching solution:", error);
         toast({

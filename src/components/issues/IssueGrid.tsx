@@ -45,10 +45,21 @@ export interface Issue {
     name: string;
     avatar: string;
   };
+  author_id?: string;
+  author_name?: string;
+  author_avatar?: string;
   thumbnail: string;
+  thumbnails?: string[];
   location?: string;
   constituency?: string;
   watchers?: number;
+  watchers_count?: number;
+  created_at?: string;
+  updated_at?: string;
+  resolved_at?: string;
+  resolved_by?: string;
+  department_id?: string;
+  search_vector?: unknown;
 }
 
 interface IssueGridProps {
@@ -56,6 +67,7 @@ interface IssueGridProps {
   onFilterChange?: (filters: any) => void;
   onSearch?: (searchTerm: string) => void;
   onIssueClick: (issue: Issue) => void;
+  compact?: boolean;
 }
 
 const IssueGrid = ({

@@ -6,7 +6,7 @@ import CreateIssueDialog from "./CreateIssueDialog";
 import type { Issue } from "./IssueGrid";
 import { z } from "zod";
 import { supabase } from "@/lib/supabase";
-import { useToast } from "@/components/ui/use-toast";
+import { useToast } from "@/components/ui/use-toast-enhanced";
 import { useAuth } from "@/lib/auth";
 
 const formSchema = z.object({
@@ -38,7 +38,7 @@ export const IssuesPage = () => {
   const [issues, setIssues] = useState<Issue[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
-  const { user, profile } = useAuth ? useAuth() : { user: null, profile: null };
+  const { user, profile } = useAuth() || { user: null, profile: null };
 
   // Prevent duplicate issues by ensuring we only fetch once
   const [hasFetched, setHasFetched] = useState(false);
@@ -158,7 +158,13 @@ export const IssuesPage = () => {
         let thumbnail = "";
 
         // If an image was uploaded, store it in Supabase storage
-        if (data.image) {
+        if (
+          "image" in data &&
+          data.image &&
+          typeof data.image === "object" &&
+          "name" in data.image &&
+          data.image instanceof File
+        ) {
           const fileExt = data.image.name.split(".").pop();
           const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
           const filePath = `issue-images/${fileName}`;
@@ -169,7 +175,7 @@ export const IssuesPage = () => {
             const { error: uploadError, data: uploadData } =
               await supabase.storage
                 .from("issues")
-                .upload(filePath, data.image, {
+                .upload(filePath, data.image as File, {
                   cacheControl: "3600",
                   upsert: false,
                 });

@@ -101,7 +101,7 @@ const AboutPage = () => {
 
         <section className="space-y-6">
           <h2 className="text-3xl font-bold">Our Approach</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
             <Card>
               <CardContent className="pt-6">
                 <h3 className="font-semibold text-lg mb-2">Citizen-Centered</h3>

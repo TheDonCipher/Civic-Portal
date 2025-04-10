@@ -289,9 +289,9 @@ const IssueCard = ({
   };
 
   return (
-    <Card className="w-full h-[420px] sm:h-[380px] bg-background hover:shadow-lg transition-all duration-200 flex flex-col relative group">
+    <Card className="w-full h-auto min-h-[420px] sm:h-[380px] bg-background hover:shadow-lg transition-all duration-200 flex flex-col relative group">
       <CardHeader className="p-4 space-y-2 flex-none">
-        <div className="flex items-center justify-between flex-wrap gap-2">
+        <div className="flex flex-col xs:flex-row items-start xs:items-center justify-between flex-wrap gap-2">
           <Badge variant="secondary" className={statusColors[status]}>
             {status.charAt(0).toUpperCase() + status.slice(1).replace("-", " ")}
           </Badge>
@@ -357,7 +357,7 @@ const IssueCard = ({
           </p>
         </div>
       </CardContent>
-      <CardFooter className="p-4 flex justify-between items-center border-t flex-wrap gap-2">
+      <CardFooter className="p-4 flex flex-col xs:flex-row justify-between items-start xs:items-center border-t flex-wrap gap-2">
         <div className="flex space-x-4">
           <motion.div whileTap={{ scale: 0.9 }}>
             <Button

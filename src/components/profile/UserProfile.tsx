@@ -40,7 +40,7 @@ const UserProfile = ({
     ...user,
     // Only add mock issue for demo users, NOT for real users
     issuesCreated: user.isRealUser
-      ? [...new Set(user.issuesCreated)]
+      ? [...user.issuesCreated]
       : user.issuesCreated,
     // Make sure we don't have duplicate issues between created and watching
     issuesWatching: user.issuesWatching.filter(

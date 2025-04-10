@@ -5,6 +5,9 @@ import {
   handleNetworkError,
 } from "./errorHandler";
 
+// Add Jest types
+import { jest, describe, beforeEach, it, expect } from "@jest/globals";
+
 // Mock the toast function
 jest.mock("@/components/ui/use-toast-enhanced", () => ({
   toast: jest.fn(),

@@ -3,8 +3,20 @@ import { supabase } from "@/lib/supabase";
 /**
  * Helper functions for fetching trending issues data
  */
-export const fetchTrendingIssues = async () => {
-  let trendingIssues = [];
+export const fetchTrendingIssues = async (): Promise<
+  Array<{
+    title: string;
+    category: string;
+    engagement: number;
+    constituency: string;
+  }>
+> => {
+  let trendingIssues: Array<{
+    title: string;
+    category: string;
+    engagement: number;
+    constituency: string;
+  }> = [];
   try {
     const { data: trendingData, error: trendingError } = await supabase
       .from("issues")
@@ -25,7 +37,7 @@ export const fetchTrendingIssues = async () => {
           const { count, error } = await supabase
             .from("comments")
             .select("*", { count: "exact", head: true })
-            .eq("issue_id", issue.id);
+            .eq("issue_id", issue.id || "");
 
           return {
             ...issue,
@@ -35,9 +47,9 @@ export const fetchTrendingIssues = async () => {
       );
 
       trendingIssues = issuesWithComments.map((issue) => ({
-        title: issue.title,
-        category: issue.category,
-        engagement: issue.votes + (issue.comments_count || 0),
+        title: issue.title || "",
+        category: issue.category || "",
+        engagement: (issue.votes || 0) + (issue.comments_count || 0),
         constituency: issue.constituency || "Unknown",
       }));
     }
@@ -50,8 +62,34 @@ export const fetchTrendingIssues = async () => {
 /**
  * Helper function for fetching funding statistics
  */
-export const fetchFundingStats = async () => {
-  let fundingStats = {
+export const fetchFundingStats = async (): Promise<{
+  totalRaised: number;
+  targetAmount: number;
+  recentDonations: Array<{
+    amount: number;
+    project: string;
+    date: string;
+    provider: {
+      name: string;
+      avatar: string;
+    };
+  }>;
+}> => {
+  interface FundingStats {
+    totalRaised: number;
+    targetAmount: number;
+    recentDonations: Array<{
+      amount: number;
+      project: string;
+      date: string;
+      provider: {
+        name: string;
+        avatar: string;
+      };
+    }>;
+  }
+
+  let fundingStats: FundingStats = {
     totalRaised: 125000, // Default values
     targetAmount: 250000,
     recentDonations: [],
@@ -66,8 +104,8 @@ export const fetchFundingStats = async () => {
     if (fundingError && fundingError.code !== "PGRST116") {
       console.warn("Error fetching funding stats:", fundingError);
     } else if (fundingData) {
-      fundingStats.totalRaised = fundingData.total_raised;
-      fundingStats.targetAmount = fundingData.target_amount;
+      fundingStats.totalRaised = fundingData.total_raised || 125000;
+      fundingStats.targetAmount = fundingData.target_amount || 250000;
     }
 
     // Get recent donations
@@ -81,14 +119,16 @@ export const fetchFundingStats = async () => {
       console.warn("Error fetching recent donations:", donationsError);
     } else if (donationsData) {
       fundingStats.recentDonations = donationsData.map((donation) => ({
-        amount: donation.amount,
-        project: donation.project,
-        date: new Date(donation.created_at).toISOString().split("T")[0],
+        amount: donation.amount || 0,
+        project: donation.project || "Unknown Project",
+        date: donation.created_at
+          ? new Date(donation.created_at).toISOString().split("T")[0]
+          : "",
         provider: {
-          name: donation.provider_name,
+          name: donation.provider_name || "Anonymous",
           avatar:
             donation.provider_avatar ||
-            `https://api.dicebear.com/7.x/avataaars/svg?seed=${donation.provider_name}`,
+            `https://api.dicebear.com/7.x/avataaars/svg?seed=${donation.provider_name || "anonymous"}`,
         },
       }));
     }
@@ -203,6 +243,14 @@ export const generateConstituencyRankings = async () => {
 
     // Get resolved issues per constituency
     const resolvedPromises = constituencyCounts.map(async (item) => {
+      if (!item.constituency) {
+        return {
+          name: "Unknown",
+          issues: parseInt(item.count?.toString() || "0"),
+          resolved: 0,
+        };
+      }
+
       const { count, error } = await supabase
         .from("issues")
         .select("*", { count: "exact", head: true })
@@ -211,7 +259,7 @@ export const generateConstituencyRankings = async () => {
 
       return {
         name: item.constituency,
-        issues: parseInt(item.count),
+        issues: parseInt(item.count?.toString() || "0"),
         resolved: error ? 0 : count || 0,
       };
     });
