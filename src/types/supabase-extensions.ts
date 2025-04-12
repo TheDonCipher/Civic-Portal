@@ -1,4 +1,5 @@
-import { Database } from "./supabase";
+import type { Database } from "./supabase";
+import type { Json } from "./supabase";
 
 // Extend the Database interface to include additional tables
 export interface ExtendedDatabase extends Database {
@@ -59,6 +60,10 @@ export interface ExtendedDatabase extends Database {
         provider_name: string;
         provider_avatar: string;
         created_at: string;
+        status: string;
+        donor_name?: string;
+        issue_id?: string;
+        issue_title?: string;
       };
       Insert: {
         id?: string;
@@ -67,6 +72,10 @@ export interface ExtendedDatabase extends Database {
         provider_name?: string;
         provider_avatar?: string;
         created_at?: string;
+        status?: string;
+        donor_name?: string;
+        issue_id?: string;
+        issue_title?: string;
       };
       Update: {
         id?: string;
@@ -75,6 +84,10 @@ export interface ExtendedDatabase extends Database {
         provider_name?: string;
         provider_avatar?: string;
         created_at?: string;
+        status?: string;
+        donor_name?: string;
+        issue_id?: string;
+        issue_title?: string;
       };
       Relationships: [];
     };
@@ -82,30 +95,36 @@ export interface ExtendedDatabase extends Database {
   Views: Database["Views"] & {};
   Functions: Database["Functions"] & {
     get_report_data: {
-      Args: { start_date?: string; end_date?: string };
+      Args: { time_frame?: string };
       Returns: {
-        issue_id: string;
-        title: string;
-        description: string;
-        category: string;
-        status: string;
-        votes: number;
-        created_at: string;
-        location: string;
-        constituency: string;
-        thumbnail: string;
-        author_name: string;
-        author_avatar: string;
-        type: string;
-      }[];
+        issuesByCategory: Array<{
+          name: string;
+          value: number;
+          previousValue: number;
+        }>;
+        issuesByStatus: Array<{
+          name: string;
+          value: number;
+          previousValue: number;
+        }>;
+        monthlyTrends: Array<{
+          month: string;
+          issues: number;
+          resolved: number;
+          responseTime?: number;
+        }>;
+        departmentPerformance?: any[];
+        budgetAllocation?: any[];
+        citizenEngagement?: any[];
+      };
     };
     get_monthly_issue_stats: {
       Args: { months_back?: number };
-      Returns: {
+      Returns: Array<{
         month: string;
         issues: number;
         resolved: number;
-      }[];
+      }>;
     };
     get_average_response_time: {
       Args: Record<string, unknown>;
@@ -134,6 +153,34 @@ export interface ExtendedDatabase extends Database {
     decrement_votes_count: {
       Args: { issue_id: string };
       Returns: number;
+    };
+    increment_issue_votes: {
+      Args: { issue_id: string };
+      Returns: number;
+    };
+    decrement_issue_votes: {
+      Args: { issue_id: string };
+      Returns: number;
+    };
+    increment_issue_watchers: {
+      Args: { issue_id: string };
+      Returns: number;
+    };
+    decrement_issue_watchers: {
+      Args: { issue_id: string };
+      Returns: number;
+    };
+    increment_solution_votes: {
+      Args: { solution_id: string };
+      Returns: number;
+    };
+    decrement_solution_votes: {
+      Args: { solution_id: string };
+      Returns: number;
+    };
+    get_user_issues: {
+      Args: { user_id: string };
+      Returns: any[];
     };
   };
   Enums: Database["Enums"] & {};
@@ -169,4 +216,64 @@ export function getProfileData(profiles: any): ProfileData {
     full_name: profiles.full_name || "Unknown",
     avatar_url: profiles.avatar_url || "",
   };
+}
+
+// Define ReportData interface
+export interface ReportData {
+  issuesByCategory: Array<{
+    name: string;
+    value: number;
+    previousValue: number;
+  }>;
+  issuesByStatus: Array<{
+    name: string;
+    value: number;
+    previousValue: number;
+  }>;
+  monthlyTrends: Array<MonthlyTrendItem>;
+  departmentPerformance?: Array<{
+    name: string;
+    resolutionRate: number;
+    avgResponseDays: number;
+  }>;
+  budgetAllocation?: Array<{
+    category: string;
+    allocated: number;
+    spent: number;
+  }>;
+  citizenEngagement?: Array<{
+    month: string;
+    votes: number;
+    comments: number;
+    satisfaction: number;
+  }>;
+}
+
+export interface MonthlyTrendItem {
+  month: string;
+  issues: number;
+  resolved: number;
+  responseTime?: number;
+}
+
+// Define constituency stats interface
+export interface ConstituencyStats {
+  name: string;
+  issues: number;
+  resolved: number;
+}
+
+// Define funding stats interface
+export interface FundingStats {
+  totalRaised: number;
+  targetAmount: number;
+  recentDonations: Array<{
+    amount: number;
+    project: string;
+    date: string;
+    provider: {
+      name: string;
+      avatar: string;
+    };
+  }>;
 }

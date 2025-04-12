@@ -6,7 +6,7 @@ import {
 } from "./dbFunctions";
 
 // Add Jest types
-import { jest } from "@jest/globals";
+import { jest, describe, beforeEach, it, expect } from "@jest/globals";
 
 // Mock the supabase client
 jest.mock("@/lib/supabase", () => ({

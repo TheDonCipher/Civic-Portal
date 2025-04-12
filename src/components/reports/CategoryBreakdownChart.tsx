@@ -89,7 +89,7 @@ const CategoryBreakdownChart: React.FC<{ timeframe?: string }> = ({
         const previousStartDate = new Date(startDate);
         previousStartDate.setMonth(
           previousStartDate.getMonth() -
-            (timeframe === "1y" ? 12 : parseInt(timeframe)),
+            (timeframe === "1y" ? 12 : parseInt(timeframe.replace("m", ""))),
         );
         const previousEndDate = new Date(startDate);
 
@@ -105,17 +105,23 @@ const CategoryBreakdownChart: React.FC<{ timeframe?: string }> = ({
         const previousCategoryMap: Record<string, number> = {};
         if (!previousCategoryError && previousCategoryData) {
           previousCategoryData.forEach((item) => {
-            previousCategoryMap[item.category] = parseInt(item.count);
+            if (item.category) {
+              previousCategoryMap[item.category] = parseInt(
+                item.count?.toString() || "0",
+              );
+            }
           });
         }
 
         // Format data for chart
         const formattedData = categoryData.map((item) => ({
-          name: item.category.charAt(0).toUpperCase() + item.category.slice(1),
-          value: parseInt(item.count),
+          name: item.category
+            ? item.category.charAt(0).toUpperCase() + item.category.slice(1)
+            : "Unknown",
+          value: parseInt(item.count?.toString() || "0"),
           previousValue:
-            previousCategoryMap[item.category] ||
-            Math.round(parseInt(item.count) * 0.85), // Fallback to estimate
+            (item.category && previousCategoryMap[item.category]) ||
+            Math.round(parseInt(item.count?.toString() || "0") * 0.85), // Fallback to estimate
         }));
 
         setData(formattedData);

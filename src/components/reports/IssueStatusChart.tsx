@@ -38,10 +38,11 @@ const IssueStatusChart: React.FC = () => {
 
         // Transform the data for the chart
         const formattedData = statusData.map((item, index) => ({
-          name:
-            item.status.charAt(0).toUpperCase() +
-            item.status.slice(1).replace("-", " "),
-          value: parseInt(item.count),
+          name: item.status
+            ? item.status.charAt(0).toUpperCase() +
+              item.status.slice(1).replace("-", " ")
+            : "Unknown",
+          value: parseInt(item.count?.toString() || "0"),
         }));
 
         setData(formattedData);

@@ -1,15 +1,12 @@
 import { createContext, useContext } from "react";
-import type { User } from "@supabase/supabase-js";
+import { User } from "@supabase/supabase-js";
 
 export interface UserProfile {
   id: string;
-  username?: string | null;
-  full_name?: string | null;
-  avatar_url?: string | null;
-  constituency?: string | null;
-  role?: "citizen" | "official" | "admin" | null;
-  created_at?: string;
-  updated_at?: string;
+  full_name: string;
+  avatar_url: string;
+  role: string;
+  updated_at: string;
 }
 
 export interface AuthContextType {
@@ -25,14 +22,13 @@ export interface AuthContextType {
   signOut?: () => Promise<any>;
   updateProfile?: (data: Partial<UserProfile>) => Promise<any>;
   resetPassword?: (email: string) => Promise<any>;
+  refreshSession?: () => Promise<any>;
 }
 
 export const AuthContext = createContext<AuthContextType>({
   user: null,
   profile: null,
-  isLoading: false,
+  isLoading: true,
 });
 
-export const useAuth = () => {
-  return useContext(AuthContext);
-};
+export const useAuth = () => useContext(AuthContext);

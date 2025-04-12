@@ -1,14 +1,15 @@
 import { supabase } from "@/lib/supabase";
 import {
+  fetchTrendingIssues as fetchTrendingIssuesHelper,
+  fetchFundingStats as fetchFundingStatsHelper,
   fetchTotalIssuesCount,
   fetchResolvedIssuesCount,
   fetchAverageResponseTime,
   fetchConstituencyRankings,
   generateConstituencyRankings,
   fetchEngagementStats,
-  fetchTrendingIssues as fetchTrendingIssuesHelper,
-  fetchFundingStats as fetchFundingStatsHelper,
 } from "./statsHelpers";
+import type { ReportData } from "@/types/supabase-extensions";
 
 /**
  * API functions for fetching statistics and dashboard data
@@ -180,31 +181,26 @@ export const getOverallStats = async () => {
   }
 };
 
-// Define types for report data
-interface ReportDataItem {
-  name: string;
-  value: number;
-  previousValue: number;
-}
-
-interface MonthlyTrendItem {
-  month: string;
-  issues: number;
-  resolved: number;
-  responseTime?: number;
-}
-
-interface ReportData {
-  issuesByCategory: ReportDataItem[];
-  issuesByStatus: ReportDataItem[];
-  monthlyTrends: MonthlyTrendItem[];
-  departmentPerformance?: any[];
-  budgetAllocation?: any[];
-  citizenEngagement?: any[];
-}
+// Helper function to convert timeframe string to months
+export const timeframeToMonths = (timeframe: string): number => {
+  switch (timeframe) {
+    case "1m":
+      return 1;
+    case "3m":
+      return 3;
+    case "6m":
+      return 6;
+    case "1y":
+      return 12;
+    default:
+      return 3; // Default to 3 months
+  }
+};
 
 // Get report data for the reports page
-export const getReportData = async (timeframe = "3m"): Promise<ReportData> => {
+export const getReportData = async (
+  timeframe: string = "3m",
+): Promise<ReportData> => {
   try {
     console.log(`Fetching report data for timeframe: ${timeframe}`);
 
@@ -227,55 +223,31 @@ export const getReportData = async (timeframe = "3m"): Promise<ReportData> => {
     // Calculate date range based on timeframe
     const now = new Date();
     let startDate: Date;
-    let timeframeNum = 3; // Default to 3 months
+    const timeframeNum = timeframeToMonths(timeframe);
 
-    switch (timeframe) {
-      case "1m":
-        startDate = new Date(
-          now.getFullYear(),
-          now.getMonth() - 1,
-          now.getDate(),
-        );
-        timeframeNum = 1;
-        break;
-      case "3m":
-        startDate = new Date(
-          now.getFullYear(),
-          now.getMonth() - 3,
-          now.getDate(),
-        );
-        timeframeNum = 3;
-        break;
-      case "6m":
-        startDate = new Date(
-          now.getFullYear(),
-          now.getMonth() - 6,
-          now.getDate(),
-        );
-        timeframeNum = 6;
-        break;
-      case "1y":
-        startDate = new Date(
-          now.getFullYear() - 1,
-          now.getMonth(),
-          now.getDate(),
-        );
-        timeframeNum = 12;
-        break;
-      default:
-        startDate = new Date(
-          now.getFullYear(),
-          now.getMonth() - 3,
-          now.getDate(),
-        );
-        timeframeNum = 3;
+    if (timeframe === "1y") {
+      startDate = new Date(
+        now.getFullYear() - 1,
+        now.getMonth(),
+        now.getDate(),
+      );
+    } else {
+      startDate = new Date(
+        now.getFullYear(),
+        now.getMonth() - timeframeNum,
+        now.getDate(),
+      );
     }
 
     const startDateStr = startDate.toISOString();
     console.log(`Using start date: ${startDateStr}`);
 
     // Get issues by category
-    let issuesByCategory: ReportDataItem[] = [];
+    let issuesByCategory: Array<{
+      name: string;
+      value: number;
+      previousValue: number;
+    }> = [];
     try {
       const { data: categoryData, error: categoryError } = await supabase
         .from("issues")
@@ -329,7 +301,11 @@ export const getReportData = async (timeframe = "3m"): Promise<ReportData> => {
     }
 
     // Get issues by status
-    let issuesByStatus: ReportDataItem[] = [];
+    let issuesByStatus: Array<{
+      name: string;
+      value: number;
+      previousValue: number;
+    }> = [];
     try {
       const { data: statusData, error: statusError } = await supabase
         .from("issues")
@@ -361,7 +337,9 @@ export const getReportData = async (timeframe = "3m"): Promise<ReportData> => {
         if (!previousStatusError && previousStatusData) {
           previousStatusData.forEach((item) => {
             if (item.status) {
-              previousStatusMap[item.status] = parseInt(item.count || "0");
+              previousStatusMap[item.status] = parseInt(
+                item.count?.toString() || "0",
+              );
             }
           });
         }
@@ -381,7 +359,12 @@ export const getReportData = async (timeframe = "3m"): Promise<ReportData> => {
     }
 
     // Get monthly trends
-    let monthlyTrends: MonthlyTrendItem[] = [];
+    let monthlyTrends: Array<{
+      month: string;
+      issues: number;
+      resolved: number;
+      responseTime?: number;
+    }> = [];
     try {
       const monthsBack = timeframeNum;
 
@@ -412,7 +395,7 @@ export const getReportData = async (timeframe = "3m"): Promise<ReportData> => {
           responseTime: Math.floor(Math.random() * 10) + 2,
         }));
       } else if (monthlyData) {
-        monthlyTrends = monthlyData as MonthlyTrendItem[];
+        monthlyTrends = monthlyData as any[];
       }
 
       console.log(

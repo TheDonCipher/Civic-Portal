@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import MainLayout from "../layout/MainLayout";
 import PageTitle from "../common/PageTitle";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -41,7 +41,7 @@ import { useRealtimeReports, TimeframeType } from "@/hooks/useRealtimeReports";
 
 const COLORS = ["#0088FE", "#00C49F", "#FFBB28", "#FF8042"];
 
-export const ReportsPageWithRealtime = () => {
+export const ReportsPageWithRealtimeHook = () => {
   const { toast } = useToast();
   const {
     timeframe,
@@ -52,16 +52,16 @@ export const ReportsPageWithRealtime = () => {
     refreshData,
   } = useRealtimeReports("6m" as TimeframeType);
 
-  // Calculate summary data from the report data
-  const summaryData = React.useMemo(() => {
-    if (!reportData) {
-      return {
-        totalIssues: 0,
-        resolutionRate: 0,
-        avgResponseTime: "0 days",
-        citizenSatisfaction: 0,
-      };
-    }
+  const [summaryData, setSummaryData] = useState({
+    totalIssues: 0,
+    resolutionRate: 0,
+    avgResponseTime: "0 days",
+    citizenSatisfaction: 0,
+  });
+
+  // Calculate summary data whenever reportData changes
+  React.useEffect(() => {
+    if (!reportData) return;
 
     // Calculate total issues
     const totalIssues =
@@ -103,12 +103,12 @@ export const ReportsPageWithRealtime = () => {
         ? lastEngagementItem.satisfaction
         : 0;
 
-    return {
+    setSummaryData({
       totalIssues,
       resolutionRate,
       avgResponseTime,
       citizenSatisfaction,
-    };
+    });
   }, [reportData]);
 
   const handleExportReport = () => {
@@ -611,4 +611,4 @@ export const ReportsPageWithRealtime = () => {
   );
 };
 
-export default ReportsPageWithRealtime;
+export default ReportsPageWithRealtimeHook;

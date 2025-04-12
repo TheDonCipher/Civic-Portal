@@ -11,6 +11,9 @@ import { jest, describe, beforeEach, it, expect } from "@jest/globals";
 // Mock the toast function
 jest.mock("@/components/ui/use-toast-enhanced", () => ({
   toast: jest.fn(),
+  useToast: () => ({
+    toast: jest.fn(),
+  }),
 }));
 
 describe("Error Handler", () => {
@@ -34,7 +37,7 @@ describe("Error Handler", () => {
         code: "ERR_API",
         status: 400,
       };
-      handleApiError(error, { showToast: false });
+      handleApiError(error as Error, { showToast: false });
       expect(console.error).toHaveBeenCalledWith(
         expect.stringContaining("API Request"),
         expect.objectContaining({
@@ -54,7 +57,7 @@ describe("Error Handler", () => {
           { path: ["email"], message: "Invalid email" },
         ],
       };
-      handleFormError(error, { showToast: false });
+      handleFormError(error as Error, { showToast: false });
       expect(console.error).toHaveBeenCalled();
     });
   });

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { RealtimeChannel } from "@supabase/supabase-js";
+import { getProfileData } from "@/types/supabase-extensions";
 
 interface Comment {
   id: string;
@@ -12,10 +13,18 @@ interface Comment {
     name: string;
     avatar: string;
   };
+  date?: string;
   [key: string]: any; // Allow for additional properties
 }
 
-export function useRealtimeComments(issueId: string | null) {
+export function useRealtimeComments(issueId: string | null): {
+  comments: Comment[];
+  loading: boolean;
+  error: Error | null;
+  addComment: (content: string) => Promise<boolean>;
+  deleteComment: (commentId: string) => Promise<boolean>;
+  refreshComments: () => Promise<void>;
+} {
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
@@ -43,23 +52,26 @@ export function useRealtimeComments(issueId: string | null) {
 
       // Transform the data to match the expected format
       const formattedComments =
-        data?.map((comment) => ({
-          ...comment,
-          author: {
-            name: comment.profiles?.full_name || "Anonymous",
-            avatar:
-              comment.profiles?.avatar_url ||
-              `https://api.dicebear.com/7.x/avataaars/svg?seed=${comment.user_id}`,
-          },
-          // Format the date for display
-          date: new Date(comment.created_at).toLocaleDateString("en-US", {
-            year: "numeric",
-            month: "short",
-            day: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
-        })) || [];
+        data?.map((comment) => {
+          const profileData = getProfileData(comment.profiles);
+          return {
+            ...comment,
+            author: {
+              name: profileData.full_name || "Anonymous",
+              avatar:
+                profileData.avatar_url ||
+                `https://api.dicebear.com/7.x/avataaars/svg?seed=${comment.user_id}`,
+            },
+            // Format the date for display
+            date: new Date(comment.created_at).toLocaleDateString("en-US", {
+              year: "numeric",
+              month: "short",
+              day: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+          };
+        }) || [];
 
       setComments(formattedComments);
     } catch (err) {
@@ -185,6 +197,7 @@ export function useRealtimeComments(issueId: string | null) {
         // Insert the comment
         const { error: insertError } = await supabase.from("comments").insert({
           issue_id: issueId,
+          author_id: user.id, // Use author_id instead of user_id if that's what your schema expects
           user_id: user.id,
           content,
         });

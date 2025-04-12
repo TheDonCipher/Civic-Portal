@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import { PostgrestCountQueryResult } from "@/types/supabase-count";
 
 /**
  * Helper functions for fetching trending issues data
@@ -34,10 +35,13 @@ export const fetchTrendingIssues = async (): Promise<
       // For each issue, get comment count
       const issuesWithComments = await Promise.all(
         (trendingData || []).map(async (issue) => {
-          const { count, error } = await supabase
+          const { count, error } = (await supabase
             .from("comments")
             .select("*", { count: "exact", head: true })
-            .eq("issue_id", issue.id || "");
+            .eq("issue_id", issue.id || "")) as {
+            count: number | null;
+            error: any;
+          };
 
           return {
             ...issue,
@@ -142,10 +146,13 @@ export const fetchFundingStats = async (): Promise<{
 /**
  * Helper function for fetching total issues count
  */
-export const fetchTotalIssuesCount = async () => {
-  const { count, error } = await supabase
+export const fetchTotalIssuesCount = async (): Promise<number> => {
+  const { count, error } = (await supabase
     .from("issues")
-    .select("*", { count: "exact", head: true });
+    .select("*", {
+      count: "exact",
+      head: true,
+    })) as PostgrestCountQueryResult<any>;
 
   if (error) {
     console.error("Error fetching total issues count:", error);
@@ -158,11 +165,11 @@ export const fetchTotalIssuesCount = async () => {
 /**
  * Helper function for fetching resolved issues count
  */
-export const fetchResolvedIssuesCount = async () => {
-  const { count, error } = await supabase
+export const fetchResolvedIssuesCount = async (): Promise<number> => {
+  const { count, error } = (await supabase
     .from("issues")
     .select("*", { count: "exact", head: true })
-    .eq("status", "resolved");
+    .eq("status", "resolved")) as PostgrestCountQueryResult<any>;
 
   if (error) {
     console.error("Error fetching resolved issues count:", error);
@@ -175,7 +182,7 @@ export const fetchResolvedIssuesCount = async () => {
 /**
  * Helper function for fetching average response time
  */
-export const fetchAverageResponseTime = async () => {
+export const fetchAverageResponseTime = async (): Promise<string> => {
   try {
     const { data, error } = await supabase.rpc("get_average_response_time");
 
@@ -194,7 +201,13 @@ export const fetchAverageResponseTime = async () => {
 /**
  * Helper function for fetching constituency rankings
  */
-export const fetchConstituencyRankings = async () => {
+export const fetchConstituencyRankings = async (): Promise<
+  Array<{
+    name: string;
+    issues: number;
+    resolved: number;
+  }>
+> => {
   try {
     const { data, error } = await supabase
       .from("constituency_stats")
@@ -217,7 +230,13 @@ export const fetchConstituencyRankings = async () => {
 /**
  * Helper function for generating constituency rankings from issues table
  */
-export const generateConstituencyRankings = async () => {
+export const generateConstituencyRankings = async (): Promise<
+  Array<{
+    name: string;
+    issues: number;
+    resolved: number;
+  }>
+> => {
   try {
     // Get constituencies with issue counts
     const { data: constituencyCounts, error: constituencyCountsError } =
@@ -251,11 +270,11 @@ export const generateConstituencyRankings = async () => {
         };
       }
 
-      const { count, error } = await supabase
+      const { count, error } = (await supabase
         .from("issues")
         .select("*", { count: "exact", head: true })
         .eq("constituency", item.constituency)
-        .eq("status", "resolved");
+        .eq("status", "resolved")) as PostgrestCountQueryResult<any>;
 
       return {
         name: item.constituency,
@@ -274,7 +293,12 @@ export const generateConstituencyRankings = async () => {
 /**
  * Helper function for fetching engagement statistics
  */
-export const fetchEngagementStats = async (totalIssues: number) => {
+export const fetchEngagementStats = async (
+  totalIssues: number,
+): Promise<{
+  votesPerIssue: number;
+  commentsPerIssue: number;
+}> => {
   let votesPerIssue = 0;
   let commentsPerIssue = 0;
 
@@ -287,9 +311,12 @@ export const fetchEngagementStats = async (totalIssues: number) => {
     if (votesError) {
       console.warn("Error fetching average votes per issue:", votesError);
       // Calculate manually if RPC fails
-      const { data: totalVotes, error: totalVotesError } = await supabase
+      const { count: totalVotes, error: totalVotesError } = (await supabase
         .from("issue_votes")
-        .select("*", { count: "exact", head: true });
+        .select("*", {
+          count: "exact",
+          head: true,
+        })) as PostgrestCountQueryResult<any>;
 
       if (!totalVotesError && totalIssues > 0) {
         votesPerIssue = Math.round((totalVotes || 0) / totalIssues);
@@ -306,9 +333,13 @@ export const fetchEngagementStats = async (totalIssues: number) => {
     if (commentsError) {
       console.warn("Error fetching average comments per issue:", commentsError);
       // Calculate manually if RPC fails
-      const { data: totalComments, error: totalCommentsError } = await supabase
-        .from("comments")
-        .select("*", { count: "exact", head: true });
+      const { count: totalComments, error: totalCommentsError } =
+        (await supabase
+          .from("comments")
+          .select("*", {
+            count: "exact",
+            head: true,
+          })) as PostgrestCountQueryResult<any>;
 
       if (!totalCommentsError && totalIssues > 0) {
         commentsPerIssue = Math.round((totalComments || 0) / totalIssues);

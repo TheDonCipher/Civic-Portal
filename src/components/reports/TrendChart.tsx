@@ -10,6 +10,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { supabase } from "@/lib/supabase";
+import { PostgrestCountQueryResult } from "@/types/supabase-count";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -84,19 +85,25 @@ const TrendChart: React.FC<{ timeframe?: string }> = ({ timeframe = "6m" }) => {
         month.getFullYear();
 
       // Get created issues count for this month
-      const { count: createdCount, error: createdError } = await supabase
+      const { count: createdCount, error: createdError } = (await supabase
         .from("issues")
         .select("*", { count: "exact", head: true })
         .gte("created_at", startOfMonth.toISOString())
-        .lte("created_at", endOfMonth.toISOString());
+        .lte(
+          "created_at",
+          endOfMonth.toISOString(),
+        )) as PostgrestCountQueryResult<any>;
 
       // Get resolved issues count for this month
-      const { count: resolvedCount, error: resolvedError } = await supabase
+      const { count: resolvedCount, error: resolvedError } = (await supabase
         .from("issues")
         .select("*", { count: "exact", head: true })
         .eq("status", "resolved")
         .gte("updated_at", startOfMonth.toISOString())
-        .lte("updated_at", endOfMonth.toISOString());
+        .lte(
+          "updated_at",
+          endOfMonth.toISOString(),
+        )) as PostgrestCountQueryResult<any>;
 
       result.push({
         month: monthName,
