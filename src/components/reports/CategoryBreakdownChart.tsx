@@ -79,7 +79,7 @@ const CategoryBreakdownChart: React.FC<{ timeframe?: string }> = ({
           .from("issues")
           .select("category, count")
           .gte("created_at", startDateStr)
-          .group("category");
+          .group("category" as any);
 
         if (categoryError) {
           throw categoryError;
@@ -99,7 +99,7 @@ const CategoryBreakdownChart: React.FC<{ timeframe?: string }> = ({
             .select("category, count")
             .gte("created_at", previousStartDate.toISOString())
             .lt("created_at", previousEndDate.toISOString())
-            .group("category");
+            .group("category" as any);
 
         // Create a map of previous period data
         const previousCategoryMap: Record<string, number> = {};

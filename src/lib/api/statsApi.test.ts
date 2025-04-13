@@ -49,9 +49,11 @@ describe("statsApi", () => {
         citizenEngagement: [],
       };
 
-      (supabase.rpc as jest.Mock).mockResolvedValueOnce({
-        data: mockRpcData,
-        error: null,
+      (supabase.rpc as jest.Mock).mockImplementation(() => {
+        return Promise.resolve({
+          data: mockRpcData,
+          error: null,
+        });
       });
 
       const result = await getReportData("3m");

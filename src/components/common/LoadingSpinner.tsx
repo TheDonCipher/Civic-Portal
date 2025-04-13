@@ -7,7 +7,7 @@ interface LoadingSpinnerProps {
   fullPage?: boolean;
 }
 
-const LoadingSpinner = ({
+export const LoadingSpinner = ({
   size = "md",
   text = "Loading...",
   fullPage = false,

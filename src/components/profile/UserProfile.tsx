@@ -10,7 +10,7 @@ import ProfileSettings from "./ProfileSettings";
 import type { Issue } from "../issues/IssueGrid";
 import { useAuth } from "@/lib/auth";
 
-interface UserProfileProps {
+export interface UserProfileProps {
   user: {
     name: string;
     avatar: string;
@@ -26,7 +26,7 @@ interface UserProfileProps {
   onCreateIssue: () => void;
 }
 
-const UserProfile = ({
+export const UserProfile = ({
   user,
   onIssueClick,
   onCreateIssue,
@@ -52,12 +52,15 @@ const UserProfile = ({
   };
 
   return (
-    <div className="max-w-7xl mx-auto p-6 space-y-6">
+    <div className="max-w-7xl mx-auto p-6 space-y-6" data-testid="user-profile">
       <Card className="overflow-hidden">
         <div className="h-32 bg-gradient-to-r from-primary/10 to-primary/5" />
         <CardContent className="relative pt-16 pb-8 px-6 -mt-12">
           <div className="flex flex-col md:flex-row md:items-center gap-6">
-            <Avatar className="h-24 w-24 border-4 border-background">
+            <Avatar
+              className="h-24 w-24 border-4 border-background"
+              data-testid="user-avatar"
+            >
               <AvatarImage
                 src={userWithIssues.avatar}
                 alt={userWithIssues.name}
@@ -66,17 +69,29 @@ const UserProfile = ({
             </Avatar>
             <div className="space-y-2">
               <div className="space-y-1">
-                <h2 className="text-2xl font-bold">{userWithIssues.name}</h2>
-                <Badge variant="secondary" className="text-sm">
+                <h2 className="text-2xl font-bold" data-testid="user-name">
+                  {userWithIssues.name}
+                </h2>
+                <Badge
+                  variant="secondary"
+                  className="text-sm"
+                  data-testid="user-role"
+                >
                   {userWithIssues.role}
                 </Badge>
               </div>
               <div className="flex flex-col sm:flex-row gap-4 text-sm text-muted-foreground">
-                <div className="flex items-center gap-2">
+                <div
+                  className="flex items-center gap-2"
+                  data-testid="user-email"
+                >
                   <Mail className="h-4 w-4" />
                   {userWithIssues.email}
                 </div>
-                <div className="flex items-center gap-2">
+                <div
+                  className="flex items-center gap-2"
+                  data-testid="user-join-date"
+                >
                   <Calendar className="h-4 w-4" />
                   Joined{" "}
                   {new Date(userWithIssues.joinDate).toLocaleDateString()}
@@ -93,23 +108,33 @@ const UserProfile = ({
             value={activeTab}
             onValueChange={setActiveTab}
             className="space-y-6"
+            data-testid="user-tabs"
           >
             <TabsList>
-              <TabsTrigger value="created">Created Issues</TabsTrigger>
-              <TabsTrigger value="watching">Watching</TabsTrigger>
+              <TabsTrigger value="created" data-testid="created-issues-tab">
+                Created Issues
+              </TabsTrigger>
+              <TabsTrigger value="watching" data-testid="watching-issues-tab">
+                Watching
+              </TabsTrigger>
               {user.issuesSolved && user.issuesSolved.length > 0 && (
-                <TabsTrigger value="solved">Solved</TabsTrigger>
+                <TabsTrigger value="solved" data-testid="solved-issues-tab">
+                  Solved
+                </TabsTrigger>
               )}
               {isCurrentUser && (
-                <TabsTrigger value="settings">Settings</TabsTrigger>
+                <TabsTrigger value="settings" data-testid="settings-tab">
+                  Settings
+                </TabsTrigger>
               )}
             </TabsList>
 
-            <TabsContent value="created">
+            <TabsContent value="created" data-testid="created-issues-content">
               <div className="flex justify-end mb-4">
                 <Button
                   onClick={onCreateIssue}
                   className="flex items-center gap-2"
+                  data-testid="create-issue-button"
                 >
                   <Plus className="h-4 w-4" />
                   Report New Issue
@@ -123,7 +148,10 @@ const UserProfile = ({
                   compact
                 />
               ) : (
-                <div className="text-center py-12 border border-dashed rounded-lg">
+                <div
+                  className="text-center py-12 border border-dashed rounded-lg"
+                  data-testid="no-created-issues"
+                >
                   <p className="text-muted-foreground">
                     You haven't created any issues yet.
                   </p>
@@ -134,7 +162,7 @@ const UserProfile = ({
               )}
             </TabsContent>
 
-            <TabsContent value="watching">
+            <TabsContent value="watching" data-testid="watching-issues-content">
               {userWithIssues.issuesWatching.length > 0 ? (
                 <IssueGrid
                   issues={userWithIssues.issuesWatching}
@@ -142,7 +170,10 @@ const UserProfile = ({
                   compact
                 />
               ) : (
-                <div className="text-center py-12 border border-dashed rounded-lg">
+                <div
+                  className="text-center py-12 border border-dashed rounded-lg"
+                  data-testid="no-watching-issues"
+                >
                   <p className="text-muted-foreground">
                     You're not watching any issues yet.
                   </p>
@@ -158,7 +189,7 @@ const UserProfile = ({
             </TabsContent>
 
             {user.issuesSolved && (
-              <TabsContent value="solved">
+              <TabsContent value="solved" data-testid="solved-issues-content">
                 {user.issuesSolved.length > 0 ? (
                   <IssueGrid
                     issues={user.issuesSolved}
@@ -166,7 +197,10 @@ const UserProfile = ({
                     compact
                   />
                 ) : (
-                  <div className="text-center py-12 border border-dashed rounded-lg">
+                  <div
+                    className="text-center py-12 border border-dashed rounded-lg"
+                    data-testid="no-solved-issues"
+                  >
                     <p className="text-muted-foreground">
                       {user.role === "official"
                         ? "You haven't marked any issues as resolved yet."
@@ -178,7 +212,7 @@ const UserProfile = ({
             )}
 
             {isCurrentUser && (
-              <TabsContent value="settings">
+              <TabsContent value="settings" data-testid="settings-content">
                 <ProfileSettings onUpdate={() => setActiveTab("created")} />
               </TabsContent>
             )}

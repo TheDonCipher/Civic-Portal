@@ -77,7 +77,7 @@ const IssueGrid = ({
   onIssueClick,
 }: IssueGridProps) => {
   return (
-    <div className="w-full flex flex-col gap-6">
+    <div className="w-full flex flex-col gap-6" data-testid="issue-grid">
       <FilterBar onFilterChange={onFilterChange} onSearch={onSearch} />
       <div className="flex-1 bg-background border-border rounded-lg p-4 sm:p-6 shadow-sm">
         <div className="w-full">
@@ -87,6 +87,7 @@ const IssueGrid = ({
                 key={issue.id}
                 onClick={() => onIssueClick(issue)}
                 className="cursor-pointer transition-transform hover:scale-[1.02]"
+                data-testid="issue-card-container"
               >
                 <IssueCard
                   id={issue.id}

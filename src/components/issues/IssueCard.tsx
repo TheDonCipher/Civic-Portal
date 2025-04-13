@@ -289,16 +289,29 @@ const IssueCard = ({
   };
 
   return (
-    <Card className="w-full h-auto min-h-[420px] sm:h-[380px] bg-background hover:shadow-lg transition-all duration-200 flex flex-col relative group">
+    <Card
+      className="w-full h-auto min-h-[420px] sm:h-[380px] bg-background hover:shadow-lg transition-all duration-200 flex flex-col relative group"
+      data-testid="issue-card"
+    >
       <CardHeader className="p-4 space-y-2 flex-none">
         <div className="flex flex-col xs:flex-row items-start xs:items-center justify-between flex-wrap gap-2">
-          <Badge variant="secondary" className={statusColors[status]}>
+          <Badge
+            variant="secondary"
+            className={statusColors[status]}
+            data-testid="issue-status"
+          >
             {status.charAt(0).toUpperCase() + status.slice(1).replace("-", " ")}
           </Badge>
           <div className="flex gap-2">
-            <Badge variant="outline">{category}</Badge>
+            <Badge variant="outline" data-testid="issue-category">
+              {category}
+            </Badge>
             {constituency && (
-              <Badge variant="secondary" className="bg-primary/10">
+              <Badge
+                variant="secondary"
+                className="bg-primary/10"
+                data-testid="issue-constituency"
+              >
                 <LandPlot className="h-3 w-3 mr-1" />
                 {constituency}
               </Badge>
@@ -310,7 +323,10 @@ const IssueCard = ({
             <AvatarImage src={author.avatar} alt={author.name} />
             <AvatarFallback>{author.name.charAt(0)}</AvatarFallback>
           </Avatar>
-          <span className="text-sm text-gray-600 dark:text-gray-300">
+          <span
+            className="text-sm text-gray-600 dark:text-gray-300"
+            data-testid="issue-author"
+          >
             {author.name}
           </span>
         </div>
@@ -326,6 +342,7 @@ const IssueCard = ({
             alt={title}
             className="w-full h-full object-cover"
             loading="eager"
+            data-testid="issue-thumbnail"
             onError={(e) => {
               console.log("Image failed to load:", thumbnail);
               // Fallback to a default image if the thumbnail fails to load
@@ -349,10 +366,16 @@ const IssueCard = ({
           />
         </motion.div>
         <div className="space-y-2">
-          <h3 className="font-semibold text-lg md:truncate line-clamp-2 md:line-clamp-1">
+          <h3
+            className="font-semibold text-lg md:truncate line-clamp-2 md:line-clamp-1"
+            data-testid="issue-title"
+          >
             {title}
           </h3>
-          <p className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2 overflow-hidden">
+          <p
+            className="text-sm text-gray-600 dark:text-gray-300 line-clamp-2 overflow-hidden"
+            data-testid="issue-description"
+          >
             {description || "No description available"}
           </p>
         </div>
@@ -365,6 +388,7 @@ const IssueCard = ({
               size="sm"
               className={cn("space-x-1", liked && "text-primary")}
               onClick={handleLike}
+              data-testid="issue-like-button"
             >
               <AnimatePresence mode="wait">
                 <motion.div
@@ -386,12 +410,17 @@ const IssueCard = ({
                   <ThumbsUp className="h-4 w-4" />
                 </motion.div>
               </AnimatePresence>
-              <span>{localVotes}</span>
+              <span data-testid="issue-votes">{localVotes}</span>
             </Button>
           </motion.div>
-          <Button variant="ghost" size="sm" className="space-x-1">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="space-x-1"
+            data-testid="issue-comments-button"
+          >
             <MessageCircle className="h-4 w-4" />
-            <span>{commentsCount}</span>
+            <span data-testid="issue-comments-count">{commentsCount}</span>
           </Button>
         </div>
         <div className="flex items-center space-x-4">
@@ -402,6 +431,7 @@ const IssueCard = ({
               className={cn("space-x-1", watched && "text-primary")}
               onClick={handleWatch}
               title={`${localWatchers} people watching`}
+              data-testid="issue-watch-button"
             >
               <AnimatePresence mode="wait">
                 <motion.div
@@ -436,10 +466,15 @@ const IssueCard = ({
                   </div>
                 </motion.div>
               </AnimatePresence>
-              <span className="ml-1">{localWatchers}</span>
+              <span className="ml-1" data-testid="issue-watchers-count">
+                {localWatchers}
+              </span>
             </Button>
           </motion.div>
-          <div className="flex items-center text-sm text-gray-500 dark:text-gray-400">
+          <div
+            className="flex items-center text-sm text-gray-500 dark:text-gray-400"
+            data-testid="issue-date"
+          >
             <Calendar className="h-4 w-4 mr-1" />
             {formattedDate}
           </div>

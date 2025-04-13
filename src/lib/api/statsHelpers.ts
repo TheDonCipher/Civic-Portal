@@ -147,12 +147,10 @@ export const fetchFundingStats = async (): Promise<{
  * Helper function for fetching total issues count
  */
 export const fetchTotalIssuesCount = async (): Promise<number> => {
-  const { count, error } = (await supabase
-    .from("issues")
-    .select("*", {
-      count: "exact",
-      head: true,
-    })) as PostgrestCountQueryResult<any>;
+  const { count, error } = (await supabase.from("issues").select("*", {
+    count: "exact",
+    head: true,
+  })) as PostgrestCountQueryResult<any>;
 
   if (error) {
     console.error("Error fetching total issues count:", error);
@@ -184,7 +182,9 @@ export const fetchResolvedIssuesCount = async (): Promise<number> => {
  */
 export const fetchAverageResponseTime = async (): Promise<string> => {
   try {
-    const { data, error } = await supabase.rpc("get_average_response_time");
+    const { data, error } = await supabase.rpc(
+      "get_average_response_time" as any,
+    );
 
     if (error) {
       console.warn("Error fetching average response time:", error);
@@ -244,7 +244,7 @@ export const generateConstituencyRankings = async (): Promise<
         .from("issues")
         .select("constituency, count")
         .not("constituency", "is", null)
-        .group("constituency")
+        .group("constituency" as any)
         .order("count", { ascending: false })
         .limit(5);
 
@@ -305,7 +305,7 @@ export const fetchEngagementStats = async (
   try {
     // Try to get average votes per issue
     const { data: votesData, error: votesError } = await supabase.rpc(
-      "get_average_votes_per_issue",
+      "get_average_votes_per_issue" as any,
     );
 
     if (votesError) {
@@ -327,19 +327,17 @@ export const fetchEngagementStats = async (
 
     // Try to get average comments per issue
     const { data: commentsData, error: commentsError } = await supabase.rpc(
-      "get_average_comments_per_issue",
+      "get_average_comments_per_issue" as any,
     );
 
     if (commentsError) {
       console.warn("Error fetching average comments per issue:", commentsError);
       // Calculate manually if RPC fails
       const { count: totalComments, error: totalCommentsError } =
-        (await supabase
-          .from("comments")
-          .select("*", {
-            count: "exact",
-            head: true,
-          })) as PostgrestCountQueryResult<any>;
+        (await supabase.from("comments").select("*", {
+          count: "exact",
+          head: true,
+        })) as PostgrestCountQueryResult<any>;
 
       if (!totalCommentsError && totalIssues > 0) {
         commentsPerIssue = Math.round((totalComments || 0) / totalIssues);

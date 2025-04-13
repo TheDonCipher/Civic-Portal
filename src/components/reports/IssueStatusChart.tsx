@@ -30,7 +30,7 @@ const IssueStatusChart: React.FC = () => {
         const { data: statusData, error: statusError } = await supabase
           .from("issues")
           .select("status, count")
-          .group("status");
+          .group("status" as any);
 
         if (statusError) {
           throw statusError;

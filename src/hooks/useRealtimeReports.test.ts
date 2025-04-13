@@ -1,4 +1,4 @@
-import { renderHook, act } from "@testing-library/react-hooks";
+import { renderHook, act, waitFor } from "@testing-library/react";
 import { useRealtimeReports } from "./useRealtimeReports";
 import { getReportData } from "@/lib/api/statsApi";
 import { supabase } from "@/lib/supabase";
@@ -50,31 +50,30 @@ describe("useRealtimeReports", () => {
   });
 
   it("should fetch report data on initial render", async () => {
-    const { result, waitForNextUpdate } = renderHook(() =>
-      useRealtimeReports("3m"),
-    );
+    const { result } = renderHook(() => useRealtimeReports("3m"));
 
     // Initial state
     expect(result.current.loading).toBe(true);
     expect(result.current.reportData).toBeNull();
 
     // Wait for data to load
-    await waitForNextUpdate();
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
 
     // After data is loaded
-    expect(result.current.loading).toBe(false);
     expect(result.current.reportData).toEqual(mockReportData);
     expect(result.current.timeframe).toBe("3m");
     expect(getReportData).toHaveBeenCalledWith("3m");
   });
 
   it("should update timeframe and fetch new data", async () => {
-    const { result, waitForNextUpdate } = renderHook(() =>
-      useRealtimeReports("3m"),
-    );
+    const { result } = renderHook(() => useRealtimeReports("3m"));
 
     // Wait for initial data to load
-    await waitForNextUpdate();
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
 
     // Change timeframe
     act(() => {
@@ -85,19 +84,22 @@ describe("useRealtimeReports", () => {
     expect(result.current.loading).toBe(true);
 
     // Wait for new data
-    await waitForNextUpdate();
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
 
     // After new data is loaded
-    expect(result.current.loading).toBe(false);
     expect(result.current.timeframe).toBe("6m");
     expect(getReportData).toHaveBeenCalledWith("6m");
   });
 
   it("should set up realtime subscriptions", async () => {
-    const { waitForNextUpdate } = renderHook(() => useRealtimeReports());
+    const { result } = renderHook(() => useRealtimeReports());
 
     // Wait for data to load
-    await waitForNextUpdate();
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
 
     // Check that subscriptions were set up
     expect(supabase.channel).toHaveBeenCalledWith("reports-realtime-updates");
@@ -106,12 +108,12 @@ describe("useRealtimeReports", () => {
   });
 
   it("should handle manual refresh", async () => {
-    const { result, waitForNextUpdate } = renderHook(() =>
-      useRealtimeReports("3m"),
-    );
+    const { result } = renderHook(() => useRealtimeReports("3m"));
 
     // Wait for initial data to load
-    await waitForNextUpdate();
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
 
     // Reset mock to track new calls
     (getReportData as jest.Mock).mockClear();
@@ -125,10 +127,11 @@ describe("useRealtimeReports", () => {
     expect(result.current.loading).toBe(true);
 
     // Wait for refresh to complete
-    await waitForNextUpdate();
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
 
     // After refresh is complete
-    expect(result.current.loading).toBe(false);
     expect(getReportData).toHaveBeenCalledWith("3m");
   });
 });

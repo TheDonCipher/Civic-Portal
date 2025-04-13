@@ -8,7 +8,7 @@ interface PageTitleProps {
   actions?: React.ReactNode;
 }
 
-const PageTitle = ({
+export const PageTitle = ({
   title,
   description,
   breadcrumbs,

@@ -253,7 +253,7 @@ export const getReportData = async (
         .from("issues")
         .select("category, count")
         .gte("created_at", startDateStr)
-        .group("category");
+        .group("category" as any);
 
       if (categoryError) {
         console.warn("Error fetching issues by category:", categoryError);
@@ -311,7 +311,7 @@ export const getReportData = async (
         .from("issues")
         .select("status, count")
         .gte("created_at", startDateStr)
-        .group("status");
+        .group("status" as any);
 
       if (statusError) {
         console.warn("Error fetching issues by status:", statusError);

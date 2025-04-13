@@ -304,4 +304,5 @@ const ProfileSettings = ({ onUpdate }: ProfileSettingsProps) => {
   );
 };
 
+export { ProfileSettings };
 export default ProfileSettings;
