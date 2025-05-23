@@ -32,7 +32,7 @@ export const UserProfile = ({
   onCreateIssue,
 }: UserProfileProps) => {
   const [activeTab, setActiveTab] = useState("created");
-  const { user: authUser } = useAuth();
+  const { user: authUser } = useAuth ? useAuth() : { user: null };
   const isCurrentUser = authUser?.id && user.isRealUser;
 
   // Process user issues to ensure no duplicates
@@ -112,14 +112,14 @@ export const UserProfile = ({
           >
             <TabsList>
               <TabsTrigger value="created" data-testid="created-issues-tab">
-                Created Issues
+                Issues Created
               </TabsTrigger>
               <TabsTrigger value="watching" data-testid="watching-issues-tab">
-                Watching
+                Issues Watching
               </TabsTrigger>
               {user.issuesSolved && user.issuesSolved.length > 0 && (
                 <TabsTrigger value="solved" data-testid="solved-issues-tab">
-                  Solved
+                  Issues Solved
                 </TabsTrigger>
               )}
               {isCurrentUser && (
@@ -137,7 +137,7 @@ export const UserProfile = ({
                   data-testid="create-issue-button"
                 >
                   <Plus className="h-4 w-4" />
-                  Report New Issue
+                  Report Issue
                 </Button>
               </div>
 

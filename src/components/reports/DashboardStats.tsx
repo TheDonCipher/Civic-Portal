@@ -65,7 +65,7 @@ const DashboardStats: React.FC = () => {
         setStats({
           totalIssues: overallStats.totalIssues,
           resolutionRate: overallStats.resolutionRate,
-          avgResponseTime: overallStats.avgResponseTime,
+          avgResponseTime: String(overallStats.avgResponseTime), // Ensure string conversion
           activeUsers,
         });
       } catch (error) {

@@ -152,19 +152,22 @@ const CreateIssueDialog = ({
       try {
         // Fetch departments
         const { data: departmentsData, error: departmentsError } =
-          await supabase.from("departments").select("*").order("name");
+          await supabase
+            .from("departments" as any)
+            .select("*")
+            .order("name");
 
         if (departmentsError) throw departmentsError;
-        setDepartments(departmentsData || []);
+        setDepartments((departmentsData as Department[]) || []);
 
         // Fetch categories
         const { data: categoriesData, error: categoriesError } = await supabase
-          .from("issue_categories")
+          .from("issue_categories" as any)
           .select("*")
           .order("name");
 
         if (categoriesError) throw categoriesError;
-        setCategories(categoriesData || []);
+        setCategories((categoriesData as Category[]) || []);
 
         // If no categories found in the new table, fall back to the old categories
         if (!categoriesData || categoriesData.length === 0) {

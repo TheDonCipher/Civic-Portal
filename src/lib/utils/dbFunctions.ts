@@ -1,64 +1,57 @@
 import { supabase } from "@/lib/supabase";
-import type { PostgrestCountQueryResult } from "@/types/supabase-count";
-import type { Database } from "@/types/supabase";
+import { IssueSubscriptionOptions } from "@/types/supabase-extensions";
 
 /**
- * Ensures that all required database tables exist
+ * Database utility functions for the application
  */
-export const ensureTablesExist = async () => {
+
+/**
+ * Ensures that all required tables exist in the database
+ */
+export const ensureTablesExist = async (): Promise<boolean> => {
   try {
-    // Check if the tables exist by querying them
+    // Check if the issues table exists by querying it
     const { error: issuesError } = await supabase
       .from("issues")
       .select("id")
       .limit(1);
 
+    if (issuesError && issuesError.code === "PGRST116") {
+      console.error("Issues table does not exist:", issuesError);
+      return false;
+    }
+
+    // Check if the profiles table exists
     const { error: profilesError } = await supabase
       .from("profiles")
       .select("id")
       .limit(1);
 
+    if (profilesError && profilesError.code === "PGRST116") {
+      console.error("Profiles table does not exist:", profilesError);
+      return false;
+    }
+
+    // Check if the comments table exists
     const { error: commentsError } = await supabase
       .from("comments")
       .select("id")
       .limit(1);
 
-    const { error: updatesError } = await supabase
-      .from("updates")
-      .select("id")
-      .limit(1);
+    if (commentsError && commentsError.code === "PGRST116") {
+      console.error("Comments table does not exist:", commentsError);
+      return false;
+    }
 
-    const { error: solutionsError } = await supabase
-      .from("solutions")
-      .select("id")
-      .limit(1);
-
-    // Log any errors for debugging
-    if (issuesError) console.warn("Issues table check:", issuesError.message);
-    if (profilesError)
-      console.warn("Profiles table check:", profilesError.message);
-    if (commentsError)
-      console.warn("Comments table check:", commentsError.message);
-    if (updatesError)
-      console.warn("Updates table check:", updatesError.message);
-    if (solutionsError)
-      console.warn("Solutions table check:", solutionsError.message);
-
-    return {
-      issuesExists: !issuesError,
-      profilesExists: !profilesError,
-      commentsExists: !commentsError,
-      updatesExists: !updatesError,
-      solutionsExists: !solutionsError,
-    };
+    return true;
   } catch (error) {
     console.error("Error checking database tables:", error);
-    throw error;
+    return false;
   }
 };
 
 /**
- * Get a single issue with all related data (comments, updates, solutions)
+ * Get an issue with all its related details
  */
 export const getIssueWithDetails = async (issueId: string) => {
   try {
@@ -74,7 +67,7 @@ export const getIssueWithDetails = async (issueId: string) => {
     // Get comments for the issue
     const { data: comments, error: commentsError } = await supabase
       .from("comments")
-      .select("*, profiles(full_name, avatar_url)")
+      .select("*")
       .eq("issue_id", issueId)
       .order("created_at", { ascending: true });
 
@@ -83,7 +76,7 @@ export const getIssueWithDetails = async (issueId: string) => {
     // Get updates for the issue
     const { data: updates, error: updatesError } = await supabase
       .from("updates")
-      .select("*, profiles(full_name, avatar_url)")
+      .select("*")
       .eq("issue_id", issueId)
       .order("created_at", { ascending: true });
 
@@ -92,213 +85,198 @@ export const getIssueWithDetails = async (issueId: string) => {
     // Get solutions for the issue
     const { data: solutions, error: solutionsError } = await supabase
       .from("solutions")
-      .select("*, profiles(full_name, avatar_url)")
+      .select("*")
       .eq("issue_id", issueId)
       .order("created_at", { ascending: true });
 
     if (solutionsError) throw solutionsError;
 
-    // Format the data for the frontend
-    const formattedComments = comments.map((comment) => ({
-      id: comment.id,
-      content: comment.content,
-      created_at: comment.created_at,
-      author_id: comment.author_id,
-      profiles: comment.profiles,
-    }));
-
-    const formattedUpdates = updates.map((update) => ({
-      id: update.id,
-      content: update.content,
-      created_at: update.created_at,
-      author_id: update.author_id,
-      type: update.type,
-      profiles: update.profiles,
-    }));
-
-    const formattedSolutions = solutions.map((solution) => ({
-      id: solution.id,
-      title: solution.title,
-      description: solution.description,
-      created_at: solution.created_at,
-      proposed_by: solution.proposed_by,
-      estimated_cost: solution.estimated_cost,
-      votes: solution.votes,
-      status: solution.status,
-      profiles: solution.profiles,
-    }));
-
     return {
       issue,
-      comments: formattedComments,
-      updates: formattedUpdates,
-      solutions: formattedSolutions,
+      comments: comments || [],
+      updates: updates || [],
+      solutions: solutions || [],
     };
   } catch (error) {
-    console.error("Error in getIssueWithDetails:", error);
+    console.error("Error fetching issue details:", error);
     throw error;
   }
 };
 
 /**
- * Get issues with pagination
+ * Get issues with optional filtering
  */
-export const getIssues = async (page = 1, limit = 10, filters = {}) => {
+export const getIssues = async (
+  category,
+  status,
+  constituency,
+  search,
+  sortBy = "created_at",
+  sortOrder = "desc",
+  _limit = 10,
+  offset = 0,
+  page: number = 1,
+  limit: number = 10,
+  filters?: {
+    category?: string;
+    status?: string;
+    constituency?: string;
+    search?: string;
+    sortBy?: string;
+    sortOrder?: "asc" | "desc";
+  },
+) => {
   try {
-    const startIndex = (page - 1) * limit;
-    const endIndex = startIndex + limit - 1;
-
-    // Build the query
-    let query = supabase
-      .from("issues")
-      .select("*", { count: "exact" })
-      .order("created_at", { ascending: false });
+    // Use the typed limit parameter from function arguments
+    const calculatedOffset = (page - 1) * limit;
+    let query = supabase.from("issues").select("*", { count: "exact" });
 
     // Apply filters if provided
-    if (filters) {
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value && value !== "all") {
-          query = query.eq(key, value);
-        }
-      });
+    if (filters?.category) {
+      query = query.eq("category", filters.category);
     }
 
-    // Get paginated results
-    const { data, count, error } = await query.range(startIndex, endIndex);
+    if (filters?.status) {
+      query = query.eq("status", filters.status);
+    }
+
+    if (filters?.constituency) {
+      query = query.eq("constituency", filters.constituency);
+    }
+
+    if (filters?.search) {
+      query = query.or(
+        `title.ilike.%${filters.search}%,description.ilike.%${filters.search}%`,
+      );
+    }
+
+    // Apply sorting
+    const sortBy = filters?.sortBy || "created_at";
+    const sortOrder = filters?.sortOrder || "desc";
+    query = query.order(sortBy, { ascending: sortOrder === "asc" });
+
+    // Apply pagination
+    query = query.range(calculatedOffset, calculatedOffset + limit - 1);
+
+    const { data, count, error } = await query;
 
     if (error) throw error;
-
-    // Calculate total pages
-    const totalPages = Math.ceil((count || 0) / limit);
 
     return {
       data: data || [],
       count: count || 0,
       page,
       limit,
-      totalPages,
+      totalPages: Math.ceil((count || 0) / limit),
     };
   } catch (error) {
-    console.error("Error in getIssues:", error);
+    console.error("Error fetching issues:", error);
     throw error;
   }
 };
 
 /**
- * Set up realtime subscriptions for an issue
+ * Set up realtime subscriptions for issues
+ * @param issueId - Optional issue ID to filter changes
+ * @param options - Subscription options with callbacks
  */
-export const setupIssueSubscriptions = (issueId: string, callbacks: any) => {
-  const { onCommentAdded, onUpdateAdded, onSolutionChanged } = callbacks;
+export const setupIssueSubscriptions = (
+  issueId?: string,
+  options?: IssueSubscriptionOptions,
+) => {
+  const channels = [];
 
-  // Subscribe to comments
-  const commentsChannel = supabase
-    .channel(`issue-comments-${issueId}`)
+  // Issues channel
+  const issuesFilter = issueId ? `id=eq.${issueId}` : undefined;
+  const issuesChannel = supabase
+    .channel(`issues-channel-${issueId || "all"}`)
     .on(
       "postgres_changes",
-      {
-        event: "INSERT",
-        schema: "public",
-        table: "comments",
-        filter: `issue_id=eq.${issueId}`,
-      },
+      { event: "*", schema: "public", table: "issues", filter: issuesFilter },
       (payload) => {
-        console.log("New comment received:", payload);
-        if (onCommentAdded && payload.new) {
-          // Get the author details
-          supabase
-            .from("profiles")
-            .select("full_name, avatar_url")
-            .eq("id", payload.new.author_id)
-            .single()
-            .then(({ data: profile }) => {
-              const newComment = {
-                ...payload.new,
-                profiles: profile,
-              };
-              onCommentAdded(newComment);
-            });
+        console.log("Issues change:", payload);
+        if (options?.onIssueUpdated) {
+          options.onIssueUpdated(payload.new);
         }
       },
     )
     .subscribe();
 
-  // Subscribe to updates
-  const updatesChannel = supabase
-    .channel(`issue-updates-${issueId}`)
-    .on(
-      "postgres_changes",
-      {
-        event: "INSERT",
-        schema: "public",
-        table: "updates",
-        filter: `issue_id=eq.${issueId}`,
-      },
-      (payload) => {
-        console.log("New update received:", payload);
-        if (onUpdateAdded && payload.new) {
-          // Get the author details
-          supabase
-            .from("profiles")
-            .select("full_name, avatar_url")
-            .eq("id", payload.new.author_id)
-            .single()
-            .then(({ data: profile }) => {
-              const newUpdate = {
-                ...payload.new,
-                profiles: profile,
-              };
-              onUpdateAdded(newUpdate);
-            });
-        }
-      },
-    )
-    .subscribe();
+  channels.push(issuesChannel);
 
-  // Subscribe to solutions
-  const solutionsChannel = supabase
-    .channel(`issue-solutions-${issueId}`)
-    .on(
-      "postgres_changes",
-      {
-        event: "*",
-        schema: "public",
-        table: "solutions",
-        filter: `issue_id=eq.${issueId}`,
-      },
-      () => {
-        console.log("Solutions changed, fetching updated solutions");
-        if (onSolutionChanged) {
-          // Fetch all solutions for this issue
-          supabase
-            .from("solutions")
-            .select("*, profiles(full_name, avatar_url)")
-            .eq("issue_id", issueId)
-            .order("created_at", { ascending: true })
-            .then(({ data: solutions }) => {
-              if (solutions) {
-                const formattedSolutions = solutions.map((solution) => ({
-                  id: solution.id,
-                  title: solution.title,
-                  description: solution.description,
-                  created_at: solution.created_at,
-                  proposed_by: solution.proposed_by,
-                  estimated_cost: solution.estimated_cost,
-                  votes: solution.votes,
-                  status: solution.status,
-                  profiles: solution.profiles,
-                }));
-                onSolutionChanged(formattedSolutions);
-              }
-            });
-        }
-      },
-    )
-    .subscribe();
+  // If specific issue ID is provided, subscribe to related tables
+  if (issueId) {
+    // Comments channel
+    const commentsChannel = supabase
+      .channel(`comments-channel-${issueId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "comments",
+          filter: `issue_id=eq.${issueId}`,
+        },
+        (payload) => {
+          console.log("New comment:", payload);
+          if (options?.onCommentAdded) {
+            options.onCommentAdded(payload.new);
+          }
+        },
+      )
+      .subscribe();
 
-  // Return a cleanup function
+    channels.push(commentsChannel);
+
+    // Updates channel
+    const updatesChannel = supabase
+      .channel(`updates-channel-${issueId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "updates",
+          filter: `issue_id=eq.${issueId}`,
+        },
+        (payload) => {
+          console.log("New update:", payload);
+          if (options?.onUpdateAdded) {
+            options.onUpdateAdded(payload.new);
+          }
+        },
+      )
+      .subscribe();
+
+    channels.push(updatesChannel);
+
+    // Solutions channel
+    const solutionsChannel = supabase
+      .channel(`solutions-channel-${issueId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "solutions",
+          filter: `issue_id=eq.${issueId}`,
+        },
+        (payload) => {
+          console.log("Solution change:", payload);
+          if (options?.onSolutionAdded && payload.eventType === "INSERT") {
+            options.onSolutionAdded(payload.new);
+          }
+        },
+      )
+      .subscribe();
+
+    channels.push(solutionsChannel);
+  }
+
+  // Return cleanup function
   return () => {
-    supabase.removeChannel(commentsChannel);
-    supabase.removeChannel(updatesChannel);
-    supabase.removeChannel(solutionsChannel);
+    channels.forEach((channel) => {
+      supabase.removeChannel(channel);
+    });
   };
 };

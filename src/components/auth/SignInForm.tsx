@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
+import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -12,26 +12,25 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { useAuth } from "@/lib/auth";
 import { useToast } from "@/components/ui/use-toast-enhanced";
-import { handleAuthError, showSuccess } from "@/lib/utils/errorHandler";
-import { Loader2 } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
 
 const formSchema = z.object({
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(8, "Password must be at least 8 characters"),
+  email: z.string().email("Please enter a valid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
 });
+
+type FormValues = z.infer<typeof formSchema>;
 
 interface SignInFormProps {
   onSuccess?: () => void;
 }
 
-const SignInForm = ({ onSuccess }: SignInFormProps) => {
-  const [isLoading, setIsLoading] = useState(false);
+export function SignInForm({ onSuccess = () => {} }: SignInFormProps) {
   const { toast } = useToast();
   const { signIn } = useAuth();
 
-  const form = useForm<z.infer<typeof formSchema>>({
+  const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       email: "",
@@ -39,29 +38,22 @@ const SignInForm = ({ onSuccess }: SignInFormProps) => {
     },
   });
 
-  const onSubmit = async (data: z.infer<typeof formSchema>) => {
-    setIsLoading(true);
+  const onSubmit = async (data: FormValues) => {
     try {
-      const { error } = await signIn(data.email, data.password);
-
-      if (error) {
-        throw error;
-      }
-
-      showSuccess("Sign in successful", "Welcome back!");
-
-      if (onSuccess) {
-        onSuccess();
-      }
-    } catch (error: any) {
-      console.error("Sign in error:", error);
-      handleAuthError(error, {
-        toastTitle: "Sign in failed",
-        toastDescription: error.message || "Please check your credentials",
-        details: [{ label: "Email", value: data.email }],
+      await signIn(data.email, data.password);
+      toast({
+        title: "Success",
+        description: "You have successfully signed in",
+        variant: "success",
       });
-    } finally {
-      setIsLoading(false);
+      onSuccess();
+    } catch (error) {
+      toast({
+        title: "Error",
+        description:
+          error instanceof Error ? error.message : "Failed to sign in",
+        variant: "destructive",
+      });
     }
   };
 
@@ -75,19 +67,12 @@ const SignInForm = ({ onSuccess }: SignInFormProps) => {
             <FormItem>
               <FormLabel>Email</FormLabel>
               <FormControl>
-                <Input
-                  type="email"
-                  placeholder="Enter your email"
-                  autoComplete="email"
-                  disabled={isLoading}
-                  {...field}
-                />
+                <Input placeholder="your.email@example.com" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-
         <FormField
           control={form.control}
           name="password"
@@ -95,32 +80,22 @@ const SignInForm = ({ onSuccess }: SignInFormProps) => {
             <FormItem>
               <FormLabel>Password</FormLabel>
               <FormControl>
-                <Input
-                  type="password"
-                  placeholder="Enter your password"
-                  autoComplete="current-password"
-                  disabled={isLoading}
-                  {...field}
-                />
+                <Input type="password" placeholder="••••••" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-
-        <Button type="submit" className="w-full" disabled={isLoading}>
-          {isLoading ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Signing in...
-            </>
-          ) : (
-            "Sign In"
-          )}
+        <Button
+          type="submit"
+          className="w-full"
+          disabled={form.formState.isSubmitting}
+        >
+          {form.formState.isSubmitting ? "Signing in..." : "Sign In"}
         </Button>
       </form>
     </Form>
   );
-};
+}
 
 export default SignInForm;

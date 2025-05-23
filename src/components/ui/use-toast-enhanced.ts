@@ -1,7 +1,7 @@
 // Enhanced toast hook with better visibility and more informative messages
 import * as React from "react";
 
-import type { ToastProps } from "@/components/ui/toast-enhanced";
+import type { ToastProps } from "@/components/ui/toast";
 
 type ToastActionElement = React.ReactElement<
   any,

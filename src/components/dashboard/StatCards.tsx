@@ -84,7 +84,23 @@ const StatCards = ({ stats }: StatCardsProps) => {
         setLoading(true);
         const data = await getOverallStats();
         console.log("Fetched stats data:", data);
-        setStatsData(data);
+        // Ensure data has all required properties before setting state
+        setStatsData({
+          totalIssues: data?.totalIssues || 0,
+          resolutionRate: data?.resolutionRate || 0,
+          avgResponseTime: data?.avgResponseTime || "0 days",
+          constituencyRankings: data?.constituencyRankings || [],
+          engagementStats: {
+            votesPerIssue: data?.engagementStats?.votesPerIssue || 0,
+            commentsPerIssue: data?.engagementStats?.commentsPerIssue || 0,
+            trendingIssues: data?.engagementStats?.trendingIssues || [],
+          },
+          fundingStats: {
+            totalRaised: data?.fundingStats?.totalRaised || 0,
+            targetAmount: data?.fundingStats?.targetAmount || 0,
+            recentDonations: data?.fundingStats?.recentDonations || [],
+          },
+        });
       } catch (error) {
         console.error("Error fetching stats:", error);
       } finally {
@@ -132,7 +148,7 @@ const StatCards = ({ stats }: StatCardsProps) => {
                     <AlertTriangle className="h-4 w-4 text-yellow-500" />
                   </div>
                   <p className="text-2xl font-bold">
-                    {displayStats.totalIssues}
+                    {displayStats?.totalIssues || 0}
                   </p>
                   <div className="text-xs text-muted-foreground">
                     +12% from last month
@@ -148,10 +164,10 @@ const StatCards = ({ stats }: StatCardsProps) => {
                     <CheckCircle2 className="h-4 w-4 text-green-500" />
                   </div>
                   <p className="text-2xl font-bold">
-                    {displayStats.resolutionRate}%
+                    {displayStats?.resolutionRate || 0}%
                   </p>
                   <Progress
-                    value={displayStats.resolutionRate}
+                    value={displayStats?.resolutionRate || 0}
                     className="h-2"
                   />
                 </motion.div>
@@ -167,7 +183,7 @@ const StatCards = ({ stats }: StatCardsProps) => {
                     <Clock className="h-4 w-4 text-blue-500" />
                   </div>
                   <p className="text-2xl font-bold">
-                    {displayStats.avgResponseTime}
+                    {displayStats?.avgResponseTime || "0 days"}
                   </p>
                   <div className="text-xs text-muted-foreground">
                     -0.5 days vs last month
@@ -195,29 +211,31 @@ const StatCards = ({ stats }: StatCardsProps) => {
               </div>
               <ScrollArea className="h-[180px]">
                 <div className="space-y-2">
-                  {displayStats.constituencyRankings.map((constituency, i) => (
-                    <motion.div
-                      key={i}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: i * 0.1 }}
-                      className="flex items-center justify-between p-3 rounded-lg bg-primary/5"
-                    >
-                      <div className="space-y-1">
-                        <p className="text-sm font-medium">
-                          {constituency.name}
-                        </p>
-                        <div className="flex items-center gap-2">
-                          <Badge variant="secondary" className="text-xs">
-                            {constituency.resolved} resolved
-                          </Badge>
+                  {(displayStats?.constituencyRankings || []).map(
+                    (constituency, i) => (
+                      <motion.div
+                        key={i}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: i * 0.1 }}
+                        className="flex items-center justify-between p-3 rounded-lg bg-primary/5"
+                      >
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium">
+                            {constituency?.name || "Unknown"}
+                          </p>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="secondary" className="text-xs">
+                              {constituency?.resolved || 0} resolved
+                            </Badge>
+                          </div>
                         </div>
-                      </div>
-                      <span className="text-sm font-semibold text-primary">
-                        {constituency.issues} issues
-                      </span>
-                    </motion.div>
-                  ))}
+                        <span className="text-sm font-semibold text-primary">
+                          {constituency?.issues || 0} issues
+                        </span>
+                      </motion.div>
+                    ),
+                  )}
                 </div>
               </ScrollArea>
             </CardContent>
@@ -237,12 +255,12 @@ const StatCards = ({ stats }: StatCardsProps) => {
                     <span className="text-sm">Comments/Issue</span>
                   </div>
                   <span className="font-semibold">
-                    {displayStats.engagementStats.commentsPerIssue}
+                    {displayStats?.engagementStats?.commentsPerIssue || 0}
                   </span>
                 </div>
                 <ScrollArea className="h-[180px]">
                   <div className="space-y-2">
-                    {displayStats.engagementStats.trendingIssues.map(
+                    {(displayStats?.engagementStats?.trendingIssues || []).map(
                       (issue, i) => (
                         <motion.div
                           key={i}
@@ -257,19 +275,19 @@ const StatCards = ({ stats }: StatCardsProps) => {
                         >
                           <div className="space-y-1">
                             <p className="text-sm font-medium truncate">
-                              {issue.title}
+                              {issue?.title || "Untitled Issue"}
                             </p>
                             <div className="flex items-center gap-2">
                               <Badge variant="secondary" className="text-xs">
-                                {issue.category}
+                                {issue?.category || "Uncategorized"}
                               </Badge>
                               <Badge variant="outline" className="text-xs">
-                                {issue.constituency}
+                                {issue?.constituency || "Unknown"}
                               </Badge>
                             </div>
                           </div>
                           <span className="text-sm font-semibold text-blue-500">
-                            +{issue.engagement}%
+                            +{issue?.engagement || 0}%
                           </span>
                         </motion.div>
                       ),
@@ -292,27 +310,29 @@ const StatCards = ({ stats }: StatCardsProps) => {
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm font-medium">Total Raised</span>
                     <span className="font-semibold text-green-500">
-                      {displayStats.fundingStats.totalRaised.toLocaleString()}{" "}
+                      {displayStats?.fundingStats?.totalRaised?.toLocaleString() ||
+                        0}{" "}
                       BWP
                     </span>
                   </div>
                   <Progress
                     value={
-                      (displayStats.fundingStats.totalRaised /
-                        displayStats.fundingStats.targetAmount) *
+                      ((displayStats?.fundingStats?.totalRaised || 0) /
+                        (displayStats?.fundingStats?.targetAmount || 1)) *
                       100
                     }
                     className="h-2"
                   />
                   <p className="text-sm text-muted-foreground mt-2">
                     Target:{" "}
-                    {displayStats.fundingStats.targetAmount.toLocaleString()}{" "}
+                    {displayStats?.fundingStats?.targetAmount?.toLocaleString() ||
+                      0}{" "}
                     BWP
                   </p>
                 </div>
                 <ScrollArea className="h-[120px]">
                   <div className="space-y-2">
-                    {displayStats.fundingStats.recentDonations.map(
+                    {(displayStats?.fundingStats?.recentDonations || []).map(
                       (donation, i) => (
                         <motion.div
                           key={i}
@@ -327,27 +347,29 @@ const StatCards = ({ stats }: StatCardsProps) => {
                         >
                           <div className="flex items-center gap-3">
                             <Avatar className="h-8 w-8">
-                              <AvatarImage src={donation.provider.avatar} />
+                              <AvatarImage
+                                src={donation?.provider?.avatar || ""}
+                              />
                               <AvatarFallback>
-                                {donation.provider.name[0]}
+                                {donation?.provider?.name?.[0] || "?"}
                               </AvatarFallback>
                             </Avatar>
                             <div className="space-y-1">
                               <p className="text-sm font-medium truncate">
-                                {donation.project}
+                                {donation?.project || "Unknown Project"}
                               </p>
                               <div className="flex items-center gap-2">
                                 <span className="text-xs text-muted-foreground">
-                                  {donation.provider.name}
+                                  {donation?.provider?.name || "Anonymous"}
                                 </span>
                                 <span className="text-xs text-muted-foreground">
-                                  • {donation.date}
+                                  • {donation?.date || "Unknown date"}
                                 </span>
                               </div>
                             </div>
                           </div>
                           <span className="text-sm font-semibold text-green-500 shrink-0">
-                            +{donation.amount.toLocaleString()} BWP
+                            +{(donation?.amount || 0).toLocaleString()} BWP
                           </span>
                         </motion.div>
                       ),

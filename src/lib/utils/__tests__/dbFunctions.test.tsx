@@ -162,7 +162,18 @@ describe("Database Functions", () => {
         }),
       }));
 
-      const result = await getIssues(1, 10);
+      const result = await getIssues(
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        "created_at",
+        "desc",
+        10,
+        0,
+        1,
+        10,
+      );
 
       // Check that the issues are returned with pagination info
       expect(result).toHaveProperty("data");

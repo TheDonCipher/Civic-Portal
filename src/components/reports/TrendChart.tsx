@@ -20,6 +20,13 @@ interface MonthlyData {
   resolved: number;
 }
 
+// Define the RPC function return type
+interface MonthlyIssueStats {
+  month: string;
+  created: number;
+  resolved: number;
+}
+
 const TrendChart: React.FC<{ timeframe?: string }> = ({ timeframe = "6m" }) => {
   const [data, setData] = useState<MonthlyData[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -40,10 +47,10 @@ const TrendChart: React.FC<{ timeframe?: string }> = ({ timeframe = "6m" }) => {
                 : 12;
 
         // Try to use RPC function if available
-        const { data: monthlyData, error: monthlyError } = await supabase.rpc(
-          "get_monthly_issue_stats",
-          { months_back: monthsBack },
-        );
+        const { data: monthlyData, error: monthlyError } =
+          await supabase.rpc<MonthlyIssueStats>("get_monthly_issue_stats", {
+            months_back: monthsBack,
+          });
 
         if (monthlyError) {
           console.warn("Error fetching monthly trends via RPC:", monthlyError);

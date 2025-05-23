@@ -1,50 +1,76 @@
-import React from "react";
-import { Navigate } from "react-router-dom";
-import { useAuth } from "@/hooks/useAuth";
-import LoadingSpinner from "../common/LoadingSpinner";
+import React, { useEffect } from "react";
+import { Navigate, useParams, useLocation } from "react-router-dom";
+import { useAuth } from "@/lib/auth";
+import { useToast } from "@/components/ui/use-toast";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  redirectTo?: string;
   allowedRoles?: string[];
+  requireOwnership?: boolean; // New prop to check if user owns the resource
 }
 
-/**
- * A component that protects routes requiring authentication
- * Redirects to login if user is not authenticated
- * Optionally checks for specific roles
- */
-const ProtectedRoute = ({
+export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   children,
-  redirectTo = "/?signin=true",
-  allowedRoles,
-}: ProtectedRouteProps) => {
+  allowedRoles = [],
+  requireOwnership = false,
+}) => {
   const { user, profile, isLoading } = useAuth();
+  const { toast } = useToast();
+  const { userId } = useParams<{ userId: string }>();
+  const location = useLocation();
 
-  // Show loading spinner while checking authentication
+  // Show loading state while auth state is being determined
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <LoadingSpinner size="lg" text="Verifying authentication..." />
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
       </div>
     );
   }
 
-  // Redirect if not authenticated
+  // If user is not authenticated, redirect to home with signin param
   if (!user) {
-    return <Navigate to={redirectTo} replace />;
+    toast({
+      title: "Authentication Required",
+      description: "Please sign in to access this page",
+      variant: "destructive",
+    });
+    return <Navigate to="/?signin=true" replace />;
   }
 
-  // Check role-based access if roles are specified
-  if (allowedRoles && allowedRoles.length > 0) {
-    const userRole = profile?.role || "citizen";
-    if (!allowedRoles.includes(userRole)) {
-      // Redirect to home if user doesn't have the required role
-      return <Navigate to="/" replace />;
+  // If specific roles are required, check if user has one of them
+  if (
+    allowedRoles.length > 0 &&
+    (!profile?.role || !allowedRoles.includes(profile.role))
+  ) {
+    toast({
+      title: "Access Denied",
+      description: "You don't have permission to access this page",
+      variant: "destructive",
+    });
+    return <Navigate to="/" replace />;
+  }
+
+  // If ownership is required (for user-specific routes), check if the user owns the resource
+  if (requireOwnership && userId && userId !== user.id) {
+    // Allow admins to access any user's resources
+    if (profile?.role !== "admin") {
+      return <Navigate to={`/user/${user.id}`} replace />;
     }
   }
 
-  // User is authenticated and has the required role (if specified)
+  // For user-specific routes, ensure the userId matches the authenticated user
+  // unless they're an admin
+  if (
+    location.pathname.startsWith("/user/") &&
+    userId &&
+    userId !== user.id &&
+    profile?.role !== "admin"
+  ) {
+    return <Navigate to={`/user/${user.id}`} replace />;
+  }
+
+  // User is authenticated and has required permissions, render the protected content
   return <>{children}</>;
 };
 

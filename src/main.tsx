@@ -14,15 +14,20 @@ import { TempoDevtools } from "tempo-devtools";
 TempoDevtools.init();
 
 const basename = import.meta.env.BASE_URL;
+const rootElement = document.getElementById("root");
 
-ReactDOM.createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
-    <BrowserRouter basename={basename}>
-      <ThemeProvider defaultTheme="light">
-        <AuthProvider>
-          <App />
-        </AuthProvider>
-      </ThemeProvider>
-    </BrowserRouter>
-  </React.StrictMode>,
-);
+if (!rootElement) {
+  console.error("Root element not found");
+} else {
+  ReactDOM.createRoot(rootElement).render(
+    <React.StrictMode>
+      <BrowserRouter basename={basename}>
+        <ThemeProvider defaultTheme="light">
+          <AuthProvider>
+            <App />
+          </AuthProvider>
+        </ThemeProvider>
+      </BrowserRouter>
+    </React.StrictMode>,
+  );
+}

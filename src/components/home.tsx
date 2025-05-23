@@ -10,6 +10,7 @@ import type { Issue } from "./issues/IssueGrid";
 import CreateIssueDialog from "./issues/CreateIssueDialog";
 import { z } from "zod";
 import { useToast } from "@/components/ui/use-toast-enhanced";
+import { useLocation, useNavigate } from "react-router-dom";
 
 interface HomeProps {
   initialIssues?: Issue[];
@@ -165,6 +166,8 @@ const Home = ({ initialIssues = mockIssues }: HomeProps) => {
   const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false);
   const { user, profile } = useAuth();
   const { toast } = useToast();
+  const location = useLocation();
+  const navigate = useNavigate();
 
   // Check URL params for signin=true
   useEffect(() => {
@@ -181,6 +184,11 @@ const Home = ({ initialIssues = mockIssues }: HomeProps) => {
 
   // Prevent duplicate issues by ensuring we only fetch once
   const [hasFetched, setHasFetched] = useState(false);
+
+  // Check if we're in demo mode
+  const isDemoMode =
+    location.search.includes("demo=true") ||
+    location.pathname.startsWith("/demo");
 
   // Fetch issues from the database when the component mounts
   useEffect(() => {
@@ -459,7 +467,15 @@ const Home = ({ initialIssues = mockIssues }: HomeProps) => {
   return (
     <div className="min-h-screen bg-background">
       <Header
-        onCreateIssue={() => setIsCreateDialogOpen(true)}
+        onCreateIssue={() => {
+          if (!user && !isDemoMode) {
+            setIsAuthDialogOpen(true);
+          } else if (user && !isDemoMode) {
+            navigate(`/user/${user.id}/issues`);
+          } else {
+            setIsCreateDialogOpen(true);
+          }
+        }}
         onSearch={handleSearch}
       />
 

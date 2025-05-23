@@ -10,6 +10,41 @@ import {
   toggleSolutionVote,
   updateSolutionStatus,
 } from "@/lib/utils/issueHelpers";
+import { ProfileData } from "@/types/supabase-extensions";
+
+interface Author {
+  name: string;
+  avatar: string;
+}
+
+interface Comment {
+  id: string;
+  content: string;
+  date: string;
+  author: Author;
+  author_id: string;
+}
+
+interface Update {
+  id: string;
+  content: string;
+  date: string;
+  type: string;
+  author: Author;
+  author_id: string;
+}
+
+interface Solution {
+  id: string;
+  title: string;
+  description: string;
+  estimatedCost: number;
+  votes: number;
+  status: string;
+  date: string;
+  proposedBy: Author;
+  proposed_by: string;
+}
 
 /**
  * Custom hook for handling issue interactions (likes, watches, comments, etc.)
@@ -22,9 +57,9 @@ export const useIssueInteractions = (issueId: string) => {
   const [isWatched, setIsWatched] = useState(false);
   const [voteCount, setVoteCount] = useState(0);
   const [watchCount, setWatchCount] = useState(0);
-  const [comments, setComments] = useState<any[]>([]);
-  const [updates, setUpdates] = useState<any[]>([]);
-  const [solutions, setSolutions] = useState<any[]>([]);
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [updates, setUpdates] = useState<Update[]>([]);
+  const [solutions, setSolutions] = useState<Solution[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   // Fetch initial data
@@ -77,9 +112,13 @@ export const useIssueInteractions = (issueId: string) => {
           content: comment.content,
           date: new Date(comment.created_at).toLocaleDateString(),
           author: {
-            name: comment.profiles?.full_name || "Unknown",
+            name:
+              comment.profiles?.full_name ||
+              comment.profiles?.[0]?.full_name ||
+              "Unknown",
             avatar:
               comment.profiles?.avatar_url ||
+              comment.profiles?.[0]?.avatar_url ||
               `https://api.dicebear.com/7.x/avataaars/svg?seed=${comment.author_id}`,
           },
           author_id: comment.author_id,
@@ -114,9 +153,13 @@ export const useIssueInteractions = (issueId: string) => {
           date: new Date(update.created_at).toLocaleDateString(),
           type: update.type,
           author: {
-            name: update.profiles?.full_name || "Unknown",
+            name:
+              update.profiles?.full_name ||
+              update.profiles?.[0]?.full_name ||
+              "Unknown",
             avatar:
               update.profiles?.avatar_url ||
+              update.profiles?.[0]?.avatar_url ||
               `https://api.dicebear.com/7.x/avataaars/svg?seed=${update.author_id}`,
           },
           author_id: update.author_id,
@@ -156,9 +199,13 @@ export const useIssueInteractions = (issueId: string) => {
           status: solution.status,
           date: new Date(solution.created_at).toLocaleDateString(),
           proposedBy: {
-            name: solution.profiles?.full_name || "Unknown",
+            name:
+              solution.profiles?.full_name ||
+              solution.profiles?.[0]?.full_name ||
+              "Unknown",
             avatar:
               solution.profiles?.avatar_url ||
+              solution.profiles?.[0]?.avatar_url ||
               `https://api.dicebear.com/7.x/avataaars/svg?seed=${solution.proposed_by}`,
           },
           proposed_by: solution.proposed_by,
@@ -232,9 +279,13 @@ export const useIssueInteractions = (issueId: string) => {
             content: data.content,
             date: new Date(data.created_at).toLocaleDateString(),
             author: {
-              name: data.profiles?.full_name || "Unknown",
+              name:
+                data.profiles?.full_name ||
+                data.profiles?.[0]?.full_name ||
+                "Unknown",
               avatar:
                 data.profiles?.avatar_url ||
+                data.profiles?.[0]?.avatar_url ||
                 `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.author_id}`,
             },
             author_id: data.author_id,
@@ -275,9 +326,13 @@ export const useIssueInteractions = (issueId: string) => {
             date: new Date(data.created_at).toLocaleDateString(),
             type: data.type,
             author: {
-              name: data.profiles?.full_name || "Unknown",
+              name:
+                data.profiles?.full_name ||
+                data.profiles?.[0]?.full_name ||
+                "Unknown",
               avatar:
                 data.profiles?.avatar_url ||
+                data.profiles?.[0]?.avatar_url ||
                 `https://api.dicebear.com/7.x/avataaars/svg?seed=${data.author_id}`,
             },
             author_id: data.author_id,
@@ -323,9 +378,13 @@ export const useIssueInteractions = (issueId: string) => {
             status: solution.status,
             date: new Date(solution.created_at).toLocaleDateString(),
             proposedBy: {
-              name: solution.profiles?.full_name || "Unknown",
+              name:
+                solution.profiles?.full_name ||
+                solution.profiles?.[0]?.full_name ||
+                "Unknown",
               avatar:
                 solution.profiles?.avatar_url ||
+                solution.profiles?.[0]?.avatar_url ||
                 `https://api.dicebear.com/7.x/avataaars/svg?seed=${solution.proposed_by}`,
             },
             proposed_by: solution.proposed_by,
@@ -653,7 +712,7 @@ export const useIssueInteractions = (issueId: string) => {
 
       // Add an update to the updates list
       const newUpdate = {
-        id: Date.now(),
+        id: Date.now().toString(),
         content: `Solution status updated to ${status}: ${updateText}`,
         date: new Date().toLocaleDateString(),
         type: "solution",
