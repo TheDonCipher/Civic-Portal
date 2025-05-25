@@ -1,16 +1,11 @@
-import React, { useEffect, useState } from "react";
-import { AuthContext } from "@/lib/auth";
-import { supabase } from "@/lib/supabase";
-import type { User, AuthError } from "@supabase/supabase-js";
-import type { UserProfile } from "@/lib/auth";
-import { Toaster } from "@/components/ui/toaster-enhanced";
-import { useToast } from "@/components/ui/use-toast-enhanced";
-import {
-  handleApiError,
-  handleAuthError,
-  showSuccess,
-} from "@/lib/utils/errorHandler";
-import { sanitizeInput } from "@/lib/utils/securityUtils";
+import React, { useEffect, useState } from 'react';
+import { AuthContext } from '@/lib/auth';
+import { supabase } from '@/lib/supabase';
+import type { User, AuthError } from '@supabase/supabase-js';
+import type { UserProfile } from '@/lib/auth';
+import { Toaster } from '@/components/ui/toaster';
+import { useToast } from '@/components/ui/use-toast';
+import { sanitizeInput } from '@/lib/utils';
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -28,8 +23,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           data: { session },
         } = await supabase.auth.getSession();
         console.log(
-          "Initial session check:",
-          session?.user?.id ? "Logged in" : "Not logged in",
+          'Initial session check:',
+          session?.user?.id ? 'Logged in' : 'Not logged in'
         );
 
         setUser(session?.user ?? null);
@@ -39,7 +34,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           setIsLoading(false);
         }
       } catch (error) {
-        console.error("Error getting initial session:", error);
+        console.error('Error getting initial session:', error);
         setIsLoading(false);
       }
     };
@@ -50,16 +45,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log("Auth state changed:", event, session?.user?.id);
+      console.log('Auth state changed:', event, session?.user?.id);
 
       setUser(session?.user ?? null);
       if (session?.user) {
         getProfile(session.user.id);
 
         // Redirect to user dashboard after successful sign in
-        if (event === "SIGNED_IN" && window.location.pathname === "/") {
+        if (event === 'SIGNED_IN' && window.location.pathname === '/') {
           const params = new URLSearchParams(window.location.search);
-          if (!params.get("demo")) {
+          if (!params.get('demo')) {
             // Add a small delay to ensure profile is loaded
             setTimeout(() => {
               window.location.href = `/user/${session.user.id}`;
@@ -72,10 +67,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
         // Redirect to home after sign out
         if (
-          event === "SIGNED_OUT" &&
-          window.location.pathname.startsWith("/user/")
+          event === 'SIGNED_OUT' &&
+          window.location.pathname.startsWith('/user/')
         ) {
-          window.location.href = "/";
+          window.location.href = '/';
         }
       }
     });
@@ -91,76 +86,116 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       // First try to get the profile from the database
       let { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", userId)
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
         .single();
 
       if (error) {
-        if (error.code === "PGRST116") {
+        if (error.code === 'PGRST116') {
           // Profile doesn't exist yet, this can happen if the trigger failed
+          console.log(
+            'Profile not found for user:',
+            userId,
+            'attempting to create...'
+          );
+
           const session = await supabase.auth.getSession();
           const metadata = session?.data?.session?.user?.user_metadata;
+          const rawMetadata = session?.data?.session?.user?.user_metadata;
 
-          if (metadata) {
-            // Create a default profile for the user
+          console.log('User metadata for profile creation:', metadata);
+
+          if (metadata || session?.data?.session?.user) {
+            // Create a default profile for the user with more comprehensive data
+            const userRole = metadata?.role || 'citizen';
             const defaultProfile = {
               id: userId,
-              username: metadata.username || userId.substring(0, 8),
-              full_name: metadata.full_name || "John Doe",
-              constituency: metadata.constituency || "Gaborone central",
-              avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`,
-              role: "citizen",
+              email: session?.data?.session?.user?.email || '',
+              username:
+                metadata?.username ||
+                session?.data?.session?.user?.email?.split('@')[0] ||
+                userId.substring(0, 8),
+              full_name: metadata?.full_name || 'User',
+              constituency: metadata?.constituency || null,
+              department: metadata?.department || null,
+              avatar_url:
+                metadata?.avatar_url ||
+                `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`,
+              banner_url: null,
+              role: userRole,
+              // Set verification status based on role
+              verification_status:
+                userRole === 'official' ? 'pending' : 'verified',
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
             };
 
-            // Enable RLS for this operation
-            const { error: insertError } =
-              await supabase.auth.admin.updateUserById(userId, {
-                app_metadata: { role: "citizen" },
-              });
+            console.log('Attempting to create profile:', defaultProfile);
 
-            if (insertError) {
-              console.error("Error updating user role:", insertError);
-            }
-
-            // Insert the profile using service role if available
-            const { error: profileInsertError } = await supabase
-              .from("profiles")
-              .insert([defaultProfile]);
+            // Try to insert the profile directly
+            const { data: insertData, error: profileInsertError } =
+              await supabase
+                .from('profiles')
+                .insert([defaultProfile])
+                .select()
+                .single();
 
             if (profileInsertError) {
-              console.error("Error inserting profile:", profileInsertError);
+              console.error('Error inserting profile:', profileInsertError);
+
+              // Try calling the sync function as a fallback
+              try {
+                const { data: syncData, error: syncError } = await supabase.rpc(
+                  'sync_missing_profiles'
+                );
+
+                if (syncError) {
+                  console.error(
+                    'Error calling sync_missing_profiles:',
+                    syncError
+                  );
+                } else {
+                  console.log('Sync function result:', syncData);
+                }
+              } catch (syncErr) {
+                console.error('Sync function not available:', syncErr);
+              }
+
               // Use the default profile even if we couldn't save it
               profileData = defaultProfile;
             } else {
-              // Successfully inserted, now try to get it back
-              const { data: newData, error: newError } = await supabase
-                .from("profiles")
-                .select("*")
-                .eq("id", userId)
-                .single();
-
-              if (newError) {
-                console.error("Error fetching new profile:", newError);
-                profileData = defaultProfile;
-              } else {
-                profileData = newData;
-              }
+              console.log('Profile created successfully:', insertData);
+              profileData = insertData;
             }
+          } else {
+            console.error('No user metadata available for profile creation');
+            // Create a minimal default profile
+            profileData = {
+              id: userId,
+              username: 'user_' + userId.substring(0, 5),
+              full_name: 'User',
+              constituency: null,
+              avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`,
+              banner_url: null,
+              role: 'citizen',
+            };
           }
         } else {
-          console.error("Error fetching profile:", error);
+          console.error('Error fetching profile:', error);
           // Create a default profile in memory if we can't get it from the database
           profileData = {
             id: userId,
-            username: "user_" + userId.substring(0, 5),
-            full_name: "John Doe",
-            constituency: "Gaborone central",
+            username: 'user_' + userId.substring(0, 5),
+            full_name: 'User',
+            constituency: null,
             avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`,
-            role: "citizen",
+            banner_url: null,
+            role: 'citizen',
           };
         }
       } else {
+        console.log('Profile found successfully:', data);
         profileData = data;
       }
 
@@ -170,19 +205,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           username: profileData.username || null,
           full_name: profileData.full_name || null,
           avatar_url: profileData.avatar_url || null,
+          banner_url: profileData.banner_url || null,
           constituency: profileData.constituency || null,
           role:
-            (profileData.role as "citizen" | "official" | "admin" | null) ||
-            "citizen",
+            (profileData.role as 'citizen' | 'official' | 'admin' | null) ||
+            'citizen',
+          department_id: profileData.department_id || null,
         });
       }
     } catch (error: any) {
-      console.error("Error loading user profile:", error);
+      console.error('Error loading user profile:', error);
       toast({
-        title: "Profile Error",
+        title: 'Profile Error',
         description:
-          "There was an error loading your profile. Please try refreshing the page.",
-        variant: "destructive",
+          'There was an error loading your profile. Please try refreshing the page.',
+        variant: 'destructive',
         duration: 5000,
       });
     } finally {
@@ -201,7 +238,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (error) throw error;
       return { error: null };
     } catch (error) {
-      console.error("Sign in error:", error);
+      console.error('Sign in error:', error);
       return { error: error as AuthError };
     }
   };
@@ -210,7 +247,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const signUp = async (
     email: string,
     password: string,
-    userData: Partial<UserProfile>,
+    userData: Partial<UserProfile>
   ) => {
     try {
       // Sanitize user inputs
@@ -223,6 +260,10 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         constituency: userData.constituency
           ? sanitizeInput(userData.constituency)
           : null,
+        department: userData.department
+          ? sanitizeInput(userData.department)
+          : null,
+        role: userData.role || 'citizen',
       };
 
       // Create the user account
@@ -230,10 +271,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         email,
         password,
         options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
           data: {
             full_name: sanitizedData.full_name,
-            username: sanitizedData.username || email.split("@")[0],
+            username: sanitizedData.username || email.split('@')[0],
             constituency: sanitizedData.constituency,
+            department: sanitizedData.department,
+            role: sanitizedData.role,
             avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${Date.now()}`,
           },
         },
@@ -242,7 +286,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (error) throw error;
       return { error: null };
     } catch (error) {
-      console.error("Sign up error:", error);
+      console.error('Sign up error:', error);
       return { error: error as AuthError };
     }
   };
@@ -254,7 +298,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (error) throw error;
       return { error: null };
     } catch (error) {
-      console.error("Sign out error:", error);
+      console.error('Sign out error:', error);
       return { error: error as Error };
     }
   };
@@ -268,7 +312,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       if (error) throw error;
       return { error: null };
     } catch (error) {
-      console.error("Reset password error:", error);
+      console.error('Reset password error:', error);
       return { error: error as AuthError };
     }
   };
@@ -276,7 +320,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // Update user profile
   const updateProfile = async (data: Partial<UserProfile>) => {
     try {
-      if (!user) throw new Error("User not authenticated");
+      if (!user) throw new Error('User not authenticated');
 
       // Sanitize user inputs
       const sanitizedData = {
@@ -295,6 +339,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           username: sanitizedData.username,
           constituency: sanitizedData.constituency,
           avatar_url: sanitizedData.avatar_url,
+          banner_url: sanitizedData.banner_url,
         },
       });
 
@@ -302,15 +347,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       // Update profile in database
       const { error: profileError } = await supabase
-        .from("profiles")
+        .from('profiles')
         .update({
           full_name: sanitizedData.full_name,
           username: sanitizedData.username,
           constituency: sanitizedData.constituency,
           avatar_url: sanitizedData.avatar_url,
+          banner_url: sanitizedData.banner_url,
           updated_at: new Date().toISOString(),
         })
-        .eq("id", user.id);
+        .eq('id', user.id);
 
       if (profileError) throw profileError;
 
@@ -324,7 +370,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
       return { error: null };
     } catch (error) {
-      console.error("Update profile error:", error);
+      console.error('Update profile error:', error);
       return { error: error as Error };
     }
   };
@@ -334,9 +380,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     try {
       const { data, error } = await supabase.auth.refreshSession();
       if (error) throw error;
-      console.log("Session refreshed successfully");
+      console.log('Session refreshed successfully');
     } catch (error) {
-      console.error("Error refreshing session:", error);
+      console.error('Error refreshing session:', error);
     }
   };
 

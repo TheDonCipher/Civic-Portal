@@ -1,14 +1,17 @@
-import { createContext, useContext } from "react";
-import type { User, AuthError } from "@supabase/supabase-js";
-import { supabase } from "./supabase";
+import { createContext, useContext } from 'react';
+import type { User, AuthError } from '@supabase/supabase-js';
+import { supabase } from './supabase';
 
 export interface UserProfile {
   id: string;
   username?: string | null;
   full_name?: string | null;
   avatar_url?: string | null;
+  banner_url?: string | null;
   constituency?: string | null;
-  role?: "citizen" | "official" | "admin" | null;
+  role?: 'citizen' | 'official' | 'admin' | null;
+  department_id?: string | null;
+  verification_status?: 'pending' | 'verified' | 'rejected' | null;
 }
 
 export interface AuthContextType {
@@ -17,17 +20,17 @@ export interface AuthContextType {
   isLoading: boolean;
   signIn: (
     email: string,
-    password: string,
+    password: string
   ) => Promise<{ error: AuthError | null }>;
   signUp: (
     email: string,
     password: string,
-    userData: Partial<UserProfile>,
+    userData: Partial<UserProfile>
   ) => Promise<{ error: AuthError | null }>;
   signOut: () => Promise<{ error: Error | null }>;
   resetPassword: (email: string) => Promise<{ error: AuthError | null }>;
   updateProfile: (
-    data: Partial<UserProfile>,
+    data: Partial<UserProfile>
   ) => Promise<{ error: Error | null }>;
   refreshSession: () => Promise<void>;
 }

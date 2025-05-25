@@ -7,28 +7,10 @@ import SEOHead from "../common/SEOHead";
 
 const teamMembers = [
   {
-    name: "John Mokgwathi",
-    role: "Project Director",
+    name: "Kealeboga Eugene Ratshipa",
+    role: "Developer",
     bio: "John has over 15 years of experience in public administration and civic engagement projects.",
     avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=john",
-  },
-  {
-    name: "Sarah Molefe",
-    role: "Community Liaison",
-    bio: "Sarah specializes in community outreach and ensuring citizen voices are heard in governance.",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=sarah",
-  },
-  {
-    name: "David Kgosi",
-    role: "Technical Lead",
-    bio: "David brings extensive experience in developing digital solutions for government services.",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=david",
-  },
-  {
-    name: "Lesedi Tau",
-    role: "Data Analyst",
-    bio: "Lesedi specializes in analyzing civic data to identify trends and improve service delivery.",
-    avatar: "https://api.dicebear.com/7.x/avataaars/svg?seed=lesedi",
   },
 ];
 

@@ -32,3 +32,6 @@ core
 
 # Project specific
 checklist.md
+
+# env
+.env.local

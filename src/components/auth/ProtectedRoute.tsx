@@ -1,7 +1,7 @@
-import React, { useEffect } from "react";
-import { Navigate, useParams, useLocation } from "react-router-dom";
-import { useAuth } from "@/lib/auth";
-import { useToast } from "@/components/ui/use-toast";
+import React, { useEffect, useState, useMemo } from 'react';
+import { Navigate, useParams, useLocation } from 'react-router-dom';
+import { useAuth } from '@/lib/auth';
+import { useToast } from '@/components/ui/use-toast';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -14,64 +14,107 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   allowedRoles = [],
   requireOwnership = false,
 }) => {
+  // Always call all hooks at the top level
   const { user, profile, isLoading } = useAuth();
   const { toast } = useToast();
   const { userId } = useParams<{ userId: string }>();
   const location = useLocation();
+  const [hasShownToast, setHasShownToast] = useState(false);
 
-  // Show loading state while auth state is being determined
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
+  // Calculate authentication and authorization status
+  const authStatus = useMemo(() => {
+    if (isLoading) return 'loading';
+    if (!user) return 'unauthenticated';
 
-  // If user is not authenticated, redirect to home with signin param
-  if (!user) {
-    toast({
-      title: "Authentication Required",
-      description: "Please sign in to access this page",
-      variant: "destructive",
-    });
-    return <Navigate to="/?signin=true" replace />;
-  }
-
-  // If specific roles are required, check if user has one of them
-  if (
-    allowedRoles.length > 0 &&
-    (!profile?.role || !allowedRoles.includes(profile.role))
-  ) {
-    toast({
-      title: "Access Denied",
-      description: "You don't have permission to access this page",
-      variant: "destructive",
-    });
-    return <Navigate to="/" replace />;
-  }
-
-  // If ownership is required (for user-specific routes), check if the user owns the resource
-  if (requireOwnership && userId && userId !== user.id) {
-    // Allow admins to access any user's resources
-    if (profile?.role !== "admin") {
-      return <Navigate to={`/user/${user.id}`} replace />;
+    if (
+      allowedRoles.length > 0 &&
+      (!profile?.role || !allowedRoles.includes(profile.role))
+    ) {
+      return 'unauthorized';
     }
-  }
 
-  // For user-specific routes, ensure the userId matches the authenticated user
-  // unless they're an admin
-  if (
-    location.pathname.startsWith("/user/") &&
-    userId &&
-    userId !== user.id &&
-    profile?.role !== "admin"
-  ) {
-    return <Navigate to={`/user/${user.id}`} replace />;
-  }
+    if (
+      requireOwnership &&
+      userId &&
+      userId !== user.id &&
+      profile?.role !== 'admin'
+    ) {
+      return 'ownership_denied';
+    }
 
-  // User is authenticated and has required permissions, render the protected content
-  return <>{children}</>;
+    if (
+      location.pathname.startsWith('/user/') &&
+      userId &&
+      userId !== user.id &&
+      profile?.role !== 'admin'
+    ) {
+      return 'user_mismatch';
+    }
+
+    return 'authorized';
+  }, [
+    isLoading,
+    user,
+    profile,
+    allowedRoles,
+    requireOwnership,
+    userId,
+    location.pathname,
+  ]);
+
+  // Handle toast notifications
+  useEffect(() => {
+    if (!hasShownToast && !isLoading) {
+      if (authStatus === 'unauthenticated') {
+        toast({
+          title: 'Authentication Required',
+          description: 'Please sign in to access this page',
+          variant: 'destructive',
+        });
+        setHasShownToast(true);
+      } else if (authStatus === 'unauthorized') {
+        toast({
+          title: 'Access Denied',
+          description: "You don't have permission to access this page",
+          variant: 'destructive',
+        });
+        setHasShownToast(true);
+      }
+    }
+  }, [authStatus, hasShownToast, isLoading, toast]);
+
+  // Reset toast state when auth status changes
+  useEffect(() => {
+    setHasShownToast(false);
+  }, [user?.id, profile?.role]);
+
+  // Render based on auth status
+  switch (authStatus) {
+    case 'loading':
+      return (
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+        </div>
+      );
+
+    case 'unauthenticated':
+      return <Navigate to="/?signin=true" replace />;
+
+    case 'unauthorized':
+      return <Navigate to="/" replace />;
+
+    case 'ownership_denied':
+      return <Navigate to={`/user/${user?.id}`} replace />;
+
+    case 'user_mismatch':
+      return <Navigate to={`/user/${user?.id}`} replace />;
+
+    case 'authorized':
+      return <>{children}</>;
+
+    default:
+      return <Navigate to="/" replace />;
+  }
 };
 
 export default ProtectedRoute;

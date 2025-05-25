@@ -1,45 +1,64 @@
-import React, { useState, useEffect, Suspense } from "react";
-import {
-  Routes,
-  Route,
-  Navigate,
-  useRoutes,
-  useLocation,
-} from "react-router-dom";
-import { useAuth } from "./lib/auth";
-import ErrorBoundary from "./components/common/ErrorBoundary";
-import { Toaster } from "./components/ui/toaster-enhanced";
-import { ensureTablesExist } from "./lib/utils/dbFunctions";
-import { ConnectionStatus } from "./components/common/ConnectionStatus";
-import ProtectedRoute from "./components/auth/ProtectedRoute";
-import routes from "tempo-routes";
+import React, { useState, useEffect, Suspense } from 'react';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { useAuth } from './lib/auth';
+import ErrorBoundary from './components/common/ErrorBoundary';
+import { Toaster } from './components/ui/toaster-enhanced';
+import { ensureTablesExist } from './lib/utils/dbFunctions';
+import { ConnectionStatus } from './components/common/ConnectionStatus';
+import ProtectedRoute from './components/auth/ProtectedRoute';
+import { logConfigurationStatus } from './utils/supabaseConfigCheck';
+// import routes from 'tempo-routes'; // Disabled - not using Tempo
 
 // Lazy load components to reduce initial bundle size
-const Home = React.lazy(() => import("./components/home"));
+const Home = React.lazy(() => import('./components/home'));
+const DemoHome = React.lazy(() => import('./components/demo/DemoHome'));
+const DemoStakeholderDashboard = React.lazy(
+  () => import('./components/demo/DemoStakeholderDashboard')
+);
+const DemoReportsPage = React.lazy(
+  () => import('./components/demo/DemoReportsPage')
+);
+const DemoUserDashboard = React.lazy(
+  () => import('./components/demo/DemoUserDashboard')
+);
+const DemoIssuesPage = React.lazy(
+  () => import('./components/demo/DemoIssuesPage')
+);
 const IssuesPage = React.lazy(() =>
-  import("./components/issues/IssuesPage").then((module) => ({
+  import('./components/issues/IssuesPage').then((module) => ({
     default: module.IssuesPage,
-  })),
+  }))
 );
 const ReportsPage = React.lazy(() =>
-  import("./components/reports/ReportsPage").then((module) => ({
+  import('./components/reports/ReportsPage').then((module) => ({
     default: module.ReportsPage,
-  })),
+  }))
 );
 const ProfilePage = React.lazy(
-  () => import("./components/profile/ProfilePage"),
+  () => import('./components/profile/ProfilePage')
 );
 const StakeholderDashboard = React.lazy(
-  () => import("./components/stakeholder/StakeholderDashboard"),
+  () => import('./components/stakeholder/StakeholderDashboard')
 );
-const AboutPage = React.lazy(() => import("./components/about/AboutPage"));
-const FAQPage = React.lazy(() => import("./components/faq/FAQPage"));
-const AuthDialog = React.lazy(() => import("./components/auth/AuthDialog"));
-const TestingBanner = React.lazy(() => import("./components/TestingBanner"));
+const AdminPage = React.lazy(() => import('./components/admin/AdminPage'));
+const AboutPage = React.lazy(() => import('./components/about/AboutPage'));
+const FAQPage = React.lazy(() => import('./components/faq/FAQPage'));
+const AuthDialog = React.lazy(() => import('./components/auth/AuthDialog'));
+const TestingBanner = React.lazy(() => import('./components/TestingBanner'));
 const UserDashboard = React.lazy(
-  () => import("./components/user/UserDashboard"),
+  () => import('./components/user/UserDashboard')
 );
-const Header = React.lazy(() => import("./components/layout/Header"));
+const EmailVerificationCallback = React.lazy(
+  () => import('./components/auth/EmailVerificationCallback')
+);
+const TabsTestComponent = React.lazy(() =>
+  import('./components/test/TabsTestComponent').then((module) => ({
+    default: module.TabsTestComponent,
+  }))
+);
+const DatabaseTest = React.lazy(
+  () => import('./components/debug/DatabaseTest')
+);
 
 function App() {
   const { user, profile, isLoading } = useAuth();
@@ -49,37 +68,34 @@ function App() {
   // Check URL params for signin=true
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get("signin") === "true") {
+    if (params.get('signin') === 'true') {
       setIsAuthDialogOpen(true);
       // Clean up the URL
-      window.history.replaceState({}, "", window.location.pathname);
+      window.history.replaceState({}, '', window.location.pathname);
     }
   }, []);
 
-  // Redirect authenticated users to their dashboard if they're on the home page
-  useEffect(() => {
-    if (user && profile && location.pathname === "/" && !isLoading) {
-      // Only redirect if they're not explicitly viewing demo content
-      const params = new URLSearchParams(window.location.search);
-      if (!params.get("demo")) {
-        // Use navigate instead of directly manipulating history for better routing
-        window.location.href = `/user/${user.id}`;
-      }
-    }
-  }, [user, profile, location.pathname, isLoading]);
+  // Note: Removed automatic redirect to allow signed-in users to access home page
 
   // Verify database tables exist on app startup
   useEffect(() => {
     const checkDatabase = async () => {
       try {
         await ensureTablesExist();
-        console.log("Database tables verified successfully");
+        console.log('Database tables verified successfully');
+
+        // Run configuration check in development
+        if (import.meta.env.DEV) {
+          setTimeout(() => {
+            logConfigurationStatus();
+          }, 1000);
+        }
       } catch (error) {
-        console.error("Database verification error:", error);
+        console.error('Database verification error:', error);
         // Add more visible error for demo purposes
         if (import.meta.env.DEV) {
           console.warn(
-            "Database connection issue - this may affect app functionality",
+            'Database connection issue - this may affect app functionality'
           );
         }
       }
@@ -90,7 +106,7 @@ function App() {
 
   // For Tempo routes - this needs to be outside the Routes component
   // Use a more permissive check for VITE_TEMPO
-  const tempoRoutes = import.meta.env.VITE_TEMPO ? useRoutes(routes) : null;
+  // const tempoRoutes = import.meta.env.VITE_TEMPO ? useRoutes(routes) : null; // Disabled - not using Tempo
 
   // Loading fallback component
   const LoadingFallback = () => (
@@ -107,24 +123,30 @@ function App() {
           <TestingBanner />
         </Suspense>
 
-        <Suspense
-          fallback={<div className="h-16 bg-background border-b"></div>}
-        >
-          <Header />
-        </Suspense>
-
         {/* Render Tempo routes if enabled */}
-        {tempoRoutes}
+        {/* {tempoRoutes} */}
 
         <Suspense fallback={<LoadingFallback />}>
           <Routes>
             {/* Public demo routes - accessible to everyone */}
             <Route path="/" element={<Home />} />
-            <Route path="/demo" element={<Home />} />
-            <Route path="/demo/issues" element={<IssuesPage />} />
-            <Route path="/demo/reports" element={<ReportsPage />} />
+            <Route
+              path="/auth/callback"
+              element={<EmailVerificationCallback />}
+            />
+            <Route path="/demo" element={<DemoHome />} />
+            <Route path="/demo/issues" element={<DemoIssuesPage />} />
+            <Route path="/demo/reports" element={<DemoReportsPage />} />
+            <Route
+              path="/demo/stakeholder"
+              element={<DemoStakeholderDashboard />}
+            />
+            <Route path="/demo/user/:userId" element={<DemoUserDashboard />} />
+            <Route path="/demo/profile" element={<DemoUserDashboard />} />
             <Route path="/about" element={<AboutPage />} />
             <Route path="/faq" element={<FAQPage />} />
+            <Route path="/test-tabs" element={<TabsTestComponent />} />
+            <Route path="/debug-db" element={<DatabaseTest />} />
 
             {/* User-specific routes - require authentication */}
             <Route
@@ -143,14 +165,7 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            <Route
-              path="/user/:userId/reports"
-              element={
-                <ProtectedRoute>
-                  <ReportsPage />
-                </ProtectedRoute>
-              }
-            />
+
             <Route
               path="/user/:userId/profile"
               element={
@@ -170,8 +185,18 @@ function App() {
             <Route
               path="/stakeholder"
               element={
-                <ProtectedRoute allowedRoles={["official", "admin"]}>
+                <ProtectedRoute allowedRoles={['official', 'admin']}>
                   <StakeholderDashboard />
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Admin panel - requires admin role */}
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute allowedRoles={['admin']}>
+                  <AdminPage />
                 </ProtectedRoute>
               }
             />

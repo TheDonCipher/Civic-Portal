@@ -1,387 +1,240 @@
-import React, { useState, useEffect } from "react";
-import { getOverallStats } from "@/lib/api/statsApi";
-import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Progress } from "@/components/ui/progress";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
-import { motion, AnimatePresence } from "framer-motion";
+import React, { useState, useEffect } from 'react';
+import { getOverallStats } from '@/lib/api/statsApi';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { motion } from 'framer-motion';
+import { supabase } from '@/lib/supabase';
 import {
   AlertTriangle,
   CheckCircle2,
   Clock,
+  Users,
+  FileText,
   TrendingUp,
-  MessageSquare,
-  Banknote,
-  Info,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+} from 'lucide-react';
 
 interface StatCardsProps {
-  stats?: {
-    totalIssues: number;
-    resolutionRate: number;
-    avgResponseTime: string;
-    engagementStats: {
-      votesPerIssue: number;
-      commentsPerIssue: number;
-      trendingIssues: Array<{
-        title: string;
-        category: string;
-        engagement: number;
-        constituency: string;
-      }>;
-    };
-    fundingStats: {
-      totalRaised: number;
-      targetAmount: number;
-      recentDonations: Array<{
-        amount: number;
-        project: string;
-        date: string;
-        provider: {
-          name: string;
-          avatar: string;
-        };
-      }>;
-    };
-    constituencyRankings: Array<{
-      name: string;
-      issues: number;
-      resolved: number;
-    }>;
-  };
+  demoData?: any; // Demo data from DemoProvider
 }
 
-const StatCards = ({ stats }: StatCardsProps) => {
+interface StatData {
+  totalIssues: number;
+  openIssues: number;
+  inProgressIssues: number;
+  resolvedIssues: number;
+  activeUsers: number;
+  resolutionRate: number;
+}
+
+const StatCards = ({ demoData }: StatCardsProps) => {
   const [loading, setLoading] = useState(true);
-  const [statsData, setStatsData] = useState({
+  const [statsData, setStatsData] = useState<StatData>({
     totalIssues: 0,
+    openIssues: 0,
+    inProgressIssues: 0,
+    resolvedIssues: 0,
+    activeUsers: 0,
     resolutionRate: 0,
-    avgResponseTime: "0 days",
-    constituencyRankings: [],
-    engagementStats: {
-      votesPerIssue: 0,
-      commentsPerIssue: 0,
-      trendingIssues: [],
-    },
-    fundingStats: {
-      totalRaised: 0,
-      targetAmount: 0,
-      recentDonations: [],
-    },
   });
 
   useEffect(() => {
+    // If demo data is provided, use it directly
+    if (demoData) {
+      setStatsData({
+        totalIssues: demoData.totalIssues || 0,
+        openIssues: demoData.openIssues || 0,
+        inProgressIssues: demoData.inProgressIssues || 0,
+        resolvedIssues: demoData.resolvedIssues || 0,
+        activeUsers: demoData.activeUsers || 0,
+        resolutionRate:
+          demoData.resolvedIssues && demoData.totalIssues
+            ? Math.round((demoData.resolvedIssues / demoData.totalIssues) * 100)
+            : 0,
+      });
+      setLoading(false);
+      return;
+    }
+
     const fetchStats = async () => {
       try {
         setLoading(true);
         const data = await getOverallStats();
-        console.log("Fetched stats data:", data);
-        // Ensure data has all required properties before setting state
+
         setStatsData({
           totalIssues: data?.totalIssues || 0,
+          openIssues: data?.openIssues || 0,
+          inProgressIssues: data?.inProgressIssues || 0,
+          resolvedIssues: data?.resolvedIssues || 0,
+          activeUsers: data?.activeUsers || 0,
           resolutionRate: data?.resolutionRate || 0,
-          avgResponseTime: data?.avgResponseTime || "0 days",
-          constituencyRankings: data?.constituencyRankings || [],
-          engagementStats: {
-            votesPerIssue: data?.engagementStats?.votesPerIssue || 0,
-            commentsPerIssue: data?.engagementStats?.commentsPerIssue || 0,
-            trendingIssues: data?.engagementStats?.trendingIssues || [],
-          },
-          fundingStats: {
-            totalRaised: data?.fundingStats?.totalRaised || 0,
-            targetAmount: data?.fundingStats?.targetAmount || 0,
-            recentDonations: data?.fundingStats?.recentDonations || [],
-          },
         });
       } catch (error) {
-        console.error("Error fetching stats:", error);
+        console.error('Error fetching stats:', error);
+        // Set default values on error
+        setStatsData({
+          totalIssues: 0,
+          openIssues: 0,
+          inProgressIssues: 0,
+          resolvedIssues: 0,
+          activeUsers: 0,
+          resolutionRate: 0,
+        });
       } finally {
         setLoading(false);
       }
     };
 
     fetchStats();
-  }, []);
+  }, [demoData]);
 
-  // If stats are provided as props, use those instead (useful for testing/storybook)
-  const displayStats = stats || statsData;
+  // Set up real-time subscriptions for stats updates (only when not using demo data)
+  useEffect(() => {
+    if (demoData) return; // Skip real-time updates for demo mode
+
+    const subscription = supabase
+      .channel('stats-realtime-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'issues',
+        },
+        (payload) => {
+          console.log('Issue change detected in stats:', payload);
+          // Refresh stats when issues change
+          const fetchStats = async () => {
+            try {
+              const data = await getOverallStats();
+              setStatsData({
+                totalIssues: data?.totalIssues || 0,
+                openIssues: data?.openIssues || 0,
+                inProgressIssues: data?.inProgressIssues || 0,
+                resolvedIssues: data?.resolvedIssues || 0,
+                activeUsers: data?.activeUsers || 0,
+                resolutionRate: data?.resolutionRate || 0,
+              });
+            } catch (error) {
+              console.error('Error refreshing stats:', error);
+            }
+          };
+          fetchStats();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [demoData]);
+
+  const statCards = [
+    {
+      title: 'Total Issues',
+      value: statsData.totalIssues,
+      icon: FileText,
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-50',
+      change: '+12%',
+      changeType: 'increase' as const,
+    },
+    {
+      title: 'Open Issues',
+      value: statsData.openIssues,
+      icon: AlertTriangle,
+      color: 'text-orange-600',
+      bgColor: 'bg-orange-50',
+      change: '+5%',
+      changeType: 'increase' as const,
+    },
+    {
+      title: 'In Progress',
+      value: statsData.inProgressIssues,
+      icon: Clock,
+      color: 'text-yellow-600',
+      bgColor: 'bg-yellow-50',
+      change: '+8%',
+      changeType: 'increase' as const,
+    },
+    {
+      title: 'Resolved',
+      value: statsData.resolvedIssues,
+      icon: CheckCircle2,
+      color: 'text-green-600',
+      bgColor: 'bg-green-50',
+      change: '+15%',
+      changeType: 'increase' as const,
+    },
+    {
+      title: 'Active Users',
+      value: statsData.activeUsers,
+      icon: Users,
+      color: 'text-purple-600',
+      bgColor: 'bg-purple-50',
+      change: '+3%',
+      changeType: 'increase' as const,
+    },
+    {
+      title: 'Resolution Rate',
+      value: `${statsData.resolutionRate}%`,
+      icon: TrendingUp,
+      color: 'text-emerald-600',
+      bgColor: 'bg-emerald-50',
+      change: '+2%',
+      changeType: 'increase' as const,
+    },
+  ];
+
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 sm:gap-6">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="h-32 animate-pulse bg-muted rounded-xl"></div>
+        ))}
+      </div>
+    );
+  }
+
   return (
-    <TooltipProvider>
-      {loading ? (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          <div className="col-span-full lg:col-span-8 h-[300px] animate-pulse bg-muted rounded-lg"></div>
-          <div className="col-span-full lg:col-span-4 h-[300px] animate-pulse bg-muted rounded-lg"></div>
-          <div className="col-span-full lg:col-span-6 h-[300px] animate-pulse bg-muted rounded-lg"></div>
-          <div className="col-span-full lg:col-span-6 h-[300px] animate-pulse bg-muted rounded-lg"></div>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-          {/* Key Issue Overview */}
-          <Card className="col-span-full lg:col-span-8 hover:shadow-lg transition-all duration-200 bg-gradient-to-br from-background to-secondary/20">
-            <CardContent className="p-6 space-y-6">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">Key Issue Overview</h3>
-                <Tooltip>
-                  <TooltipTrigger>
-                    <Info className="h-4 w-4 text-muted-foreground" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Overview of current civic issues and their status</p>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <motion.div
-                  whileHover={{ scale: 1.02 }}
-                  className="p-4 rounded-lg bg-primary/5 space-y-2"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Total Issues</span>
-                    <AlertTriangle className="h-4 w-4 text-yellow-500" />
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 sm:gap-6">
+      {statCards.map((stat, index) => {
+        const Icon = stat.icon;
+        return (
+          <motion.div
+            key={stat.title}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.1 }}
+            whileHover={{ scale: 1.02 }}
+            className="group"
+          >
+            <Card className="h-full border-border/50 hover:border-primary/20 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5">
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className={`p-2 rounded-lg ${stat.bgColor}`}>
+                    <Icon className={`h-5 w-5 ${stat.color}`} />
                   </div>
-                  <p className="text-2xl font-bold">
-                    {displayStats?.totalIssues || 0}
-                  </p>
-                  <div className="text-xs text-muted-foreground">
-                    +12% from last month
+                  <div className="text-right">
+                    <div className="text-xs text-muted-foreground font-medium">
+                      {stat.change}
+                    </div>
                   </div>
-                </motion.div>
-
-                <motion.div
-                  whileHover={{ scale: 1.02 }}
-                  className="p-4 rounded-lg bg-primary/5 space-y-2"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">Resolution Rate</span>
-                    <CheckCircle2 className="h-4 w-4 text-green-500" />
-                  </div>
-                  <p className="text-2xl font-bold">
-                    {displayStats?.resolutionRate || 0}%
-                  </p>
-                  <Progress
-                    value={displayStats?.resolutionRate || 0}
-                    className="h-2"
-                  />
-                </motion.div>
-
-                <motion.div
-                  whileHover={{ scale: 1.02 }}
-                  className="p-4 rounded-lg bg-primary/5 space-y-2"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium">
-                      Avg Response Time
-                    </span>
-                    <Clock className="h-4 w-4 text-blue-500" />
-                  </div>
-                  <p className="text-2xl font-bold">
-                    {displayStats?.avgResponseTime || "0 days"}
-                  </p>
-                  <div className="text-xs text-muted-foreground">
-                    -0.5 days vs last month
-                  </div>
-                </motion.div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Constituency Rankings */}
-          <Card className="col-span-full lg:col-span-4 hover:shadow-lg transition-shadow duration-200">
-            <CardContent className="p-6 space-y-6">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">
-                  Top Constituencies by Issues
-                </h3>
-                <Tooltip>
-                  <TooltipTrigger>
-                    <Info className="h-4 w-4 text-muted-foreground" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Rankings based on issue resolution rates</p>
-                  </TooltipContent>
-                </Tooltip>
-              </div>
-              <ScrollArea className="h-[180px]">
-                <div className="space-y-2">
-                  {(displayStats?.constituencyRankings || []).map(
-                    (constituency, i) => (
-                      <motion.div
-                        key={i}
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: i * 0.1 }}
-                        className="flex items-center justify-between p-3 rounded-lg bg-primary/5"
-                      >
-                        <div className="space-y-1">
-                          <p className="text-sm font-medium">
-                            {constituency?.name || "Unknown"}
-                          </p>
-                          <div className="flex items-center gap-2">
-                            <Badge variant="secondary" className="text-xs">
-                              {constituency?.resolved || 0} resolved
-                            </Badge>
-                          </div>
-                        </div>
-                        <span className="text-sm font-semibold text-primary">
-                          {constituency?.issues || 0} issues
-                        </span>
-                      </motion.div>
-                    ),
-                  )}
                 </div>
-              </ScrollArea>
-            </CardContent>
-          </Card>
-
-          {/* Engagement Highlights */}
-          <Card className="col-span-full lg:col-span-6 hover:shadow-lg transition-shadow duration-200">
-            <CardContent className="p-6 space-y-6">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">Trending Issues</h3>
-                <TrendingUp className="h-5 w-5 text-blue-500" />
-              </div>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <MessageSquare className="h-4 w-4 text-blue-500" />
-                    <span className="text-sm">Comments/Issue</span>
-                  </div>
-                  <span className="font-semibold">
-                    {displayStats?.engagementStats?.commentsPerIssue || 0}
-                  </span>
-                </div>
-                <ScrollArea className="h-[180px]">
-                  <div className="space-y-2">
-                    {(displayStats?.engagementStats?.trendingIssues || []).map(
-                      (issue, i) => (
-                        <motion.div
-                          key={i}
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: i * 0.1 }}
-                          whileHover={{
-                            scale: 1.02,
-                            backgroundColor: "hsl(var(--muted))",
-                          }}
-                          className="flex items-center justify-between p-3 rounded-lg bg-primary/5"
-                        >
-                          <div className="space-y-1">
-                            <p className="text-sm font-medium truncate">
-                              {issue?.title || "Untitled Issue"}
-                            </p>
-                            <div className="flex items-center gap-2">
-                              <Badge variant="secondary" className="text-xs">
-                                {issue?.category || "Uncategorized"}
-                              </Badge>
-                              <Badge variant="outline" className="text-xs">
-                                {issue?.constituency || "Unknown"}
-                              </Badge>
-                            </div>
-                          </div>
-                          <span className="text-sm font-semibold text-blue-500">
-                            +{issue?.engagement || 0}%
-                          </span>
-                        </motion.div>
-                      ),
-                    )}
-                  </div>
-                </ScrollArea>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Crowdfunding Success */}
-          <Card className="col-span-full lg:col-span-6 hover:shadow-lg transition-shadow duration-200">
-            <CardContent className="p-6 space-y-6">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold">Crowdfunding Progress</h3>
-                <Banknote className="h-5 w-5 text-green-500" />
-              </div>
-              <div className="space-y-4">
-                <div className="p-4 rounded-lg bg-primary/5">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium">Total Raised</span>
-                    <span className="font-semibold text-green-500">
-                      {displayStats?.fundingStats?.totalRaised?.toLocaleString() ||
-                        0}{" "}
-                      BWP
-                    </span>
-                  </div>
-                  <Progress
-                    value={
-                      ((displayStats?.fundingStats?.totalRaised || 0) /
-                        (displayStats?.fundingStats?.targetAmount || 1)) *
-                      100
-                    }
-                    className="h-2"
-                  />
-                  <p className="text-sm text-muted-foreground mt-2">
-                    Target:{" "}
-                    {displayStats?.fundingStats?.targetAmount?.toLocaleString() ||
-                      0}{" "}
-                    BWP
+                <div className="space-y-1">
+                  <p className="text-2xl sm:text-3xl font-bold text-foreground">
+                    {typeof stat.value === 'number'
+                      ? stat.value.toLocaleString()
+                      : stat.value}
+                  </p>
+                  <p className="text-sm text-muted-foreground font-medium">
+                    {stat.title}
                   </p>
                 </div>
-                <ScrollArea className="h-[120px]">
-                  <div className="space-y-2">
-                    {(displayStats?.fundingStats?.recentDonations || []).map(
-                      (donation, i) => (
-                        <motion.div
-                          key={i}
-                          initial={{ opacity: 0, x: 20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: i * 0.1 }}
-                          whileHover={{
-                            scale: 1.02,
-                            backgroundColor: "hsl(var(--muted))",
-                          }}
-                          className="flex items-center justify-between p-3 rounded-lg bg-primary/5"
-                        >
-                          <div className="flex items-center gap-3">
-                            <Avatar className="h-8 w-8">
-                              <AvatarImage
-                                src={donation?.provider?.avatar || ""}
-                              />
-                              <AvatarFallback>
-                                {donation?.provider?.name?.[0] || "?"}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div className="space-y-1">
-                              <p className="text-sm font-medium truncate">
-                                {donation?.project || "Unknown Project"}
-                              </p>
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs text-muted-foreground">
-                                  {donation?.provider?.name || "Anonymous"}
-                                </span>
-                                <span className="text-xs text-muted-foreground">
-                                  • {donation?.date || "Unknown date"}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                          <span className="text-sm font-semibold text-green-500 shrink-0">
-                            +{(donation?.amount || 0).toLocaleString()} BWP
-                          </span>
-                        </motion.div>
-                      ),
-                    )}
-                  </div>
-                </ScrollArea>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
-    </TooltipProvider>
+              </CardContent>
+            </Card>
+          </motion.div>
+        );
+      })}
+    </div>
   );
 };
 

@@ -1,16 +1,16 @@
-import React, { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { useAuth } from "@/lib/auth";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import PageTitle from "../common/PageTitle";
-import { useToast } from "@/components/ui/use-toast";
-import { supabase } from "@/lib/supabase";
+import { useEffect, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '@/lib/auth';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import MainLayout from '../layout/MainLayout';
+import PageTitle from '../common/PageTitle';
+import { useToast } from '@/components/ui/use-toast';
+import { supabase } from '@/lib/supabase';
 import {
-  User,
   Settings,
   FileText,
   BarChart3,
@@ -21,7 +21,8 @@ import {
   Calendar,
   MapPin,
   Users,
-} from "lucide-react";
+  Mail,
+} from 'lucide-react';
 
 interface UserStats {
   issuesCreated: number;
@@ -33,10 +34,11 @@ interface UserStats {
 interface RecentActivity {
   id: string;
   type:
-    | "issue_created"
-    | "comment_posted"
-    | "issue_supported"
-    | "issue_watched";
+    | 'issue_created'
+    | 'comment_posted'
+    | 'issue_supported'
+    | 'issue_watched'
+    | 'solution_offered';
   title: string;
   description: string;
   date: string;
@@ -65,20 +67,20 @@ const UserDashboard = () => {
     } else if (user && userId !== user.id) {
       // User is trying to access someone else's dashboard
       toast({
-        title: "Access Denied",
-        description: "You can only access your own dashboard",
-        variant: "destructive",
+        title: 'Access Denied',
+        description: 'You can only access your own dashboard',
+        variant: 'destructive',
       });
       navigate(`/user/${user.id}`);
       return;
     } else if (!user) {
       // User is not authenticated
       toast({
-        title: "Authentication Required",
-        description: "Please sign in to access your dashboard",
-        variant: "destructive",
+        title: 'Authentication Required',
+        description: 'Please sign in to access your dashboard',
+        variant: 'destructive',
       });
-      navigate("/?signin=true");
+      navigate('/?signin=true');
       return;
     }
 
@@ -94,27 +96,27 @@ const UserDashboard = () => {
 
       // Fetch issues created by user
       const { count: issuesCreated } = await supabase
-        .from("issues")
-        .select("*", { count: "exact", head: true })
-        .eq("author_id", user.id);
+        .from('issues')
+        .select('*', { count: 'exact', head: true })
+        .eq('author_id', user.id);
 
       // Fetch issues user is watching
       const { count: issuesWatching } = await supabase
-        .from("issue_watchers")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", user.id);
+        .from('issue_watchers')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id);
 
       // Fetch comments posted by user
       const { count: commentsPosted } = await supabase
-        .from("comments")
-        .select("*", { count: "exact", head: true })
-        .eq("author_id", user.id);
+        .from('comments')
+        .select('*', { count: 'exact', head: true })
+        .eq('author_id', user.id);
 
       // Fetch issues user has supported (voted for)
       const { count: issuesSupported } = await supabase
-        .from("issue_votes")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", user.id);
+        .from('issue_votes')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id);
 
       setUserStats({
         issuesCreated: issuesCreated || 0,
@@ -123,11 +125,11 @@ const UserDashboard = () => {
         issuesSupported: issuesSupported || 0,
       });
     } catch (error) {
-      console.error("Error fetching user stats:", error);
+      console.error('Error fetching user stats:', error);
       toast({
-        title: "Error",
-        description: "Failed to load dashboard statistics",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to load dashboard statistics',
+        variant: 'destructive',
       });
     } finally {
       setLoading(false);
@@ -140,18 +142,42 @@ const UserDashboard = () => {
     try {
       // Fetch recent issues created
       const { data: recentIssues } = await supabase
-        .from("issues")
-        .select("id, title, created_at")
-        .eq("author_id", user.id)
-        .order("created_at", { ascending: false })
+        .from('issues')
+        .select('id, title, created_at')
+        .eq('author_id', user.id)
+        .order('created_at', { ascending: false })
         .limit(3);
 
       // Fetch recent comments
       const { data: recentComments } = await supabase
-        .from("comments")
-        .select("id, content, created_at, issue_id, issues(title)")
-        .eq("author_id", user.id)
-        .order("created_at", { ascending: false })
+        .from('comments')
+        .select('id, content, created_at, issue_id, issues(title)')
+        .eq('author_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(3);
+
+      // Fetch recent solutions offered
+      const { data: recentSolutions } = await supabase
+        .from('solutions')
+        .select('id, title, created_at, issue_id, issues(title)')
+        .eq('proposed_by', user.id)
+        .order('created_at', { ascending: false })
+        .limit(3);
+
+      // Fetch recent votes (issue support) - simplified query
+      const { data: recentVotes } = await supabase
+        .from('issue_votes')
+        .select('created_at, issue_id')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(3);
+
+      // Fetch recent watches - simplified query
+      const { data: recentWatches } = await supabase
+        .from('issue_watchers')
+        .select('created_at, issue_id')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
         .limit(3);
 
       const activities: RecentActivity[] = [];
@@ -160,10 +186,10 @@ const UserDashboard = () => {
       recentIssues?.forEach((issue) => {
         activities.push({
           id: `issue-${issue.id}`,
-          type: "issue_created",
-          title: "Created new issue",
+          type: 'issue_created',
+          title: 'Created new issue',
           description: issue.title,
-          date: new Date(issue.created_at).toLocaleDateString(),
+          date: issue.created_at,
           issueId: issue.id,
         });
       });
@@ -172,34 +198,76 @@ const UserDashboard = () => {
       recentComments?.forEach((comment) => {
         activities.push({
           id: `comment-${comment.id}`,
-          type: "comment_posted",
-          title: "Posted a comment",
-          description: `On: ${(comment.issues as any)?.title || "Unknown issue"}`,
-          date: new Date(comment.created_at).toLocaleDateString(),
+          type: 'comment_posted',
+          title: 'Posted a comment',
+          description: `On: ${
+            (comment.issues as any)?.title || 'Unknown issue'
+          }`,
+          date: comment.created_at,
           issueId: comment.issue_id,
+        });
+      });
+
+      // Add recent solutions
+      recentSolutions?.forEach((solution) => {
+        activities.push({
+          id: `solution-${solution.id}`,
+          type: 'solution_offered',
+          title: 'Offered a solution',
+          description: `${solution.title} for: ${
+            (solution.issues as any)?.title || 'Unknown issue'
+          }`,
+          date: solution.created_at,
+          issueId: solution.issue_id,
+        });
+      });
+
+      // Add recent votes
+      recentVotes?.forEach((vote, index) => {
+        activities.push({
+          id: `vote-${vote.issue_id}-${index}`,
+          type: 'issue_supported',
+          title: 'Supported an issue',
+          description: 'Voted for an issue',
+          date: vote.created_at,
+          issueId: vote.issue_id,
+        });
+      });
+
+      // Add recent watches
+      recentWatches?.forEach((watch, index) => {
+        activities.push({
+          id: `watch-${watch.issue_id}-${index}`,
+          type: 'issue_watched',
+          title: 'Started watching',
+          description: 'Now following an issue',
+          date: watch.created_at,
+          issueId: watch.issue_id,
         });
       });
 
       // Sort by date and take the most recent 5
       activities.sort(
-        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime(),
+        (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
       );
       setRecentActivity(activities.slice(0, 5));
     } catch (error) {
-      console.error("Error fetching recent activity:", error);
+      console.error('Error fetching recent activity:', error);
     }
   };
 
-  const getActivityIcon = (type: RecentActivity["type"]) => {
+  const getActivityIcon = (type: RecentActivity['type']) => {
     switch (type) {
-      case "issue_created":
+      case 'issue_created':
         return <Plus className="h-4 w-4 text-blue-500" />;
-      case "comment_posted":
+      case 'comment_posted':
         return <MessageSquare className="h-4 w-4 text-green-500" />;
-      case "issue_supported":
+      case 'issue_supported':
         return <Heart className="h-4 w-4 text-red-500" />;
-      case "issue_watched":
+      case 'issue_watched':
         return <Eye className="h-4 w-4 text-purple-500" />;
+      case 'solution_offered':
+        return <BarChart3 className="h-4 w-4 text-orange-500" />;
       default:
         return <Calendar className="h-4 w-4 text-gray-500" />;
     }
@@ -214,22 +282,29 @@ const UserDashboard = () => {
   }
 
   return (
-    <div className="bg-background min-h-screen">
+    <MainLayout>
       <PageTitle
         title={
-          isOwnDashboard ? "My Dashboard" : `${profile.full_name}'s Dashboard`
+          isOwnDashboard ? 'My Dashboard' : `${profile.full_name}'s Dashboard`
         }
         description={
           isOwnDashboard
             ? "Welcome back! Here's your civic engagement overview."
-            : "User dashboard"
+            : 'User dashboard'
         }
         breadcrumbs={[
-          { label: "Home", href: "/" },
-          { label: "Dashboard", href: "#" },
+          { label: 'Home', href: '/' },
+          { label: 'Dashboard', href: '#' },
         ]}
         actions={
           <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => navigate(`/user/${user.id}/issues?create=true`)}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Report Issue
+            </Button>
             <Button
               variant="outline"
               onClick={() => navigate(`/user/${user.id}/issues`)}
@@ -248,31 +323,31 @@ const UserDashboard = () => {
         }
       />
 
-      <div className="container mx-auto py-6 space-y-6">
+      <div className="container mx-auto py-4 sm:py-6 space-y-4 sm:space-y-6 mobile-padding">
         {/* User Profile Card */}
         <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center space-x-4">
-              <Avatar className="h-16 w-16">
+          <CardContent className="pt-4 sm:pt-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
+              <Avatar className="h-16 w-16 mx-auto sm:mx-0">
                 <AvatarImage
-                  src={profile.avatar_url || ""}
-                  alt={profile.full_name || ""}
+                  src={profile.avatar_url || ''}
+                  alt={profile.full_name || ''}
                 />
                 <AvatarFallback>
-                  {profile.full_name?.charAt(0) || user.email?.charAt(0) || "U"}
+                  {profile.full_name?.charAt(0) || user.email?.charAt(0) || 'U'}
                 </AvatarFallback>
               </Avatar>
-              <div className="space-y-1">
-                <h2 className="text-2xl font-bold">
-                  {profile.full_name || "User"}
+              <div className="space-y-2 text-center sm:text-left w-full">
+                <h2 className="text-xl sm:text-2xl font-bold">
+                  {profile.full_name || 'User'}
                 </h2>
-                <div className="flex items-center space-x-2">
+                <div className="flex flex-col sm:flex-row items-center sm:items-start space-y-2 sm:space-y-0 sm:space-x-2">
                   <Badge variant="secondary">
-                    {profile.role === "citizen"
-                      ? "Citizen"
-                      : profile.role === "official"
-                        ? "Government Official"
-                        : "Administrator"}
+                    {profile.role === 'citizen'
+                      ? 'Citizen'
+                      : profile.role === 'official'
+                      ? 'Government Official'
+                      : 'Administrator'}
                   </Badge>
                   {profile.constituency && (
                     <div className="flex items-center text-sm text-muted-foreground">
@@ -281,9 +356,17 @@ const UserDashboard = () => {
                     </div>
                   )}
                 </div>
+                <div className="flex items-center justify-center sm:justify-start text-sm text-muted-foreground">
+                  <Mail className="mr-1 h-3 w-3" />
+                  <span className="truncate">
+                    {user?.email ||
+                      user?.user_metadata?.email ||
+                      'No email provided'}
+                  </span>
+                </div>
                 <p className="text-sm text-muted-foreground">
-                  Member since{" "}
-                  {new Date(user.created_at || "").toLocaleDateString()}
+                  Member since{' '}
+                  {new Date(user.created_at || '').toLocaleDateString()}
                 </p>
               </div>
             </div>
@@ -291,7 +374,7 @@ const UserDashboard = () => {
         </Card>
 
         {/* Stats Cards */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-3 sm:gap-4 grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">
@@ -301,7 +384,7 @@ const UserDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {loading ? "..." : userStats.issuesCreated}
+                {loading ? '...' : userStats.issuesCreated}
               </div>
               <p className="text-xs text-muted-foreground">
                 Total issues you've reported
@@ -318,7 +401,7 @@ const UserDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {loading ? "..." : userStats.issuesWatching}
+                {loading ? '...' : userStats.issuesWatching}
               </div>
               <p className="text-xs text-muted-foreground">
                 Issues you're following
@@ -335,7 +418,7 @@ const UserDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {loading ? "..." : userStats.commentsPosted}
+                {loading ? '...' : userStats.commentsPosted}
               </div>
               <p className="text-xs text-muted-foreground">
                 Your community contributions
@@ -352,7 +435,7 @@ const UserDashboard = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                {loading ? "..." : userStats.issuesSupported}
+                {loading ? '...' : userStats.issuesSupported}
               </div>
               <p className="text-xs text-muted-foreground">
                 Issues you've voted for
@@ -390,7 +473,7 @@ const UserDashboard = () => {
                             {activity.description}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            {activity.date}
+                            {new Date(activity.date).toLocaleDateString()}
                           </p>
                         </div>
                         {activity.issueId && (
@@ -399,7 +482,7 @@ const UserDashboard = () => {
                             size="sm"
                             onClick={() =>
                               navigate(
-                                `/user/${user.id}/issues?highlight=${activity.issueId}`,
+                                `/user/${user.id}/issues?highlight=${activity.issueId}`
                               )
                             }
                           >
@@ -434,12 +517,12 @@ const UserDashboard = () => {
           </TabsContent>
 
           <TabsContent value="quick-actions" className="space-y-4">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
               <Card
                 className="cursor-pointer hover:shadow-md transition-shadow"
-                onClick={() => navigate(`/user/${user.id}/issues`)}
+                onClick={() => navigate(`/user/${user.id}/issues?create=true`)}
               >
-                {" "}
+                {' '}
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2">
                     <Plus className="h-5 w-5" />
@@ -457,7 +540,7 @@ const UserDashboard = () => {
                 className="cursor-pointer hover:shadow-md transition-shadow"
                 onClick={() => navigate(`/user/${user.id}/issues`)}
               >
-                {" "}
+                {' '}
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2">
                     <Eye className="h-5 w-5" />
@@ -473,9 +556,9 @@ const UserDashboard = () => {
 
               <Card
                 className="cursor-pointer hover:shadow-md transition-shadow"
-                onClick={() => navigate(`/user/${user.id}/reports`)}
+                onClick={() => navigate('/reports')}
               >
-                {" "}
+                {' '}
                 <CardHeader>
                   <CardTitle className="flex items-center space-x-2">
                     <BarChart3 className="h-5 w-5" />
@@ -492,7 +575,7 @@ const UserDashboard = () => {
           </TabsContent>
         </Tabs>
       </div>
-    </div>
+    </MainLayout>
   );
 };
 

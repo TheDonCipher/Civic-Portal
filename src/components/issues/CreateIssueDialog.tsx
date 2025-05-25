@@ -1,15 +1,15 @@
-import React, { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
+import React, { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from "@/components/ui/dialog";
-import { Button } from "@/components/ui/button";
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import {
   Form,
   FormControl,
@@ -18,20 +18,20 @@ import {
   FormLabel,
   FormMessage,
   FormDescription,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { constituencies } from "@/lib/constituencies";
-import { useAuth } from "@/lib/auth";
-import { useToast } from "@/components/ui/use-toast";
-import { supabase } from "@/lib/supabase";
+} from '@/components/ui/select';
+import { constituencies } from '@/lib/constituencies';
+import { useAuth } from '@/lib/auth';
+import { useToast } from '@/components/ui/use-toast';
+import { supabase } from '@/lib/supabase';
 import {
   Image,
   Loader2,
@@ -40,12 +40,12 @@ import {
   ChevronLeft,
   ChevronRight,
   Building2,
-} from "lucide-react";
+} from 'lucide-react';
 import {
   uploadImageToStorage,
   resizeImageBeforeUpload,
   getCategoryDefaultImage,
-} from "@/lib/utils/imageUpload";
+} from '@/lib/utils/imageUpload';
 
 interface Department {
   id: string;
@@ -63,44 +63,44 @@ interface Category {
 const formSchema = z.object({
   title: z
     .string()
-    .min(1, "Title is required")
-    .max(100, "Title must be less than 100 characters")
+    .min(1, 'Title is required')
+    .max(100, 'Title must be less than 100 characters')
     .refine((val) => !/[<>"'&]/.test(val), {
-      message: "Title contains invalid characters",
+      message: 'Title contains invalid characters',
     }),
   description: z
     .string()
-    .min(1, "Description is required")
-    .max(2000, "Description must be less than 2000 characters")
+    .min(1, 'Description is required')
+    .max(2000, 'Description must be less than 2000 characters')
     .refine((val) => !/[<>"'&]/.test(val), {
-      message: "Description contains invalid characters",
+      message: 'Description contains invalid characters',
     }),
-  department_id: z.string().min(1, "Department is required"),
-  category: z.string().min(1, "Category is required"),
+  department_id: z.string().min(1, 'Department is required'),
+  category: z.string().min(1, 'Category is required'),
   location: z
     .string()
-    .min(1, "Location is required")
-    .max(200, "Location must be less than 200 characters")
+    .min(1, 'Location is required')
+    .max(200, 'Location must be less than 200 characters')
     .refine((val) => !/[<>"'&]/.test(val), {
-      message: "Location contains invalid characters",
+      message: 'Location contains invalid characters',
     }),
-  constituency: z.string().min(1, "Constituency is required"),
+  constituency: z.string().min(1, 'Constituency is required'),
   images: z
     .array(
       z
         .instanceof(File)
         .refine((file) => file.size <= 5 * 1024 * 1024, {
-          message: "Each image must be less than 5MB",
+          message: 'Each image must be less than 5MB',
         })
         .refine(
           (file) =>
-            ["image/jpeg", "image/png", "image/gif", "image/webp"].includes(
-              file.type,
+            ['image/jpeg', 'image/png', 'image/gif', 'image/webp'].includes(
+              file.type
             ),
           {
-            message: "Only JPEG, PNG, GIF and WebP images are supported",
-          },
-        ),
+            message: 'Only JPEG, PNG, GIF and WebP images are supported',
+          }
+        )
     )
     .optional()
     .default([]),
@@ -127,23 +127,23 @@ const CreateIssueDialog = ({
 
   const [imagePreview, setImagePreview] = useState<string[]>([]);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "";
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      title: "",
-      description: "",
-      department_id: "",
-      category: "",
-      location: "",
-      constituency: profile?.constituency || "",
+      title: '',
+      description: '',
+      department_id: '',
+      category: '',
+      location: '',
+      constituency: profile?.constituency || '',
       images: [],
     },
   });
 
   // Watch for department changes to filter categories
-  const selectedDepartmentId = form.watch("department_id");
+  const selectedDepartmentId = form.watch('department_id');
 
   // Fetch departments and categories when the dialog opens
   useEffect(() => {
@@ -153,18 +153,18 @@ const CreateIssueDialog = ({
         // Fetch departments
         const { data: departmentsData, error: departmentsError } =
           await supabase
-            .from("departments" as any)
-            .select("*")
-            .order("name");
+            .from('departments' as any)
+            .select('*')
+            .order('name');
 
         if (departmentsError) throw departmentsError;
         setDepartments((departmentsData as Department[]) || []);
 
         // Fetch categories
         const { data: categoriesData, error: categoriesError } = await supabase
-          .from("issue_categories" as any)
-          .select("*")
-          .order("name");
+          .from('issue_categories' as any)
+          .select('*')
+          .order('name');
 
         if (categoriesError) throw categoriesError;
         setCategories((categoriesData as Category[]) || []);
@@ -172,20 +172,20 @@ const CreateIssueDialog = ({
         // If no categories found in the new table, fall back to the old categories
         if (!categoriesData || categoriesData.length === 0) {
           const fallbackCategories = [
-            { id: "1", name: "infrastructure", department_id: "" },
-            { id: "2", name: "environment", department_id: "" },
-            { id: "3", name: "safety", department_id: "" },
-            { id: "4", name: "community", department_id: "" },
+            { id: '1', name: 'infrastructure', department_id: '' },
+            { id: '2', name: 'environment', department_id: '' },
+            { id: '3', name: 'safety', department_id: '' },
+            { id: '4', name: 'community', department_id: '' },
           ];
           setCategories(fallbackCategories);
           setFilteredCategories(fallbackCategories);
         }
       } catch (error) {
-        console.error("Error fetching departments and categories:", error);
+        console.error('Error fetching departments and categories:', error);
         toast({
-          title: "Error",
-          description: "Failed to load departments and categories.",
-          variant: "destructive",
+          title: 'Error',
+          description: 'Failed to load departments and categories.',
+          variant: 'destructive',
         });
       } finally {
         setIsLoading(false);
@@ -201,17 +201,17 @@ const CreateIssueDialog = ({
   useEffect(() => {
     if (selectedDepartmentId) {
       const filtered = categories.filter(
-        (category) => category.department_id === selectedDepartmentId,
+        (category) => category.department_id === selectedDepartmentId
       );
       setFilteredCategories(filtered);
 
       // Reset category selection if the current category doesn't belong to the selected department
-      const currentCategory = form.getValues("category");
+      const currentCategory = form.getValues('category');
       const categoryExists = filtered.some(
-        (cat) => cat.name === currentCategory,
+        (cat) => cat.name === currentCategory
       );
       if (currentCategory && !categoryExists) {
-        form.setValue("category", "");
+        form.setValue('category', '');
       }
     } else {
       setFilteredCategories(categories);
@@ -221,9 +221,9 @@ const CreateIssueDialog = ({
   const handleSubmit = async (data: z.infer<typeof formSchema>) => {
     if (!user || !profile) {
       toast({
-        title: "Authentication Required",
-        description: "Please sign in to report an issue",
-        variant: "destructive",
+        title: 'Authentication Required',
+        description: 'Please sign in to report an issue',
+        variant: 'destructive',
       });
       onOpenChange(false);
       return;
@@ -231,7 +231,7 @@ const CreateIssueDialog = ({
 
     // Prevent duplicate submissions
     if (isSubmitting) {
-      console.log("Submission already in progress, preventing duplicate");
+      console.log('Submission already in progress, preventing duplicate');
       return;
     }
 
@@ -255,33 +255,39 @@ const CreateIssueDialog = ({
               {
                 originalSize: image.size,
                 resizedSize: resizedImage.size,
-                reduction: `${Math.round((1 - resizedImage.size / image.size) * 100)}%`,
-              },
+                reduction: `${Math.round(
+                  (1 - resizedImage.size / image.size) * 100
+                )}%`,
+              }
             );
 
             // Upload the resized image to Supabase storage
             const imageUrl = await uploadImageToStorage(
               resizedImage,
-              "issues",
-              "issue-images",
+              'issues',
+              'issue-images',
               (progress) => {
                 console.log(
-                  `Upload progress for image ${i + 1}/${data.images.length}: ${progress}%`,
+                  `Upload progress for image ${i + 1}/${
+                    data.images.length
+                  }: ${progress}%`
                 );
                 setUploadProgress(progress);
-              },
+              }
             );
 
             console.log(
-              `Image ${i + 1}/${data.images.length} uploaded successfully, URL:`,
-              imageUrl,
+              `Image ${i + 1}/${
+                data.images.length
+              } uploaded successfully, URL:`,
+              imageUrl
             );
             thumbnails.push(imageUrl);
           }
 
-          console.log("All images uploaded successfully:", thumbnails);
+          console.log('All images uploaded successfully:', thumbnails);
         } catch (uploadErr) {
-          console.error("Exception during image upload:", uploadErr);
+          console.error('Exception during image upload:', uploadErr);
 
           // If we have some successful uploads, continue with those
           if (thumbnails.length === 0) {
@@ -289,22 +295,22 @@ const CreateIssueDialog = ({
             const category = data.category.toLowerCase();
             const defaultImageUrl = getCategoryDefaultImage(category);
             thumbnails = [defaultImageUrl];
-            console.log("Using fallback image:", defaultImageUrl);
+            console.log('Using fallback image:', defaultImageUrl);
 
             // Show a warning toast but continue with the submission
             toast({
-              title: "Image Upload Failed",
+              title: 'Image Upload Failed',
               description:
                 "We couldn't upload your images, but your issue will still be created with a default image.",
-              variant: "warning",
+              variant: 'warning',
               duration: 5000,
             });
           } else {
             // Some images uploaded successfully
             toast({
-              title: "Some Images Failed to Upload",
+              title: 'Some Images Failed to Upload',
               description: `${thumbnails.length} out of ${data.images.length} images were uploaded successfully.`,
-              variant: "warning",
+              variant: 'warning',
               duration: 5000,
             });
           }
@@ -315,20 +321,20 @@ const CreateIssueDialog = ({
         const defaultImageUrl = getCategoryDefaultImage(category);
         thumbnails = [defaultImageUrl];
         console.log(
-          "Using default image for category:",
+          'Using default image for category:',
           category,
-          defaultImageUrl,
+          defaultImageUrl
         );
       }
 
-      console.log("Creating issue with thumbnails:", thumbnails);
+      console.log('Creating issue with thumbnails:', thumbnails);
 
       // Ensure all thumbnail URLs are absolute and valid
       thumbnails = thumbnails.map((url) => {
-        if (url && !url.startsWith("http")) {
-          console.warn("Thumbnail URL is not absolute, fixing it:", url);
+        if (url && !url.startsWith('http')) {
+          console.warn('Thumbnail URL is not absolute, fixing it:', url);
           // If it's a relative URL from Supabase storage, convert to absolute
-          if (url.startsWith("/")) {
+          if (url.startsWith('/')) {
             return `${supabaseUrl}${url}`;
           } else {
             // Fall back to a category-specific default image
@@ -340,7 +346,7 @@ const CreateIssueDialog = ({
         return url;
       });
 
-      console.log("Fixed thumbnail URLs:", thumbnails);
+      console.log('Fixed thumbnail URLs:', thumbnails);
 
       // Ensure we have at least one thumbnail
       if (thumbnails.length === 0) {
@@ -351,22 +357,22 @@ const CreateIssueDialog = ({
 
       // Check if a similar issue already exists to prevent duplicates
       const { data: existingIssues, error: checkError } = await supabase
-        .from("issues")
-        .select("id")
-        .eq("author_id", user.id)
-        .eq("title", data.title)
+        .from('issues')
+        .select('id')
+        .eq('author_id', user.id)
+        .eq('title', data.title)
         .limit(1);
 
       if (checkError) {
-        console.error("Error checking for existing issues:", checkError);
+        console.error('Error checking for existing issues:', checkError);
       }
 
       if (existingIssues && existingIssues.length > 0) {
         toast({
-          title: "Duplicate Issue",
+          title: 'Duplicate Issue',
           description:
             "You've already created an issue with this title. Please use a different title.",
-          variant: "destructive",
+          variant: 'destructive',
           duration: 5000,
         });
         setIsSubmitting(false);
@@ -375,7 +381,7 @@ const CreateIssueDialog = ({
 
       // Create the issue in the database
       const { data: issueData, error } = await supabase
-        .from("issues")
+        .from('issues')
         .insert({
           title: data.title,
           description: data.description,
@@ -386,7 +392,7 @@ const CreateIssueDialog = ({
           author_id: user.id,
           author_name: profile.full_name,
           author_avatar: profile.avatar_url,
-          status: "open",
+          status: 'open',
           thumbnail: thumbnails[0], // Keep the first image as the main thumbnail for backward compatibility
           thumbnails: thumbnails,
           created_at: new Date().toISOString(),
@@ -396,39 +402,47 @@ const CreateIssueDialog = ({
         .single();
 
       // Log the created issue data for debugging
-      console.log("Created issue with data:", issueData);
+      console.log('Created issue with data:', issueData);
 
-      console.log("Issue created:", issueData);
+      console.log('Issue created:', issueData);
 
       if (error) throw error;
 
       // Automatically add the user as a watcher of their own issue
       // First check if the user is already watching this issue to prevent duplicates
       const { data: existingWatcher } = await supabase
-        .from("issue_watchers")
-        .select("*")
-        .eq("issue_id", issueData.id)
-        .eq("user_id", user.id)
+        .from('issue_watchers')
+        .select('*')
+        .eq('issue_id', issueData.id)
+        .eq('user_id', user.id)
         .maybeSingle();
 
       if (!existingWatcher) {
-        await supabase.from("issue_watchers").insert({
+        await supabase.from('issue_watchers').insert({
           issue_id: issueData.id,
           user_id: user.id,
         });
       } else {
-        console.log("User already watching this issue, skipping insert");
+        console.log('User already watching this issue, skipping insert');
       }
 
-      // Call the onSubmit callback with the form data
-      onSubmit(data);
+      // Call the onSubmit callback with the created issue data instead of form data
+      // This prevents the parent component from trying to create the issue again
+      if (onSubmit) {
+        onSubmit({
+          ...data,
+          id: issueData.id,
+          created_at: issueData.created_at,
+          thumbnails: thumbnails,
+        });
+      }
 
       // Show success toast
       toast({
-        title: "Issue Reported Successfully",
+        title: 'Issue Reported Successfully',
         description:
-          "Your issue has been submitted and is now visible to the community.",
-        variant: "default",
+          'Your issue has been submitted and is now visible to the community.',
+        variant: 'default',
       });
 
       // Close the dialog and reset the form
@@ -437,11 +451,11 @@ const CreateIssueDialog = ({
       setImagePreview([]);
       setUploadProgress(0);
     } catch (error) {
-      console.error("Error creating issue:", error);
+      console.error('Error creating issue:', error);
       toast({
-        title: "Error",
-        description: "Failed to create issue. Please try again.",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Failed to create issue. Please try again.',
+        variant: 'destructive',
       });
     } finally {
       setIsSubmitting(false);
@@ -549,8 +563,8 @@ const CreateIssueDialog = ({
                         <SelectValue
                           placeholder={
                             selectedDepartmentId
-                              ? "Select a category"
-                              : "Select a department first"
+                              ? 'Select a category'
+                              : 'Select a department first'
                           }
                         />
                       </SelectTrigger>
@@ -564,18 +578,18 @@ const CreateIssueDialog = ({
                           </SelectItem>
                         ))
                       ) : (
-                        <SelectItem value="" disabled>
+                        <SelectItem value="no-categories" disabled>
                           {selectedDepartmentId
-                            ? "No categories available for this department"
-                            : "Please select a department first"}
+                            ? 'No categories available for this department'
+                            : 'Please select a department first'}
                         </SelectItem>
                       )}
                     </SelectContent>
                   </Select>
                   <FormDescription>
                     {selectedDepartmentId
-                      ? "Select a specific category for your issue"
-                      : "Please select a department first"}
+                      ? 'Select a specific category for your issue'
+                      : 'Please select a department first'}
                   </FormDescription>
                   <FormMessage />
                 </FormItem>
@@ -660,7 +674,7 @@ const CreateIssueDialog = ({
                                 reader.onload = (event) => {
                                   if (event.target && event.target.result) {
                                     newPreviews.push(
-                                      event.target.result as string,
+                                      event.target.result as string
                                     );
                                     loadedCount++;
 
@@ -762,10 +776,10 @@ const CreateIssueDialog = ({
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     {uploadProgress > 0 && uploadProgress < 100
                       ? `Uploading ${uploadProgress}%`
-                      : "Submitting..."}
+                      : 'Submitting...'}
                   </>
                 ) : (
-                  "Submit Issue"
+                  'Submit Issue'
                 )}
               </Button>
             </DialogFooter>
