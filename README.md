@@ -745,6 +745,7 @@ For support and questions:
 - **Issues**: Report bugs or request features on [GitHub Issues](https://github.com/your-username/civic-portal/issues)
 - **Discussions**: Join community discussions on [GitHub Discussions](https://github.com/your-username/civic-portal/discussions)
 
+![CodeRabbit Pull Request Reviews](https://img.shields.io/coderabbit/prs/github/TheDonCipher/Civic-Portal?utm_source=oss&utm_medium=github&utm_campaign=TheDonCipher%2FCivic-Portal&labelColor=171717&color=FF570A&link=https%3A%2F%2Fcoderabbit.ai&label=CodeRabbit+Reviews)
 ---
 
 **Built with ❤️ for better civic engagement and government transparency in Botswana.**
