@@ -52,7 +52,7 @@ export const getDepartmentNameById = async (departmentId: string): Promise<strin
 
 export interface NotificationData {
   user_id: string;
-  type: 'verification_approved' | 'verification_rejected' | 'role_changed';
+  type: 'verification_approved' | 'verification_rejected' | 'role_changed' | 'status_change';
   title: string;
   message: string;
   data?: any;
@@ -63,6 +63,26 @@ export interface NotificationData {
  */
 export const sendNotification = async (notification: NotificationData) => {
   try {
+    // Check if user is authenticated
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+    if (sessionError) {
+      console.error('Session error when sending notification:', sessionError);
+      return false;
+    }
+
+    if (!session) {
+      console.error('No active session when trying to send notification');
+      return false;
+    }
+
+    console.log('Sending notification with authenticated session:', {
+      user_id: notification.user_id,
+      type: notification.type,
+      title: notification.title,
+      session_user: session.user.id
+    });
+
     const { error } = await supabase
       .from('notifications')
       .insert({
@@ -77,9 +97,16 @@ export const sendNotification = async (notification: NotificationData) => {
 
     if (error) {
       console.error('Failed to send notification:', error);
+      console.error('Error details:', {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint
+      });
       return false;
     }
 
+    console.log('Notification sent successfully');
     return true;
   } catch (error) {
     console.error('Error sending notification:', error);

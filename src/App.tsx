@@ -59,6 +59,9 @@ const TabsTestComponent = React.lazy(() =>
 const DatabaseTest = React.lazy(
   () => import('./components/debug/DatabaseTest')
 );
+const AuthDialogDebug = React.lazy(
+  () => import('./components/debug/AuthDialogDebug')
+);
 
 function App() {
   const { user, profile, isLoading } = useAuth();
@@ -147,6 +150,7 @@ function App() {
             <Route path="/faq" element={<FAQPage />} />
             <Route path="/test-tabs" element={<TabsTestComponent />} />
             <Route path="/debug-db" element={<DatabaseTest />} />
+            <Route path="/debug-auth" element={<AuthDialogDebug />} />
 
             {/* User-specific routes - require authentication */}
             <Route

@@ -211,6 +211,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             (profileData.role as 'citizen' | 'official' | 'admin' | null) ||
             'citizen',
           department_id: profileData.department_id || null,
+          verification_status: profileData.verification_status || null,
         });
       }
     } catch (error: any) {
@@ -386,6 +387,22 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  // Refresh the user profile from the database
+  const refreshProfile = async () => {
+    try {
+      if (!user) {
+        console.log('No user to refresh profile for');
+        return;
+      }
+
+      console.log('Refreshing profile for user:', user.id);
+      await getProfile(user.id);
+      console.log('Profile refreshed successfully');
+    } catch (error) {
+      console.error('Error refreshing profile:', error);
+    }
+  };
+
   // Set up session refresh timer
   useEffect(() => {
     if (user && !sessionRefreshTimer) {
@@ -414,6 +431,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         resetPassword,
         updateProfile,
         refreshSession,
+        refreshProfile,
       }}
     >
       {children}

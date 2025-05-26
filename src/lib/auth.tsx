@@ -33,6 +33,7 @@ export interface AuthContextType {
     data: Partial<UserProfile>
   ) => Promise<{ error: Error | null }>;
   refreshSession: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
 }
 
 export const AuthContext = createContext<AuthContextType>({
@@ -45,6 +46,7 @@ export const AuthContext = createContext<AuthContextType>({
   resetPassword: async () => ({ error: null }),
   updateProfile: async () => ({ error: null }),
   refreshSession: async () => {},
+  refreshProfile: async () => {},
 });
 
 export const useAuth = () => {

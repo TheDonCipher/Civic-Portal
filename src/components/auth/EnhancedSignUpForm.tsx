@@ -31,7 +31,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/lib/auth';
-import { sanitizeInput } from '@/lib/utils';
+import { sanitizeInput, cn } from '@/lib/utils';
 import { StepIndicator } from '@/components/ui/step-indicator';
 import { PasswordStrength } from '@/components/ui/password-strength';
 import { RoleExplainer } from '@/components/auth/RoleExplainer';
@@ -609,7 +609,10 @@ export function EnhancedSignUpForm({
 
   return (
     <div
-      className={`space-y-6 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm rounded-lg p-6 border border-blue-100 dark:border-blue-800 shadow-lg dark:shadow-blue-900/20 ${className}`}
+      className={cn(
+        'space-y-6 bg-transparent backdrop-blur-sm rounded-lg p-6',
+        className
+      )}
       ref={formContainerRef}
     >
       {/* Step Indicator */}
@@ -645,7 +648,20 @@ export function EnhancedSignUpForm({
                 type="submit"
                 disabled={isLoading || (currentStep === 2 && !captchaVerified)}
                 isLoading={isLoading}
-                className="flex-1"
+                className={cn(
+                  'flex-1 font-semibold transition-all duration-300',
+                  'bg-gradient-to-r from-[var(--gov-primary)] to-[var(--gov-primary-light)]',
+                  'hover:from-[var(--gov-primary-dark)] hover:to-[var(--gov-primary)]',
+                  'text-white shadow-lg hover:shadow-xl',
+                  'transform hover:scale-[1.02] active:scale-[0.98]',
+                  'border-0'
+                )}
+                style={{
+                  background:
+                    isLoading || (currentStep === 2 && !captchaVerified)
+                      ? undefined
+                      : 'var(--botswana-gradient)',
+                }}
               >
                 {currentStep === 2 ? 'Create Account' : 'Continue'}
                 {currentStep === 1 && <ArrowRight className="w-4 h-4 ml-2" />}
@@ -663,7 +679,10 @@ export function EnhancedSignUpForm({
             <Button
               type="button"
               variant="link"
-              className="px-0 font-normal"
+              className={cn(
+                'px-0 font-semibold text-[var(--gov-primary)]',
+                'hover:text-[var(--gov-primary-dark)] transition-colors duration-200'
+              )}
               onClick={onSignIn}
               disabled={isLoading}
             >

@@ -154,16 +154,78 @@ const StakeholderDashboard = () => {
       navigate('/');
     };
 
+    const getVerificationStatusMessage = () => {
+      switch (profile.verification_status) {
+        case 'pending':
+          return {
+            title: 'Account Verification Pending',
+            message:
+              'Your government official account is currently under review. You will receive a notification once your verification is complete.',
+            icon: '⏳',
+            color: 'text-yellow-600',
+          };
+        case 'rejected':
+          return {
+            title: 'Account Verification Rejected',
+            message: profile.verification_notes
+              ? `Your verification was not approved. Reason: ${profile.verification_notes}`
+              : 'Your verification was not approved. Please contact support for more information.',
+            icon: '❌',
+            color: 'text-red-600',
+          };
+        default:
+          return {
+            title: 'Account Verification Required',
+            message:
+              'Your account requires verification to access the stakeholder dashboard.',
+            icon: '🔒',
+            color: 'text-gray-600',
+          };
+      }
+    };
+
+    const statusInfo = getVerificationStatusMessage();
+
     return (
-      <VerificationPending
-        status={profile.verification_status || 'pending'}
-        userRole={profile.role}
-        fullName={profile.full_name || undefined}
-        email={user?.email || undefined}
-        department={selectedDepartmentInfo?.name}
-        onContactSupport={handleContactSupport}
-        onReturnHome={handleReturnHome}
-      />
+      <MainLayout>
+        <div className="container mx-auto py-6">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="text-center">
+                <div className={`text-6xl mb-4 ${statusInfo.color}`}>
+                  {statusInfo.icon}
+                </div>
+                <h2 className="text-xl font-semibold mb-2">
+                  {statusInfo.title}
+                </h2>
+                <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+                  {statusInfo.message}
+                </p>
+                <div className="flex gap-3 justify-center">
+                  <Button variant="outline" onClick={handleReturnHome}>
+                    Return to Home
+                  </Button>
+                  <Button onClick={handleContactSupport}>
+                    Contact Support
+                  </Button>
+                </div>
+                {profile.verification_status === 'pending' && (
+                  <div className="mt-6 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                    <p className="text-sm text-yellow-800">
+                      <strong>What happens next?</strong>
+                      <br />
+                      Our administrators will review your account and verify
+                      your government official status. This process typically
+                      takes 1-2 business days. You'll receive a notification
+                      once your account is verified.
+                    </p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </MainLayout>
     );
   }
 
@@ -264,12 +326,18 @@ const StakeholderDashboard = () => {
       setLoading(true);
 
       // Fetch departments
+      console.log('Fetching departments...');
       const { data: departmentsData, error: departmentsError } = await supabase
         .from('departments')
         .select('*')
         .order('name');
 
-      if (departmentsError) throw departmentsError;
+      if (departmentsError) {
+        console.error('Error fetching departments:', departmentsError);
+        throw departmentsError;
+      }
+
+      console.log('Departments fetched:', departmentsData?.length || 0);
       setDepartments(departmentsData || []);
 
       // For stakeholders (officials), restrict to their assigned department only
@@ -279,11 +347,35 @@ const StakeholderDashboard = () => {
             'Official user detected with department_id:',
             profile.department_id
           );
+
+          // Check if the department exists in the fetched departments
+          const departmentExists = departmentsData?.find(
+            (d) => d.id === profile.department_id
+          );
+          if (!departmentExists) {
+            console.warn(
+              'Official assigned to non-existent department:',
+              profile.department_id
+            );
+            toast({
+              title: 'Department Not Found',
+              description:
+                'Your assigned department could not be found. Please contact support.',
+              variant: 'destructive',
+            });
+          }
+
           setSelectedDepartment(profile.department_id);
           // Immediately fetch department-specific data
           await fetchDepartmentData(profile.department_id);
         } else {
           console.log('Official user without department assignment');
+          toast({
+            title: 'No Department Assignment',
+            description:
+              'You have not been assigned to a department yet. Please contact your administrator.',
+            variant: 'destructive',
+          });
           // Official without department assignment - show empty state
           setIssues([]);
           setDepartmentStats({
@@ -934,7 +1026,7 @@ const StakeholderDashboard = () => {
                       <span className="text-sm font-medium text-orange-800 dark:text-orange-200">
                         {currentStats.openIssues} issue
                         {currentStats.openIssues > 1 ? 's' : ''} in{' '}
-                        {selectedDepartmentInfo.name} need
+                        {selectedDepartmentInfo?.name || 'your department'} need
                         {currentStats.openIssues === 1 ? 's' : ''} your
                         attention
                       </span>
@@ -945,8 +1037,9 @@ const StakeholderDashboard = () => {
                     <div className="flex items-center gap-2">
                       <CheckCircle className="h-4 w-4 text-green-600" />
                       <span className="text-sm font-medium text-green-800 dark:text-green-200">
-                        Great work! All issues in {selectedDepartmentInfo.name}{' '}
-                        are being managed.
+                        Great work! All issues in{' '}
+                        {selectedDepartmentInfo?.name || 'your department'} are
+                        being managed.
                       </span>
                     </div>
                   </div>
@@ -956,7 +1049,7 @@ const StakeholderDashboard = () => {
                       <Building2 className="h-4 w-4 text-blue-600" />
                       <span className="text-sm font-medium text-blue-800 dark:text-blue-200">
                         No issues have been assigned to{' '}
-                        {selectedDepartmentInfo.name} yet.
+                        {selectedDepartmentInfo?.name || 'your department'} yet.
                       </span>
                     </div>
                   </div>

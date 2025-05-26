@@ -4,6 +4,7 @@ import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 import MainLayout from '@/components/layout/MainLayout';
 import PageTitle from '@/components/common/PageTitle';
+import AuthDebugPanel from './AuthDebugPanel';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -62,6 +63,7 @@ import {
   RefreshCw,
   Download,
   Upload,
+  Loader2,
 } from 'lucide-react';
 
 // Fallback departments data when table doesn't exist
@@ -195,6 +197,7 @@ interface Department {
   id: string;
   name: string;
   description: string | null;
+  category: string | null;
 }
 
 interface Issue {
@@ -230,6 +233,11 @@ const AdminPage: React.FC = () => {
   const [selectedRole, setSelectedRole] = useState<string>('all');
   const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingDepartment, setEditingDepartment] = useState<Department | null>(
+    null
+  );
+  const [isDepartmentEditDialogOpen, setIsDepartmentEditDialogOpen] =
+    useState(false);
   const [activeTab, setActiveTab] = useState('users');
   const [debugInfo, setDebugInfo] = useState<any>(null);
   const [verificationDialog, setVerificationDialog] = useState<{
@@ -239,6 +247,7 @@ const AdminPage: React.FC = () => {
     userName: string;
   } | null>(null);
   const [rejectionReason, setRejectionReason] = useState('');
+  const [verifyingUserId, setVerifyingUserId] = useState<string | null>(null);
 
   // Check if user is admin
   if (profile?.role !== 'admin') {
@@ -264,6 +273,52 @@ const AdminPage: React.FC = () => {
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Set up real-time subscriptions for admin dashboard updates
+  useEffect(() => {
+    if (!user || profile?.role !== 'admin') return;
+
+    // Subscribe to profiles table changes for real-time verification updates
+    const profilesSubscription = supabase
+      .channel('admin-profiles-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'profiles',
+        },
+        (payload) => {
+          console.log('Profile update detected:', payload);
+          // Refresh data when profiles are updated
+          fetchData();
+        }
+      )
+      .subscribe();
+
+    // Subscribe to issues table changes for real-time statistics
+    const issuesSubscription = supabase
+      .channel('admin-issues-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'issues',
+        },
+        (payload) => {
+          console.log('Issues table change detected:', payload);
+          // Refresh data when issues change
+          fetchData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      profilesSubscription.unsubscribe();
+      issuesSubscription.unsubscribe();
+    };
+  }, [user, profile]);
 
   // Helper function to log admin actions for audit purposes
   const logAdminAction = async (action: string, details: any) => {
@@ -569,11 +624,32 @@ const AdminPage: React.FC = () => {
     reason?: string
   ) => {
     try {
+      // Set loading state for this specific user
+      setVerifyingUserId(userId);
+
+      console.log('Starting verification update process:', {
+        userId,
+        status,
+        reason,
+        adminUser: user?.id,
+        adminProfile: profile?.role,
+      });
+
+      // Check if admin is properly authenticated
+      if (!user || !profile || profile.role !== 'admin') {
+        throw new Error('Admin authentication required');
+      }
+
       // Get user details for notification
       const userProfile = profiles.find((p) => p.id === userId);
       if (!userProfile) {
         throw new Error('User profile not found');
       }
+
+      console.log(
+        'Updating verification status for user:',
+        userProfile.username
+      );
 
       const updateData: any = { verification_status: status };
 
@@ -587,9 +663,15 @@ const AdminPage: React.FC = () => {
         .update(updateData)
         .eq('id', userId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Database update error:', error);
+        throw error;
+      }
+
+      console.log('Profile verification status updated successfully');
 
       // Log the admin action for audit purposes
+      console.log('Creating audit log...');
       await logAdminAction('verification_update', {
         target_user_id: userId,
         target_user_name: userProfile.full_name || userProfile.username,
@@ -603,32 +685,111 @@ const AdminPage: React.FC = () => {
       const departmentName = userProfile.department?.name;
       const userName = userProfile.full_name || userProfile.username || 'User';
 
+      console.log('Sending notification to user...');
+      let notificationSent = false;
+
       if (status === 'verified') {
-        await sendVerificationApprovedNotification(
+        notificationSent = await sendVerificationApprovedNotification(
           userId,
           userName,
           departmentName
         );
       } else if (status === 'rejected') {
-        await sendVerificationRejectedNotification(userId, userName, reason);
+        notificationSent = await sendVerificationRejectedNotification(
+          userId,
+          userName,
+          reason
+        );
+      }
+
+      if (!notificationSent) {
+        console.warn(
+          'Failed to send notification, but verification status was updated'
+        );
       }
 
       toast({
-        title: 'Success',
+        title: 'Verification Updated',
         description: `User verification ${status} successfully. ${
           status === 'verified'
-            ? 'The user can now access the stakeholder dashboard.'
-            : 'The user has been notified of the rejection.'
+            ? 'The user can now access the stakeholder dashboard' +
+              (notificationSent
+                ? ' and will receive a notification.'
+                : ' but notification failed to send.')
+            : 'The user has been notified of the rejection' +
+              (notificationSent
+                ? ' with the provided reason.'
+                : ' but notification failed to send.')
         }`,
         variant: 'default',
       });
 
-      fetchData(); // Refresh the data
+      // Update the local state immediately for instant UI feedback
+      setProfiles((prevProfiles) =>
+        prevProfiles.map((p) =>
+          p.id === userId
+            ? {
+                ...p,
+                verification_status: status,
+                verification_notes: status === 'rejected' ? reason : null,
+              }
+            : p
+        )
+      );
+
+      // Also refresh the data from the server to ensure consistency
+      await fetchData();
+      console.log('Verification update process completed successfully');
     } catch (error) {
       console.error('Error updating verification status:', error);
       toast({
         title: 'Error',
-        description: 'Failed to update verification status. Please try again.',
+        description: `Failed to update verification status: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }. Please try again.`,
+        variant: 'destructive',
+      });
+    } finally {
+      // Clear loading state
+      setVerifyingUserId(null);
+    }
+  };
+
+  // Department management functions
+  const updateDepartment = async (
+    departmentId: string,
+    name: string,
+    description: string,
+    category: string
+  ) => {
+    try {
+      const { error } = await supabase
+        .from('departments')
+        .update({
+          name: name.trim(),
+          description: description.trim(),
+          category: category.trim(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', departmentId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: 'Department updated successfully.',
+        variant: 'default',
+      });
+
+      // Refresh data to show updated department
+      fetchData();
+      setIsDepartmentEditDialogOpen(false);
+      setEditingDepartment(null);
+    } catch (error) {
+      console.error('Error updating department:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update department. Please try again.',
         variant: 'destructive',
       });
     }
@@ -801,6 +962,9 @@ const AdminPage: React.FC = () => {
           </div>
         )}
 
+        {/* Authentication Debug Panel */}
+        <AuthDebugPanel />
+
         {/* Debug Info */}
         {debugInfo && (
           <Card className="bg-yellow-50 border-yellow-200">
@@ -942,8 +1106,15 @@ const AdminPage: React.FC = () => {
                                           )
                                         }
                                         title="Verify user"
+                                        disabled={
+                                          verifyingUserId === profile.id
+                                        }
                                       >
-                                        ✓
+                                        {verifyingUserId === profile.id ? (
+                                          <Loader2 className="h-3 w-3 animate-spin" />
+                                        ) : (
+                                          '✓'
+                                        )}
                                       </Button>
                                       <Button
                                         size="sm"
@@ -959,8 +1130,15 @@ const AdminPage: React.FC = () => {
                                           )
                                         }
                                         title="Reject verification"
+                                        disabled={
+                                          verifyingUserId === profile.id
+                                        }
                                       >
-                                        ✗
+                                        {verifyingUserId === profile.id ? (
+                                          <Loader2 className="h-3 w-3 animate-spin" />
+                                        ) : (
+                                          '✗'
+                                        )}
                                       </Button>
                                     </div>
                                   )}
@@ -1042,10 +1220,22 @@ const AdminPage: React.FC = () => {
                             {dept.name}
                           </CardTitle>
                           <div className="flex items-center gap-1">
-                            <Button variant="ghost" size="sm">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setEditingDepartment(dept);
+                                setIsDepartmentEditDialogOpen(true);
+                              }}
+                            >
                               <Edit className="h-4 w-4" />
                             </Button>
-                            <Button variant="ghost" size="sm">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              disabled
+                              title="Department deletion is not allowed to maintain data integrity"
+                            >
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>
@@ -1260,7 +1450,11 @@ const AdminPage: React.FC = () => {
             )}
 
             <DialogFooter>
-              <Button variant="outline" onClick={closeVerificationDialog}>
+              <Button
+                variant="outline"
+                onClick={closeVerificationDialog}
+                disabled={!!verifyingUserId}
+              >
                 Cancel
               </Button>
               <Button
@@ -1271,16 +1465,48 @@ const AdminPage: React.FC = () => {
                     : 'destructive'
                 }
                 disabled={
-                  verificationDialog?.action === 'reject' &&
-                  !rejectionReason.trim()
+                  !!verifyingUserId ||
+                  (verificationDialog?.action === 'reject' &&
+                    !rejectionReason.trim())
                 }
               >
-                {verificationDialog?.action === 'verify'
-                  ? 'Verify User'
-                  : 'Reject Verification'}
+                {verifyingUserId ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    {verificationDialog?.action === 'verify'
+                      ? 'Verifying...'
+                      : 'Rejecting...'}
+                  </>
+                ) : (
+                  <>
+                    {verificationDialog?.action === 'verify'
+                      ? 'Verify User'
+                      : 'Reject Verification'}
+                  </>
+                )}
               </Button>
             </DialogFooter>
           </DialogContent>
+        </Dialog>
+
+        {/* Department Edit Dialog */}
+        <Dialog
+          open={isDepartmentEditDialogOpen}
+          onOpenChange={(open) => {
+            setIsDepartmentEditDialogOpen(open);
+            if (!open) setEditingDepartment(null);
+          }}
+        >
+          {editingDepartment && (
+            <EditDepartmentDialog
+              department={editingDepartment}
+              onSave={updateDepartment}
+              onCancel={() => {
+                setIsDepartmentEditDialogOpen(false);
+                setEditingDepartment(null);
+              }}
+            />
+          )}
         </Dialog>
       </div>
     </MainLayout>
@@ -1367,6 +1593,171 @@ const EditUserDialog: React.FC<EditUserDialogProps> = ({
         </Button>
         <Button onClick={handleSave}>
           <Save className="h-4 w-4 mr-2" />
+          Save Changes
+        </Button>
+      </DialogFooter>
+    </DialogContent>
+  );
+};
+
+// Edit Department Dialog Component
+interface EditDepartmentDialogProps {
+  department: Department;
+  onSave: (
+    departmentId: string,
+    name: string,
+    description: string,
+    category: string
+  ) => void;
+  onCancel: () => void;
+}
+
+const EditDepartmentDialog: React.FC<EditDepartmentDialogProps> = ({
+  department,
+  onSave,
+  onCancel,
+}) => {
+  const [name, setName] = useState(department.name || '');
+  const [description, setDescription] = useState(department.description || '');
+  const [category, setCategory] = useState(department.category || '');
+  const [isLoading, setIsLoading] = useState(false);
+  const [errors, setErrors] = useState<{
+    name?: string;
+    description?: string;
+    category?: string;
+  }>({});
+
+  // Validation function
+  const validateForm = () => {
+    const newErrors: typeof errors = {};
+
+    if (!name.trim()) {
+      newErrors.name = 'Department name is required';
+    } else if (name.trim().length < 2) {
+      newErrors.name = 'Department name must be at least 2 characters';
+    } else if (name.trim().length > 100) {
+      newErrors.name = 'Department name must be less than 100 characters';
+    }
+
+    if (description.trim().length > 500) {
+      newErrors.description = 'Description must be less than 500 characters';
+    }
+
+    if (category.trim().length > 100) {
+      newErrors.category = 'Category must be less than 100 characters';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSave = async () => {
+    if (!validateForm()) return;
+
+    setIsLoading(true);
+    try {
+      await onSave(department.id, name, description, category);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const hasChanges =
+    name !== department.name ||
+    description !== (department.description || '') ||
+    category !== (department.category || '');
+
+  return (
+    <DialogContent className="sm:max-w-[500px]">
+      <DialogHeader>
+        <DialogTitle>Edit Department</DialogTitle>
+        <DialogDescription>
+          Update the department information. Changes will affect all users
+          assigned to this department.
+        </DialogDescription>
+      </DialogHeader>
+
+      <div className="space-y-4">
+        <div>
+          <Label htmlFor="dept-name">Department Name *</Label>
+          <Input
+            id="dept-name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Enter department name"
+            className={errors.name ? 'border-red-500' : ''}
+          />
+          {errors.name && (
+            <p className="text-sm text-red-500 mt-1">{errors.name}</p>
+          )}
+        </div>
+
+        <div>
+          <Label htmlFor="dept-description">Description</Label>
+          <Textarea
+            id="dept-description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Enter department description"
+            className={`min-h-[80px] ${
+              errors.description ? 'border-red-500' : ''
+            }`}
+          />
+          {errors.description && (
+            <p className="text-sm text-red-500 mt-1">{errors.description}</p>
+          )}
+          <p className="text-xs text-muted-foreground mt-1">
+            {description.length}/500 characters
+          </p>
+        </div>
+
+        <div>
+          <Label htmlFor="dept-category">Category</Label>
+          <Select value={category} onValueChange={setCategory}>
+            <SelectTrigger className={errors.category ? 'border-red-500' : ''}>
+              <SelectValue placeholder="Select a category" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Economic Affairs">Economic Affairs</SelectItem>
+              <SelectItem value="External Affairs">External Affairs</SelectItem>
+              <SelectItem value="Social Services">Social Services</SelectItem>
+              <SelectItem value="Education & Welfare">
+                Education & Welfare
+              </SelectItem>
+              <SelectItem value="Infrastructure">Infrastructure</SelectItem>
+              <SelectItem value="Governance">Governance</SelectItem>
+              <SelectItem value="Security">Security</SelectItem>
+            </SelectContent>
+          </Select>
+          {errors.category && (
+            <p className="text-sm text-red-500 mt-1">{errors.category}</p>
+          )}
+        </div>
+
+        {/* Current stakeholder count info */}
+        <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+          <p className="text-sm text-blue-800">
+            <strong>Note:</strong> This department currently has stakeholders
+            assigned to it. Changing the name will update it for all assigned
+            users.
+          </p>
+        </div>
+      </div>
+
+      <DialogFooter>
+        <Button variant="outline" onClick={onCancel} disabled={isLoading}>
+          <X className="h-4 w-4 mr-2" />
+          Cancel
+        </Button>
+        <Button
+          onClick={handleSave}
+          disabled={isLoading || !hasChanges || Object.keys(errors).length > 0}
+        >
+          {isLoading ? (
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+          ) : (
+            <Save className="h-4 w-4 mr-2" />
+          )}
           Save Changes
         </Button>
       </DialogFooter>

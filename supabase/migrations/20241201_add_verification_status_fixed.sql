@@ -2,33 +2,49 @@
 -- This column tracks the verification status of government officials
 
 -- Check if verification_status column exists, if not add it
-DO $$ 
+DO $$
 BEGIN
   IF NOT EXISTS (
-    SELECT 1 FROM information_schema.columns 
+    SELECT 1 FROM information_schema.columns
     WHERE table_name = 'profiles' AND column_name = 'verification_status'
   ) THEN
     -- Add the verification_status column
-    ALTER TABLE profiles 
-    ADD COLUMN verification_status TEXT DEFAULT 'verified' 
+    ALTER TABLE profiles
+    ADD COLUMN verification_status TEXT DEFAULT 'verified'
     CHECK (verification_status IN ('pending', 'verified', 'rejected'));
-    
+
     -- Create an index for better query performance
     CREATE INDEX idx_profiles_verification_status ON profiles(verification_status);
-    
+
     -- Add a comment to document the column
     COMMENT ON COLUMN profiles.verification_status IS 'Verification status for government officials: pending, verified, or rejected';
   END IF;
 END $$;
 
+-- Check if verification_notes column exists, if not add it
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'profiles' AND column_name = 'verification_notes'
+  ) THEN
+    -- Add the verification_notes column for storing rejection reasons
+    ALTER TABLE profiles
+    ADD COLUMN verification_notes TEXT;
+
+    -- Add a comment to document the column
+    COMMENT ON COLUMN profiles.verification_notes IS 'Notes or reasons for verification status changes, especially rejections';
+  END IF;
+END $$;
+
 -- Update existing official users to have pending status
-UPDATE profiles 
-SET verification_status = 'pending' 
+UPDATE profiles
+SET verification_status = 'pending'
 WHERE role = 'official' AND verification_status = 'verified';
 
 -- Update existing citizen and admin users to have verified status
-UPDATE profiles 
-SET verification_status = 'verified' 
+UPDATE profiles
+SET verification_status = 'verified'
 WHERE (role IN ('citizen', 'admin') OR role IS NULL) AND verification_status != 'verified';
 
 -- Create a function to automatically set verification status based on role
@@ -45,7 +61,7 @@ BEGIN
   ELSIF NEW.role IN ('citizen', 'admin') THEN
     NEW.verification_status = 'verified';
   END IF;
-  
+
   RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;

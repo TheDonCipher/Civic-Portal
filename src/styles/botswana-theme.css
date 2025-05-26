@@ -85,20 +85,34 @@
 
 /* Enhanced Authentication Dialog Styling */
 .auth-dialog-enhanced {
-  background: linear-gradient(135deg, #f1f5f9 0%, #ffffff 50%, #f8fafc 100%);
-  border: 2px solid #3b82f6;
-  box-shadow: 0 25px 50px -12px rgba(59, 130, 246, 0.25),
-    0 0 0 1px rgba(59, 130, 246, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(8px);
+  background: var(--civic-gradient);
+  border: 2px solid var(--gov-primary);
+  box-shadow: 0 25px 50px -12px rgba(59, 130, 246, 0.3),
+    0 0 0 1px rgba(59, 130, 246, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(12px);
+  position: relative;
+  overflow: hidden;
+}
+
+.auth-dialog-enhanced::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--civic-gradient);
+  opacity: 0.8;
+  z-index: -1;
 }
 
 .auth-dialog-header {
   background: var(--botswana-gradient);
   color: white;
   padding: 1.5rem;
-  border-radius: 0.75rem 0.75rem 0 0;
   position: relative;
   overflow: hidden;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .auth-dialog-header::before {
@@ -108,18 +122,120 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='4'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")
+  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.08'%3E%3Ccircle cx='30' cy='30' r='3'/%3E%3Ccircle cx='10' cy='10' r='2'/%3E%3Ccircle cx='50' cy='50' r='2'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")
     repeat;
-  opacity: 0.3;
+  opacity: 0.4;
 }
 
 .botswana-badge {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.25);
   color: white;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(12px);
   font-weight: 600;
   letter-spacing: 0.5px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.botswana-badge:hover {
+  background: rgba(255, 255, 255, 0.35);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Enhanced Form Container Styling */
+.auth-form-container {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  border-radius: 1rem;
+  box-shadow: 0 8px 32px rgba(59, 130, 246, 0.1);
+  transition: all 0.3s ease;
+}
+
+.dark .auth-form-container {
+  background: rgba(31, 41, 55, 0.85);
+  border-color: rgba(96, 165, 250, 0.2);
+  box-shadow: 0 8px 32px rgba(96, 165, 250, 0.1);
+}
+
+.auth-form-container:hover {
+  border-color: rgba(59, 130, 246, 0.3);
+  box-shadow: 0 12px 40px rgba(59, 130, 246, 0.15);
+}
+
+.dark .auth-form-container:hover {
+  border-color: rgba(96, 165, 250, 0.3);
+  box-shadow: 0 12px 40px rgba(96, 165, 250, 0.15);
+}
+
+/* Enhanced Dialog Positioning and Scrolling */
+.auth-dialog-enhanced,
+.auth-dialog-basic {
+  /* Ensure dialog is always within viewport */
+  position: fixed !important;
+  left: 50% !important;
+  top: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  max-height: calc(var(--vh, 1vh) * 100 - 2rem) !important;
+  max-width: calc(100vw - 2rem) !important;
+  margin: 0 !important;
+  z-index: 50 !important;
+}
+
+/* Custom scrollbar styling for dialog content */
+.auth-dialog-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.auth-dialog-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.auth-dialog-content::-webkit-scrollbar-thumb {
+  background: rgba(59, 130, 246, 0.3);
+  border-radius: 3px;
+}
+
+.auth-dialog-content::-webkit-scrollbar-thumb:hover {
+  background: rgba(59, 130, 246, 0.5);
+}
+
+/* Ensure proper viewport handling on mobile */
+@media (max-height: 600px) {
+  .auth-dialog-enhanced,
+  .auth-dialog-basic {
+    max-height: calc(var(--vh, 1vh) * 100 - 1rem) !important;
+    top: 50% !important;
+  }
+}
+
+/* Handle very small screens */
+@media (max-height: 500px) {
+  .auth-dialog-enhanced,
+  .auth-dialog-basic {
+    max-height: calc(var(--vh, 1vh) * 100 - 0.5rem) !important;
+    top: 50% !important;
+  }
+
+  .auth-dialog-content {
+    max-height: calc(var(--vh, 1vh) * 100 - 8rem) !important;
+  }
+}
+
+/* Responsive dialog sizing */
+@media (max-width: 640px) {
+  .auth-dialog-enhanced {
+    width: calc(100vw - 1rem) !important;
+    max-width: calc(100vw - 1rem) !important;
+  }
+
+  .auth-dialog-basic {
+    width: calc(100vw - 1rem) !important;
+    max-width: calc(100vw - 1rem) !important;
+  }
 }
 
 /* Enhanced Step Indicator */

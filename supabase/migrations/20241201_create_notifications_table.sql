@@ -5,7 +5,7 @@
 CREATE TABLE IF NOT EXISTS notifications (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-  type TEXT NOT NULL CHECK (type IN ('verification_approved', 'verification_rejected', 'role_changed', 'general')),
+  type TEXT NOT NULL CHECK (type IN ('verification_approved', 'verification_rejected', 'role_changed', 'status_change', 'general')),
   title TEXT NOT NULL,
   message TEXT NOT NULL,
   data JSONB,
@@ -56,8 +56,8 @@ CREATE POLICY "Authenticated users can insert notifications" ON notifications
 CREATE POLICY "Admins can manage all notifications" ON notifications
   FOR ALL USING (
     EXISTS (
-      SELECT 1 FROM profiles 
-      WHERE profiles.id = auth.uid() 
+      SELECT 1 FROM profiles
+      WHERE profiles.id = auth.uid()
       AND profiles.role = 'admin'
     )
   );

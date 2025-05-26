@@ -1,6 +1,6 @@
-# Contributing to Government Issue Tracking Portal
+# Contributing to Civic Portal
 
-Thank you for your interest in contributing to the Government Issue Tracking Portal! This document provides guidelines and instructions for contributing to the project.
+Thank you for your interest in contributing to the Civic Portal! This document provides comprehensive guidelines and instructions for contributing to this Botswana government civic engagement platform.
 
 ## Table of Contents
 
@@ -12,6 +12,9 @@ Thank you for your interest in contributing to the Government Issue Tracking Por
 - [Testing Guidelines](#testing-guidelines)
 - [Documentation](#documentation)
 - [Issue Reporting](#issue-reporting)
+- [Feature Requests](#feature-requests)
+- [Security](#security)
+- [Community](#community)
 
 ## Code of Conduct
 
@@ -28,22 +31,25 @@ In short, we expect all contributors to:
 
 ### Prerequisites
 
-- Node.js (v16 or higher)
-- npm, yarn, or pnpm
-- Git
-- A Supabase account (free tier available)
+- **Node.js**: v18 or higher (recommended: v18.17.0+)
+- **Package Manager**: npm (included with Node.js), yarn, or pnpm
+- **Git**: For version control
+- **Supabase Account**: Free tier available at [supabase.com](https://supabase.com)
+- **Code Editor**: VS Code recommended with TypeScript and Tailwind CSS extensions
 
 ### Setting Up the Development Environment
 
-1. Fork the repository
+1. **Fork the repository** on GitHub
 
-2. Clone your fork:
+2. **Clone your fork**:
+
    ```bash
-   git clone https://github.com/your-username/government-issue-tracker.git
-   cd government-issue-tracker
+   git clone https://github.com/your-username/civic-portal.git
+   cd civic-portal
    ```
 
-3. Install dependencies:
+3. **Install dependencies**:
+
    ```bash
    npm install
    # or
@@ -52,22 +58,45 @@ In short, we expect all contributors to:
    pnpm install
    ```
 
-4. Set up environment variables:
-   - Copy `.env.example` to `.env.local`
-   - Fill in the required Supabase credentials
+4. **Set up environment variables**:
 
-5. Start the development server:
+   ```bash
+   cp .env.example .env.local
+   ```
+
+   Edit `.env.local` with your Supabase credentials:
+
+   ```env
+   VITE_SUPABASE_URL=your_supabase_project_url
+   VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
+   ```
+
+5. **Set up the database**:
+
+   ```bash
+   # Using Supabase CLI (recommended)
+   npx supabase db push
+
+   # Or manually run migrations in Supabase SQL Editor
+   ```
+
+6. **Start the development server**:
+
    ```bash
    npm run dev
-   # or
-   yarn dev
-   # or
-   pnpm dev
    ```
+
+   The application will be available at `http://localhost:5173`
+
+7. **Verify setup**:
+   - Check that the application loads without errors
+   - Test demo mode functionality
+   - Verify database connection in browser console
 
 ## Development Workflow
 
 1. Create a new branch for your feature or bugfix:
+
    ```bash
    git checkout -b feature/your-feature-name
    # or
@@ -79,17 +108,23 @@ In short, we expect all contributors to:
 3. Write or update tests as necessary
 
 4. Run tests to ensure your changes don't break existing functionality:
+
    ```bash
-   npm run test
+   # Run end-to-end tests
    npm run test:e2e
+
+   # Or run tests interactively
+   npm run cypress:open
    ```
 
 5. Commit your changes with a descriptive commit message:
+
    ```bash
    git commit -m "Add feature: your feature description"
    ```
 
 6. Push your branch to your fork:
+
    ```bash
    git push origin feature/your-feature-name
    ```
@@ -134,19 +169,65 @@ Pull requests will be merged once they have been approved by at least one mainta
 
 ## Testing Guidelines
 
-### Unit and Integration Tests
+The Civic Portal uses comprehensive end-to-end testing with Cypress to ensure all features work correctly across different user scenarios.
 
-- Write tests for all new features and bug fixes
-- Aim for high test coverage, especially for critical functionality
-- Use React Testing Library for component tests
-- Place tests in `__tests__` directories or alongside the code they test with a `.test.tsx` extension
+### End-to-End Tests (Cypress)
 
-### End-to-End Tests
+- **Write tests for all new features** and bug fixes
+- **Focus on critical user flows** including authentication, issue management, and role-based access
+- **Place E2E tests** in the `cypress/e2e` directory
+- **Follow existing patterns** for test organization and naming conventions
 
-- Use Cypress for end-to-end tests
-- Focus on critical user flows
-- Place E2E tests in the `cypress/e2e` directory
-- Follow the existing pattern for test organization
+### Test Categories
+
+#### Authentication Tests
+
+- User registration and login flows
+- Role-based access control
+- Password reset functionality
+- Verification workflow testing
+
+#### Feature Tests
+
+- Issue creation, editing, and management
+- Commenting and voting systems
+- Solution proposals and selection
+- Real-time updates and notifications
+
+#### User Experience Tests
+
+- Navigation and routing
+- Demo mode functionality
+- Responsive design across devices
+- Accessibility compliance
+
+### Running Tests
+
+```bash
+# Run all tests headlessly
+npm run test:e2e
+
+# Open Cypress test runner (interactive)
+npm run cypress:open
+
+# Run tests in CI environment
+npm run test:e2e:ci
+```
+
+### Writing Tests
+
+- Use descriptive test names that explain the user scenario
+- Include proper setup and teardown for test isolation
+- Test both positive and negative scenarios
+- Verify visual elements and user feedback
+- Test across different user roles when applicable
+
+### Test Data
+
+- Use realistic test data that reflects actual use cases
+- Clean up test data after test completion
+- Avoid dependencies between tests
+- Use demo mode for testing when appropriate
 
 ## Documentation
 
@@ -177,6 +258,60 @@ When suggesting new features:
 3. Provide examples or mockups if possible
 4. Be open to discussion and feedback
 
+## Security
+
+Security is paramount for a civic engagement platform. When contributing:
+
+### Reporting Security Issues
+
+- **Do not** create public GitHub issues for security vulnerabilities
+- Email security concerns to [security@civic-portal.com] (replace with actual email)
+- Include detailed information about the vulnerability
+- Allow time for the security team to address the issue before public disclosure
+
+### Security Best Practices
+
+- Follow secure coding practices
+- Validate all user inputs
+- Use parameterized queries for database operations
+- Implement proper authentication and authorization checks
+- Keep dependencies updated and scan for vulnerabilities
+- Follow the principle of least privilege
+
+### Data Protection
+
+- Respect user privacy and data protection laws
+- Implement proper data encryption for sensitive information
+- Follow GDPR and other applicable privacy regulations
+- Ensure proper data retention and deletion policies
+
+## Community
+
+### Communication Channels
+
+- **GitHub Issues**: For bug reports and feature requests
+- **GitHub Discussions**: For general questions and community discussions
+- **Pull Requests**: For code contributions and reviews
+
+### Getting Help
+
+- Check existing documentation in the `/docs` directory
+- Search through existing GitHub issues and discussions
+- Ask questions in GitHub Discussions
+- Join community calls (if applicable)
+
+### Recognition
+
+Contributors are recognized in several ways:
+
+- Listed in the project's contributors section
+- Mentioned in release notes for significant contributions
+- Invited to join the core contributor team for ongoing contributors
+
 ---
 
-Thank you for contributing to the Government Issue Tracking Portal! Your efforts help improve civic engagement and government transparency.
+**Thank you for contributing to the Civic Portal!**
+
+Your efforts help improve civic engagement and government transparency in Botswana. Together, we're building a platform that empowers citizens and facilitates better communication between the public and government officials.
+
+_Every contribution, no matter how small, makes a difference in strengthening democracy and civic participation._

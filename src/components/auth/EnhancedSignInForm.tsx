@@ -16,7 +16,7 @@ import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/lib/auth';
-import { sanitizeInput } from '@/lib/utils';
+import { sanitizeInput, cn } from '@/lib/utils';
 
 // Enhanced validation schema
 const signInSchema = z.object({
@@ -129,12 +129,21 @@ export function EnhancedSignInForm({
 
   return (
     <div
-      className={`space-y-6 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm rounded-lg p-6 border border-blue-100 dark:border-blue-800 shadow-lg dark:shadow-blue-900/20 ${className}`}
+      className={cn(
+        'space-y-6 bg-transparent backdrop-blur-sm rounded-lg p-6',
+        className
+      )}
     >
       {/* Header */}
-      <div className="text-center space-y-3 pb-4 border-b border-blue-100 dark:border-blue-800">
-        <div className="flex items-center justify-center w-16 h-16 mx-auto bg-gradient-to-br from-blue-100 to-blue-200 dark:from-blue-800 dark:to-blue-700 rounded-full shadow-md border-2 border-blue-200 dark:border-blue-600">
-          <Shield className="w-8 h-8 text-blue-600 dark:text-blue-300" />
+      <div className="text-center space-y-3 pb-4 border-b border-blue-200/40 dark:border-blue-700/40">
+        <div
+          className="flex items-center justify-center w-16 h-16 mx-auto rounded-full shadow-lg border-2"
+          style={{
+            background: 'var(--botswana-gradient)',
+            borderColor: 'var(--gov-primary-light)',
+          }}
+        >
+          <Shield className="w-8 h-8 text-white drop-shadow-sm" />
         </div>
         <h2 className="text-2xl font-bold tracking-tight text-gray-800 dark:text-gray-100">
           Welcome back
@@ -255,9 +264,22 @@ export function EnhancedSignInForm({
           {/* Submit Button */}
           <Button
             type="submit"
-            className="w-full h-11"
+            className={cn(
+              'w-full h-11 font-semibold transition-all duration-300',
+              'bg-gradient-to-r from-[var(--gov-primary)] to-[var(--gov-primary-light)]',
+              'hover:from-[var(--gov-primary-dark)] hover:to-[var(--gov-primary)]',
+              'text-white shadow-lg hover:shadow-xl',
+              'transform hover:scale-[1.02] active:scale-[0.98]',
+              'border-0'
+            )}
             disabled={isLoading || isRateLimited}
             isLoading={isLoading}
+            style={{
+              background:
+                isLoading || isRateLimited
+                  ? undefined
+                  : 'var(--botswana-gradient)',
+            }}
           >
             {isLoading ? 'Signing in...' : 'Sign In'}
           </Button>
