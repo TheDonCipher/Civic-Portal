@@ -11,6 +11,13 @@ import CreateIssueDialog from './issues/CreateIssueDialog';
 import { z } from 'zod';
 import { useToast } from '@/components/ui/use-toast';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { safeDate } from '@/lib/utils/dateUtils';
+import { handleApiError } from '@/lib/utils/errorHandler';
+import {
+  ConsentProtectedRoute,
+  ConsentProtectedButton,
+} from '@/components/auth/ConsentProtectedRoute';
+import { ConsentStatusWidget } from '@/components/auth/ConsentStatusWidget';
 
 interface HomeProps {
   initialIssues?: Issue[];
@@ -54,43 +61,23 @@ const mockIssues: Issue[] = [
         date: '2024-03-21',
       },
     ],
-    updates: [
-      {
-        id: 1,
-        author: {
-          name: 'City Maintenance',
-          avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=city',
-        },
-        content: 'Issue has been reviewed and scheduled for repair next week.',
-        date: '2024-03-22',
-        type: 'status',
-      },
-    ],
-    solutions: [
-      {
-        id: 1,
-        title: 'Complete Road Resurfacing',
-        description:
-          'Full resurfacing of the affected area with high-quality asphalt.',
-        proposedBy: {
-          name: 'City Engineering',
-          avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=engineer',
-        },
-        estimatedCost: 25000,
-        votes: 15,
-        status: 'proposed',
-      },
-    ],
     date: '2024-03-20',
     author: {
       name: 'John Doe',
       avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=john',
     },
+    author_id: 'demo-user-1',
     thumbnail:
       'https://images.unsplash.com/photo-1515162816999-a0c47dc192f7?w=400&h=300&fit=crop',
     location: 'Serowe-Palapye Road',
     constituency: 'Serowe north',
     watchers: 68,
+    watchers_count: 68,
+    created_at: '2024-03-20T10:00:00Z',
+    updated_at: '2024-03-20T10:00:00Z',
+    resolved_at: '',
+    resolved_by: '',
+    department_id: '',
   },
   {
     id: '2',
@@ -120,44 +107,23 @@ const mockIssues: Issue[] = [
         date: '2024-03-20',
       },
     ],
-    updates: [
-      {
-        id: 1,
-        author: {
-          name: 'Environmental Team',
-          avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=env',
-        },
-        content:
-          'Equipment and supplies have been arranged. Cleanup scheduled for next Saturday.',
-        date: '2024-03-21',
-        type: 'status',
-      },
-    ],
-    solutions: [
-      {
-        id: 1,
-        title: 'Community Cleanup Day',
-        description:
-          'Organize a full day cleanup event with local volunteers and municipal support.',
-        proposedBy: {
-          name: 'Environmental Team',
-          avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=env',
-        },
-        estimatedCost: 15000,
-        votes: 25,
-        status: 'in-progress',
-      },
-    ],
     date: '2024-03-19',
     author: {
       name: 'Jane Smith',
       avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=jane',
     },
+    author_id: 'demo-user-2',
     thumbnail:
       'https://images.unsplash.com/photo-1571954471509-801c155e01ec?w=400&h=300&fit=crop',
     location: 'Main Mall',
     constituency: 'Gaborone central',
     watchers: 42,
+    watchers_count: 42,
+    created_at: '2024-03-19T14:30:00Z',
+    updated_at: '2024-03-19T14:30:00Z',
+    resolved_at: '',
+    resolved_by: '',
+    department_id: '',
   },
 ];
 
@@ -214,40 +180,63 @@ const Home = ({ initialIssues = mockIssues }: HomeProps) => {
             status: issue.status as 'open' | 'in-progress' | 'resolved',
             votes: issue.votes || 0,
             comments: [],
-            date: issue.created_at,
+            date: safeDate.toString(issue.created_at),
             author: {
               name: issue.author_name || 'Unknown',
               avatar:
                 issue.author_avatar ||
                 `https://api.dicebear.com/7.x/avataaars/svg?seed=${issue.author_id}`,
             },
-            thumbnail:
-              issue.thumbnail ||
-              (() => {
-                // Select a default image based on category if thumbnail is missing
-                const category =
-                  issue.category?.toLowerCase() || 'infrastructure';
-                const defaultImages = {
-                  infrastructure:
-                    'https://cdn.pixabay.com/photo/2018/01/10/18/49/city-3073958_1280.jpg',
-                  environment:
-                    'https://cdn.pixabay.com/photo/2015/12/01/20/28/green-1072828_1280.jpg',
-                  safety:
-                    'https://cdn.pixabay.com/photo/2019/04/13/00/47/police-4123365_1280.jpg',
-                  community:
-                    'https://cdn.pixabay.com/photo/2017/02/10/12/03/volunteer-2055010_1280.jpg',
-                };
-                return defaultImages[category] || defaultImages.infrastructure;
-              })(),
-            location: issue.location,
-            constituency: issue.constituency,
+            author_id: issue.author_id, // Add this required field
+            thumbnail: ((): string => {
+              if (issue.thumbnail) {
+                return issue.thumbnail;
+              }
+              // Select a default image based on category if thumbnail is missing
+              const category =
+                issue.category?.toLowerCase() || 'infrastructure';
+              const defaultImages: Record<string, string> = {
+                infrastructure:
+                  'https://cdn.pixabay.com/photo/2018/01/10/18/49/city-3073958_1280.jpg',
+                environment:
+                  'https://cdn.pixabay.com/photo/2015/12/01/20/28/green-1072828_1280.jpg',
+                safety:
+                  'https://cdn.pixabay.com/photo/2019/04/13/00/47/police-4123365_1280.jpg',
+                community:
+                  'https://cdn.pixabay.com/photo/2017/02/10/12/03/volunteer-2055010_1280.jpg',
+              };
+              const validCategories = [
+                'infrastructure',
+                'environment',
+                'safety',
+                'community',
+              ];
+              const validCategory = validCategories.includes(category)
+                ? category
+                : 'infrastructure';
+              return (
+                defaultImages[validCategory as keyof typeof defaultImages] ||
+                defaultImages['infrastructure']
+              );
+            })(),
+            location: issue.location || '',
+            constituency: issue.constituency || '',
             watchers: issue.watchers_count || 0,
+            watchers_count: issue.watchers_count || 0,
+            created_at: safeDate.toString(issue.created_at),
+            updated_at: safeDate.toString(issue.updated_at),
+            resolved_at: issue.resolved_at
+              ? safeDate.toString(issue.resolved_at)
+              : '',
+            resolved_by: issue.resolved_by || '',
+            department_id: (issue as any).department_id || '',
           }));
 
           setIssues(formattedIssues);
         }
       } catch (error) {
         console.error('Error fetching issues:', error);
+        handleApiError(error, 'Home', 'fetchIssues');
       } finally {
         setHasFetched(true);
       }
@@ -288,17 +277,27 @@ const Home = ({ initialIssues = mockIssues }: HomeProps) => {
         status: 'open' as const,
         votes: 0,
         comments: [],
-        date: data.created_at,
+        date: safeDate.toString(data.created_at),
         author: {
           name: profile.full_name || 'User',
           avatar:
             profile.avatar_url ||
             `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}`,
         },
-        thumbnail: data.thumbnails?.[0] || data.thumbnail,
-        location: data.location,
-        constituency: data.constituency,
+        author_id: user.id, // Add this required field
+        thumbnail:
+          data.thumbnails?.[0] ||
+          data.thumbnail ||
+          'https://cdn.pixabay.com/photo/2018/01/10/18/49/city-3073958_1280.jpg',
+        location: data.location || '',
+        constituency: data.constituency || '',
         watchers: 1, // Start with 1 watcher (the creator)
+        watchers_count: 1,
+        created_at: safeDate.toString(data.created_at),
+        updated_at: safeDate.toString(new Date().toISOString()),
+        resolved_at: '',
+        resolved_by: '',
+        department_id: '',
       };
 
       setIssues([newIssue, ...issues]);
@@ -340,48 +339,56 @@ const Home = ({ initialIssues = mockIssues }: HomeProps) => {
       }}
       onSearch={handleSearch}
     >
-      <div className="max-w-[1800px] mx-auto space-y-8 mobile-padding">
+      <div className="max-w-[1800px] mx-auto section-spacing mobile-padding">
         {/* Statistics Section */}
-        <StatCards />
+        <section className="w-full">
+          <StatCards />
+        </section>
 
-        {/* Main Content Layout */}
-        <div className="flex flex-col lg:flex-row gap-8">
-          {/* Issues Grid - Main Content */}
-          <div className="flex-1 min-w-0">
-            <IssueGrid
-              issues={activeIssues}
-              onFilterChange={handleFilterChange}
-              onSearch={handleSearch}
-              onIssueClick={(issue) => setSelectedIssue(issue)}
+        {/* Latest Updates - Mobile (appears before Issues Grid) */}
+        <section className="lg:hidden">
+          <div className="mb-6 sm:mb-8">
+            <LatestUpdates
+              onIssueClick={(issueId) => {
+                const issue = issues.find((i) => i.id === issueId);
+                if (issue) {
+                  setSelectedIssue(issue);
+                }
+              }}
             />
           </div>
+        </section>
 
-          {/* Latest Updates Sidebar - Desktop */}
-          <div className="w-full lg:w-[400px] xl:w-[420px] hidden lg:block">
-            <div className="sticky top-[100px]">
-              <LatestUpdates
-                onIssueClick={(issueId) => {
-                  const issue = issues.find((i) => i.id === issueId);
-                  if (issue) {
-                    setSelectedIssue(issue);
-                  }
-                }}
+        {/* Main Content Layout */}
+        <section className="w-full">
+          <div className="flex flex-col lg:flex-row gap-6 sm:gap-8 lg:gap-10">
+            {/* Issues Grid - Main Content */}
+            <div className="flex-1 min-w-0">
+              <IssueGrid
+                issues={activeIssues}
+                onFilterChange={handleFilterChange}
+                onSearch={handleSearch}
+                onIssueClick={(issue) => setSelectedIssue(issue)}
+                enablePagination={true}
+                initialPageSize={20}
               />
             </div>
-          </div>
-        </div>
 
-        {/* Latest Updates - Mobile */}
-        <div className="lg:hidden">
-          <LatestUpdates
-            onIssueClick={(issueId) => {
-              const issue = issues.find((i) => i.id === issueId);
-              if (issue) {
-                setSelectedIssue(issue);
-              }
-            }}
-          />
-        </div>
+            {/* Latest Updates Sidebar - Desktop */}
+            <div className="w-full lg:w-[400px] xl:w-[420px] hidden lg:block">
+              <div className="sticky top-[100px]">
+                <LatestUpdates
+                  onIssueClick={(issueId) => {
+                    const issue = issues.find((i) => i.id === issueId);
+                    if (issue) {
+                      setSelectedIssue(issue);
+                    }
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
 
       <CreateIssueDialog

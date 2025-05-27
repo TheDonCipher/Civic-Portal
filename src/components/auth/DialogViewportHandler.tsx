@@ -9,7 +9,7 @@ export function DialogViewportHandler({ isOpen }: DialogViewportHandlerProps) {
     if (isOpen) {
       // Prevent body scroll when dialog is open
       document.body.style.overflow = 'hidden';
-      
+
       // Ensure viewport meta tag is properly set for mobile
       let viewportMeta = document.querySelector('meta[name="viewport"]');
       if (!viewportMeta) {
@@ -17,23 +17,23 @@ export function DialogViewportHandler({ isOpen }: DialogViewportHandlerProps) {
         viewportMeta.setAttribute('name', 'viewport');
         document.head.appendChild(viewportMeta);
       }
-      
+
       // Set optimal viewport settings for dialog
       viewportMeta.setAttribute(
         'content',
         'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover'
       );
-      
+
       // Handle mobile viewport height issues
       const setViewportHeight = () => {
         const vh = window.innerHeight * 0.01;
         document.documentElement.style.setProperty('--vh', `${vh}px`);
       };
-      
+
       setViewportHeight();
       window.addEventListener('resize', setViewportHeight);
       window.addEventListener('orientationchange', setViewportHeight);
-      
+
       return () => {
         window.removeEventListener('resize', setViewportHeight);
         window.removeEventListener('orientationchange', setViewportHeight);
@@ -41,6 +41,9 @@ export function DialogViewportHandler({ isOpen }: DialogViewportHandlerProps) {
     } else {
       // Restore body scroll when dialog is closed
       document.body.style.overflow = '';
+
+      // Return empty cleanup function for when dialog is closed
+      return () => {};
     }
   }, [isOpen]);
 

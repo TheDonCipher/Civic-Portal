@@ -20,23 +20,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useDemoMode } from '@/providers/DemoProvider';
 import { demoSolutions } from '@/lib/demoData';
+import { safeDate } from '@/lib/utils/dateUtils';
+import { handleApiError } from '@/lib/utils/errorHandler';
+import type { UISolution } from '@/types/enhanced';
 
-interface Solution {
-  id: string;
-  title: string;
-  description: string;
-  estimated_cost: number;
-  votes: number;
-  status: string;
-  created_at: string;
-  proposed_by: string;
-  profiles: {
-    full_name: string | null;
-    avatar_url: string | null;
-    role: string | null;
-  } | null;
-  user_voted?: boolean;
-}
+// ✅ Use the centralized UISolution type
+type Solution = UISolution;
 
 interface SolutionsTabProps {
   issueId: string;
@@ -75,8 +64,9 @@ export const SolutionsTab: React.FC<SolutionsTabProps> = ({
               estimated_cost: solution.estimated_cost,
               votes: solution.votes,
               status: solution.status,
-              created_at: solution.created_at,
+              created_at: safeDate.toString(solution.created_at),
               proposed_by: solution.proposed_by,
+              issue_id: solution.issue_id,
               profiles: {
                 full_name: solution.proposer_name,
                 avatar_url: solution.proposer_avatar,
@@ -105,7 +95,8 @@ export const SolutionsTab: React.FC<SolutionsTabProps> = ({
             votes,
             status,
             created_at,
-            proposed_by
+            proposed_by,
+            issue_id
           `
           )
           .eq('issue_id', issueId)
@@ -144,19 +135,30 @@ export const SolutionsTab: React.FC<SolutionsTabProps> = ({
 
           const solutionsWithVotes = solutionsWithProfiles.map((solution) => ({
             ...solution,
+            created_at: safeDate.toString(solution.created_at),
             user_voted: votedSolutionIds.has(solution.id),
           }));
 
           setSolutions(solutionsWithVotes);
         } else {
-          setSolutions(solutionsWithProfiles || []);
+          // Transform database results to UI-safe format
+          const transformedSolutions = (solutionsWithProfiles || []).map(
+            (solution) => ({
+              ...solution,
+              created_at: safeDate.toString(solution.created_at),
+            })
+          );
+          setSolutions(transformedSolutions);
         }
       } catch (error) {
         console.error('Error fetching solutions:', error);
+        handleApiError(error, 'SolutionsTab', 'fetchSolutions');
         if (!isDemoMode) {
           toast({
             title: 'Error',
-            description: 'Failed to load solutions',
+            description: `Failed to load solutions: ${
+              error instanceof Error ? error.message : 'Unknown error'
+            }`,
             variant: 'destructive',
           });
         }
@@ -206,6 +208,9 @@ export const SolutionsTab: React.FC<SolutionsTabProps> = ({
         votesSubscription.unsubscribe();
       };
     }
+
+    // Return empty cleanup function for demo mode
+    return () => {};
   }, [issueId, user, toast, isDemoMode]);
 
   // Report count changes to parent component
@@ -232,6 +237,7 @@ export const SolutionsTab: React.FC<SolutionsTabProps> = ({
           status: 'proposed',
           created_at: new Date().toISOString(),
           proposed_by: user.id || 'demo-user',
+          issue_id: issueId,
           profiles: {
             full_name: profile?.full_name || 'Demo User',
             avatar_url: profile?.avatar_url || null,
@@ -270,9 +276,12 @@ export const SolutionsTab: React.FC<SolutionsTabProps> = ({
       });
     } catch (error) {
       console.error('Error adding solution:', error);
+      handleApiError(error, 'SolutionsTab', 'handleSubmitSolution');
       toast({
         title: 'Error',
-        description: 'Failed to propose solution',
+        description: `Failed to propose solution: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`,
         variant: 'destructive',
       });
     } finally {
@@ -408,7 +417,7 @@ export const SolutionsTab: React.FC<SolutionsTabProps> = ({
       // Regular database operations for non-demo mode
       const { error } = await supabase.rpc('mark_solution_as_official', {
         solution_id: solutionId,
-        stakeholder_id: user.id,
+        issue_id: issueId,
       });
 
       if (error) throw error;

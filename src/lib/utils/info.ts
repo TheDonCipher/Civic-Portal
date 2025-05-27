@@ -9,10 +9,13 @@ export const getAppVersion = () => {
 
 // Get environment information
 export const getEnvironmentInfo = () => {
+  // Use Vite environment variables instead of process.env for browser compatibility
+  const mode = import.meta.env.MODE;
   return {
-    isDevelopment: process.env.NODE_ENV === "development",
-    isProduction: process.env.NODE_ENV === "production",
-    isTest: process.env.NODE_ENV === "test",
+    isDevelopment: mode === "development",
+    isProduction: mode === "production",
+    isTest: mode === "test",
+    mode: mode,
   };
 };
 

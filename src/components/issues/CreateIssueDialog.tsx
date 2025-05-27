@@ -33,6 +33,11 @@ import { useAuth } from '@/lib/auth';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/lib/supabase';
 import {
+  useIssueCreationRateLimit,
+  formatTimeRemaining,
+} from '@/hooks/useRateLimit';
+import { sanitizeText, sanitizeFormData } from '@/lib/utils';
+import {
   Image,
   Loader2,
   Upload,
@@ -119,6 +124,7 @@ const CreateIssueDialog = ({
 }: CreateIssueDialogProps) => {
   const { user, profile } = useAuth() || { user: null, profile: null };
   const { toast } = useToast();
+  const rateLimit = useIssueCreationRateLimit();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -127,7 +133,7 @@ const CreateIssueDialog = ({
 
   const [imagePreview, setImagePreview] = useState<string[]>([]);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
+  const supabaseUrl = import.meta.env['VITE_SUPABASE_URL'] || '';
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -229,6 +235,23 @@ const CreateIssueDialog = ({
       return;
     }
 
+    // Check rate limiting
+    if (rateLimit.isRateLimited) {
+      toast({
+        title: 'Too Many Issues Created',
+        description: `Please wait ${formatTimeRemaining(
+          rateLimit.timeUntilReset
+        )} before creating another issue.`,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    // Record the attempt
+    if (!rateLimit.recordAttempt()) {
+      return; // Rate limited
+    }
+
     // Prevent duplicate submissions
     if (isSubmitting) {
       console.log('Submission already in progress, preventing duplicate');
@@ -237,21 +260,36 @@ const CreateIssueDialog = ({
 
     setIsSubmitting(true);
 
+    // Sanitize form data
+    const sanitizedData = sanitizeFormData({
+      title: sanitizeText(data.title, 100),
+      description: sanitizeText(data.description, 2000),
+      location: sanitizeText(data.location, 200),
+      category: data.category,
+      constituency: data.constituency,
+      department_id: data.department_id,
+      images: data.images,
+    });
+
     try {
       let thumbnails: string[] = [];
 
       // If images were uploaded, process and store them in Supabase storage
-      if (data.images && data.images.length > 0) {
+      if (sanitizedData.images && sanitizedData.images.length > 0) {
         try {
           // Process each image sequentially
-          for (let i = 0; i < data.images.length; i++) {
-            const image = data.images[i];
+          for (let i = 0; i < sanitizedData.images.length; i++) {
+            const image = sanitizedData.images[i];
+            if (!image) continue; // Skip if image is undefined
+
             setUploadProgress(0); // Reset progress for each image
 
             // First resize the image to reduce storage usage and improve loading performance
             const resizedImage = await resizeImageBeforeUpload(image);
             console.log(
-              `Image ${i + 1}/${data.images.length} resized successfully`,
+              `Image ${i + 1}/${
+                sanitizedData.images.length
+              } resized successfully`,
               {
                 originalSize: image.size,
                 resizedSize: resizedImage.size,
@@ -269,7 +307,7 @@ const CreateIssueDialog = ({
               (progress) => {
                 console.log(
                   `Upload progress for image ${i + 1}/${
-                    data.images.length
+                    sanitizedData.images.length
                   }: ${progress}%`
                 );
                 setUploadProgress(progress);
@@ -278,7 +316,7 @@ const CreateIssueDialog = ({
 
             console.log(
               `Image ${i + 1}/${
-                data.images.length
+                sanitizedData.images.length
               } uploaded successfully, URL:`,
               imageUrl
             );
@@ -292,7 +330,7 @@ const CreateIssueDialog = ({
           // If we have some successful uploads, continue with those
           if (thumbnails.length === 0) {
             // Fall back to a default image if all uploads fail
-            const category = data.category.toLowerCase();
+            const category = sanitizedData.category.toLowerCase();
             const defaultImageUrl = getCategoryDefaultImage(category);
             thumbnails = [defaultImageUrl];
             console.log('Using fallback image:', defaultImageUrl);
@@ -309,7 +347,7 @@ const CreateIssueDialog = ({
             // Some images uploaded successfully
             toast({
               title: 'Some Images Failed to Upload',
-              description: `${thumbnails.length} out of ${data.images.length} images were uploaded successfully.`,
+              description: `${thumbnails.length} out of ${sanitizedData.images.length} images were uploaded successfully.`,
               variant: 'warning',
               duration: 5000,
             });
@@ -317,7 +355,7 @@ const CreateIssueDialog = ({
         }
       } else {
         // Use reliable default image from Pixabay based on category
-        const category = data.category.toLowerCase();
+        const category = sanitizedData.category.toLowerCase();
         const defaultImageUrl = getCategoryDefaultImage(category);
         thumbnails = [defaultImageUrl];
         console.log(
@@ -338,7 +376,7 @@ const CreateIssueDialog = ({
             return `${supabaseUrl}${url}`;
           } else {
             // Fall back to a category-specific default image
-            const category = data.category.toLowerCase();
+            const category = sanitizedData.category.toLowerCase();
             const defaultImageUrl = getCategoryDefaultImage(category);
             return defaultImageUrl;
           }
@@ -350,7 +388,7 @@ const CreateIssueDialog = ({
 
       // Ensure we have at least one thumbnail
       if (thumbnails.length === 0) {
-        const category = data.category.toLowerCase();
+        const category = sanitizedData.category.toLowerCase();
         const defaultImageUrl = getCategoryDefaultImage(category);
         thumbnails = [defaultImageUrl];
       }
@@ -360,7 +398,7 @@ const CreateIssueDialog = ({
         .from('issues')
         .select('id')
         .eq('author_id', user.id)
-        .eq('title', data.title)
+        .eq('title', sanitizedData.title)
         .limit(1);
 
       if (checkError) {
@@ -383,21 +421,20 @@ const CreateIssueDialog = ({
       const { data: issueData, error } = await supabase
         .from('issues')
         .insert({
-          title: data.title,
-          description: data.description,
-          category: data.category,
-          department_id: data.department_id,
-          location: data.location,
-          constituency: data.constituency,
+          title: sanitizedData.title,
+          description: sanitizedData.description,
+          category: sanitizedData.category,
+          location: sanitizedData.location,
+          constituency: sanitizedData.constituency,
           author_id: user.id,
-          author_name: profile.full_name,
+          author_name: profile.full_name || 'Anonymous User',
           author_avatar: profile.avatar_url,
           status: 'open',
           thumbnail: thumbnails[0], // Keep the first image as the main thumbnail for backward compatibility
-          thumbnails: thumbnails,
           created_at: new Date().toISOString(),
           watchers_count: 1, // Start with 1 watcher (the creator)
-        })
+          // Note: department_id and thumbnails fields will be added when Supabase types are regenerated
+        } as any) // Type assertion to work around outdated Supabase types
         .select()
         .single();
 
@@ -431,10 +468,10 @@ const CreateIssueDialog = ({
       if (onSubmit) {
         onSubmit({
           ...data,
-          id: issueData.id,
+          // Pass additional data that parent components might need
           created_at: issueData.created_at,
           thumbnails: thumbnails,
-        });
+        } as any); // Type assertion for additional properties
       }
 
       // Show success toast
@@ -761,6 +798,18 @@ const CreateIssueDialog = ({
               )}
             />
 
+            {rateLimit.isRateLimited && (
+              <div
+                className="p-3 bg-destructive/10 border border-destructive/20 rounded-md text-sm text-destructive"
+                role="alert"
+                aria-live="polite"
+              >
+                Too many issues created. Please wait{' '}
+                {formatTimeRemaining(rateLimit.timeUntilReset)} before creating
+                another issue.
+              </div>
+            )}
+
             <DialogFooter className="flex justify-end gap-4 mt-6">
               <Button
                 type="button"
@@ -770,7 +819,13 @@ const CreateIssueDialog = ({
               >
                 Cancel
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
+              <Button
+                type="submit"
+                disabled={isSubmitting || rateLimit.isRateLimited}
+                aria-describedby={
+                  rateLimit.isRateLimited ? 'rate-limit-message' : undefined
+                }
+              >
                 {isSubmitting ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -783,6 +838,19 @@ const CreateIssueDialog = ({
                 )}
               </Button>
             </DialogFooter>
+
+            {rateLimit.attemptsRemaining < 3 &&
+              rateLimit.attemptsRemaining > 0 && (
+                <p
+                  className="text-sm text-muted-foreground text-center mt-2"
+                  role="status"
+                  aria-live="polite"
+                >
+                  {rateLimit.attemptsRemaining} issue
+                  {rateLimit.attemptsRemaining !== 1 ? 's' : ''} remaining this
+                  hour
+                </p>
+              )}
           </form>
         </Form>
       </DialogContent>

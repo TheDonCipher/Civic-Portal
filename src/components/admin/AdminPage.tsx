@@ -2,9 +2,25 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useAuth } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
+import {
+  getOverallStats,
+  getDepartmentStats,
+  getBudgetAllocations,
+} from '@/lib/api/statsApi';
+import {
+  getAllUsersConsentStatus,
+  getConsentMetrics,
+  sendBulkConsentReminders,
+  type UserConsentStatus,
+} from '@/lib/api/adminConsentApi';
 import MainLayout from '@/components/layout/MainLayout';
 import PageTitle from '@/components/common/PageTitle';
 import AuthDebugPanel from './AuthDebugPanel';
+import ConsentStatusColumn from './ConsentStatusColumn';
+import UserConsentDetailDialog from './UserConsentDetailDialog';
+import ConsentBulkActions from './ConsentBulkActions';
+import SystemDebugPanel from './SystemDebugPanel';
+import AdminNotificationSender from './AdminNotificationSender';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -205,7 +221,7 @@ interface Issue {
   title: string;
   status: string;
   category: string;
-  created_at: string;
+  created_at: string | null;
   author_id: string;
 }
 
@@ -249,6 +265,18 @@ const AdminPage: React.FC = () => {
   const [rejectionReason, setRejectionReason] = useState('');
   const [verifyingUserId, setVerifyingUserId] = useState<string | null>(null);
 
+  // Consent management state
+  const [usersConsentStatus, setUsersConsentStatus] = useState<
+    UserConsentStatus[]
+  >([]);
+  const [consentMetrics, setConsentMetrics] = useState<any>(null);
+  const [selectedUsers, setSelectedUsers] = useState<UserConsentStatus[]>([]);
+  const [consentFilter, setConsentFilter] = useState<string>('all');
+  const [showConsentDetailDialog, setShowConsentDetailDialog] = useState(false);
+  const [selectedUserForConsent, setSelectedUserForConsent] =
+    useState<UserConsentStatus | null>(null);
+  const [isLoadingConsent, setIsLoadingConsent] = useState(false);
+
   // Check if user is admin
   if (profile?.role !== 'admin') {
     return (
@@ -272,6 +300,7 @@ const AdminPage: React.FC = () => {
 
   useEffect(() => {
     fetchData();
+    fetchConsentData();
   }, []);
 
   // Set up real-time subscriptions for admin dashboard updates
@@ -327,7 +356,7 @@ const AdminPage: React.FC = () => {
         action,
         resource_type: 'user_management',
         resource_id: details.target_user_id,
-        user_id: user?.id,
+        user_id: user?.id || null,
         details: details,
       });
 
@@ -337,6 +366,32 @@ const AdminPage: React.FC = () => {
       }
     } catch (error) {
       console.warn('Error logging admin action:', error);
+    }
+  };
+
+  // Enhanced function to fetch admin statistics using new API
+  const fetchEnhancedStats = async () => {
+    try {
+      console.log('Fetching enhanced admin statistics...');
+
+      // Get overall system statistics using enhanced API
+      const overallStats = await getOverallStats();
+
+      // Get budget data for all departments
+      const budgetData = await getBudgetAllocations();
+
+      console.log('Enhanced admin stats fetched:', {
+        overallStats,
+        budgetCount: budgetData?.length || 0,
+      });
+
+      return {
+        overallStats,
+        budgetData,
+      };
+    } catch (error) {
+      console.error('Error fetching enhanced stats:', error);
+      return null;
     }
   };
 
@@ -422,23 +477,57 @@ const AdminPage: React.FC = () => {
               (dept) => dept.id === profile.department_id
             )
           : null;
+
+        // Debug logging for verification status and department
+        if (profile.role === 'official') {
+          console.log(
+            `Official user ${
+              profile.username || profile.email
+            }: verification_status = ${
+              profile.verification_status
+            }, department_id = ${profile.department_id}, department_name = ${
+              department?.name || 'NOT FOUND'
+            }`
+          );
+        }
+
         return {
           ...profile,
           // Ensure all required fields exist with defaults
           department_id: profile.department_id || null,
-          verification_status: profile.verification_status || 'verified',
+          // Preserve the actual verification status from database - don't override with any fallback
+          verification_status: profile.verification_status,
           department: department
             ? { id: department.id, name: department.name }
             : null,
         };
       });
 
-      // Calculate system statistics
+      // Calculate system statistics using enhanced data
       const stats = calculateSystemStats(
         profilesWithDepartments,
         issuesData || [],
         departmentsData || []
       );
+
+      // Fetch enhanced statistics in parallel
+      const enhancedStats = await fetchEnhancedStats();
+
+      // Merge enhanced stats with basic stats if available
+      if (enhancedStats?.overallStats) {
+        console.log('Using enhanced statistics for admin dashboard');
+        stats.totalIssues = enhancedStats.overallStats.totalIssues;
+        stats.openIssues = enhancedStats.overallStats.openIssues;
+        stats.resolvedIssues = enhancedStats.overallStats.resolvedIssues;
+        // Add budget information if available
+        if (enhancedStats.budgetData?.length > 0) {
+          console.log(
+            'Budget data available:',
+            enhancedStats.budgetData.length,
+            'allocations'
+          );
+        }
+      }
 
       setProfiles(profilesWithDepartments);
       setDepartments(departmentsData || []);
@@ -460,7 +549,7 @@ const AdminPage: React.FC = () => {
       toast({
         title: 'Error',
         description: `Failed to load admin data: ${
-          error.message || 'Unknown error'
+          error instanceof Error ? error.message : 'Unknown error'
         }`,
         variant: 'destructive',
       });
@@ -481,8 +570,10 @@ const AdminPage: React.FC = () => {
       (i) => i.status === 'resolved' || i.status === 'closed'
     ).length;
     const totalDepartments = departments.length;
+
+    // Enhanced stakeholder calculation with verification status
     const activeStakeholders = profiles.filter(
-      (p) => p.role === 'official'
+      (p) => p.role === 'official' && p.verification_status === 'verified'
     ).length;
 
     // Calculate monthly growth (simplified - last 30 days)
@@ -512,12 +603,166 @@ const AdminPage: React.FC = () => {
   const refreshData = async () => {
     setRefreshing(true);
     await fetchData();
+    await fetchConsentData();
     setRefreshing(false);
     toast({
       title: 'Data Refreshed',
       description: 'Admin dashboard data has been updated.',
       variant: 'default',
     });
+  };
+
+  // Fetch consent data for all users
+  const fetchConsentData = async () => {
+    try {
+      setIsLoadingConsent(true);
+
+      // Fetch all users consent status
+      const usersResult = await getAllUsersConsentStatus();
+      if (usersResult.success && usersResult.data) {
+        setUsersConsentStatus(usersResult.data);
+      } else {
+        console.error(
+          'Failed to fetch users consent status:',
+          usersResult.error
+        );
+      }
+
+      // Fetch consent metrics
+      const metricsResult = await getConsentMetrics();
+      if (metricsResult.success && metricsResult.data) {
+        setConsentMetrics(metricsResult.data);
+      } else {
+        console.error('Failed to fetch consent metrics:', metricsResult.error);
+      }
+    } catch (error: any) {
+      console.error('Error fetching consent data:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load consent data.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoadingConsent(false);
+    }
+  };
+
+  // Consent management functions
+  const handleConsentRefresh = async (userId: string) => {
+    await fetchConsentData();
+  };
+
+  const handleViewConsentDetails = (userId: string) => {
+    const userConsent = usersConsentStatus.find((u) => u.userId === userId);
+    if (userConsent) {
+      setSelectedUserForConsent(userConsent);
+      setShowConsentDetailDialog(true);
+    }
+  };
+
+  const handleSendConsentReminder = async (userId: string) => {
+    try {
+      // Implementation for sending consent reminder
+      toast({
+        title: 'Reminder Sent',
+        description: 'Consent reminder has been sent to the user.',
+        variant: 'success',
+      });
+    } catch (error: any) {
+      console.error('Error sending consent reminder:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to send consent reminder.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleBulkSendReminders = async (userIds: string[]) => {
+    try {
+      const result = await sendBulkConsentReminders(userIds);
+
+      if (result.results.successful.length > 0) {
+        toast({
+          title: 'Reminders Sent',
+          description: `Consent reminders sent to ${result.results.successful.length} users.`,
+          variant: 'success',
+        });
+      }
+
+      if (result.results.failed.length > 0) {
+        toast({
+          title: 'Some Reminders Failed',
+          description: `${result.results.failed.length} reminders failed to send.`,
+          variant: 'destructive',
+        });
+      }
+    } catch (error: any) {
+      console.error('Error sending bulk reminders:', error);
+      throw error;
+    }
+  };
+
+  const handleExportConsentData = (users: UserConsentStatus[]) => {
+    try {
+      // Create CSV data
+      const csvData = users.map((user) => ({
+        'User ID': user.userId,
+        Username: user.username,
+        'Full Name': user.fullName,
+        Email: user.email,
+        Role: user.role,
+        'Consent Status': user.consentStatus,
+        Progress: `${user.consentProgress}%`,
+        'Last Check': user.lastConsentCheck?.toISOString() || 'Never',
+        Error: user.errorMessage || 'None',
+      }));
+
+      // Convert to CSV string
+      const headers = Object.keys(csvData[0] || {});
+      const csvContent = [
+        headers.join(','),
+        ...csvData.map((row) =>
+          headers
+            .map((header) => `"${row[header as keyof typeof row] || ''}"`)
+            .join(',')
+        ),
+      ].join('\n');
+
+      // Download CSV
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute(
+        'download',
+        `consent-data-${new Date().toISOString().split('T')[0]}.csv`
+      );
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error: any) {
+      console.error('Error exporting consent data:', error);
+      toast({
+        title: 'Export Failed',
+        description: 'Failed to export consent data.',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  // Get user consent status by user ID
+  const getUserConsentStatus = (userId: string): UserConsentStatus | null => {
+    return usersConsentStatus.find((u) => u.userId === userId) || null;
+  };
+
+  // Filter users by consent status
+  const getFilteredUsersByConsent = () => {
+    if (consentFilter === 'all') return usersConsentStatus;
+    return usersConsentStatus.filter(
+      (user) => user.consentStatus === consentFilter
+    );
   };
 
   const updateUserRole = async (
@@ -670,6 +915,19 @@ const AdminPage: React.FC = () => {
 
       console.log('Profile verification status updated successfully');
 
+      // Update the local state immediately for instant UI feedback
+      setProfiles((prevProfiles) =>
+        prevProfiles.map((p) =>
+          p.id === userId
+            ? {
+                ...p,
+                verification_status: status,
+                verification_notes: status === 'rejected' ? reason : null,
+              }
+            : p
+        )
+      );
+
       // Log the admin action for audit purposes
       console.log('Creating audit log...');
       await logAdminAction('verification_update', {
@@ -724,20 +982,7 @@ const AdminPage: React.FC = () => {
         variant: 'default',
       });
 
-      // Update the local state immediately for instant UI feedback
-      setProfiles((prevProfiles) =>
-        prevProfiles.map((p) =>
-          p.id === userId
-            ? {
-                ...p,
-                verification_status: status,
-                verification_notes: status === 'rejected' ? reason : null,
-              }
-            : p
-        )
-      );
-
-      // Also refresh the data from the server to ensure consistency
+      // Refresh the data from the server to ensure consistency
       await fetchData();
       console.log('Verification update process completed successfully');
     } catch (error) {
@@ -962,25 +1207,8 @@ const AdminPage: React.FC = () => {
           </div>
         )}
 
-        {/* Authentication Debug Panel */}
-        <AuthDebugPanel />
-
-        {/* Debug Info */}
-        {debugInfo && (
-          <Card className="bg-yellow-50 border-yellow-200">
-            <CardHeader>
-              <CardTitle className="text-sm">Debug Information</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-xs space-y-1">
-                <p>Profiles: {debugInfo.profilesCount}</p>
-                <p>Departments: {debugInfo.departmentsCount}</p>
-                <p>Issues: {debugInfo.issuesCount}</p>
-                <p>Profile columns: {debugInfo.profileColumns.join(', ')}</p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        {/* System Debug Panel - Comprehensive debugging interface */}
+        <SystemDebugPanel debugInfo={debugInfo} />
 
         {/* Admin Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -1027,7 +1255,35 @@ const AdminPage: React.FC = () => {
                       </SelectContent>
                     </Select>
                   </div>
+                  <div>
+                    <Label htmlFor="consent-filter">Filter by Consent</Label>
+                    <Select
+                      value={consentFilter}
+                      onValueChange={setConsentFilter}
+                    >
+                      <SelectTrigger className="w-40">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Status</SelectItem>
+                        <SelectItem value="complete">Complete</SelectItem>
+                        <SelectItem value="pending">Pending</SelectItem>
+                        <SelectItem value="incomplete">Incomplete</SelectItem>
+                        <SelectItem value="failed">Failed</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
+
+                {/* Consent Bulk Actions */}
+                <ConsentBulkActions
+                  selectedUsers={selectedUsers}
+                  allUsers={usersConsentStatus}
+                  onRefreshAll={fetchConsentData}
+                  onSendBulkReminders={handleBulkSendReminders}
+                  onExportData={handleExportConsentData}
+                  isLoading={isLoadingConsent}
+                />
 
                 {/* Users Table */}
                 <div className="border rounded-lg">
@@ -1037,6 +1293,7 @@ const AdminPage: React.FC = () => {
                         <TableHead>User</TableHead>
                         <TableHead>Role</TableHead>
                         <TableHead>Verification</TableHead>
+                        <TableHead>Consent Status</TableHead>
                         <TableHead>Department</TableHead>
                         <TableHead>Constituency</TableHead>
                         <TableHead>Joined</TableHead>
@@ -1046,7 +1303,7 @@ const AdminPage: React.FC = () => {
                     <TableBody>
                       {filteredProfiles.length === 0 ? (
                         <TableRow>
-                          <TableCell colSpan={7} className="text-center py-8">
+                          <TableCell colSpan={8} className="text-center py-8">
                             <div className="text-muted-foreground">
                               {profiles.length === 0
                                 ? 'No users found in the database.'
@@ -1087,7 +1344,7 @@ const AdminPage: React.FC = () => {
                                         : 'secondary'
                                     }
                                   >
-                                    {profile.verification_status || 'pending'}
+                                    {profile.verification_status}
                                   </Badge>
                                   {profile.verification_status ===
                                     'pending' && (
@@ -1148,6 +1405,17 @@ const AdminPage: React.FC = () => {
                                   N/A
                                 </span>
                               )}
+                            </TableCell>
+                            <TableCell>
+                              <ConsentStatusColumn
+                                userConsentStatus={getUserConsentStatus(
+                                  profile.id
+                                )}
+                                onRefresh={handleConsentRefresh}
+                                onViewDetails={handleViewConsentDetails}
+                                onSendReminder={handleSendConsentReminder}
+                                isLoading={isLoadingConsent}
+                              />
                             </TableCell>
                             <TableCell>
                               {profile.department?.name || '-'}
@@ -1266,6 +1534,9 @@ const AdminPage: React.FC = () => {
           </TabsContent>
 
           <TabsContent value="system" className="space-y-6">
+            {/* Admin Notification Sender */}
+            <AdminNotificationSender />
+
             <div className="grid gap-6 md:grid-cols-2">
               <Card>
                 <CardHeader>
@@ -1396,7 +1667,9 @@ const AdminPage: React.FC = () => {
                         <div className="flex-1">
                           <p className="font-medium truncate">{issue.title}</p>
                           <p className="text-muted-foreground">
-                            {new Date(issue.created_at).toLocaleDateString()}
+                            {new Date(
+                              issue.created_at || new Date()
+                            ).toLocaleDateString()}
                           </p>
                         </div>
                         <Badge
@@ -1416,6 +1689,14 @@ const AdminPage: React.FC = () => {
             </div>
           </TabsContent>
         </Tabs>
+
+        {/* User Consent Detail Dialog */}
+        <UserConsentDetailDialog
+          open={showConsentDetailDialog}
+          onOpenChange={setShowConsentDetailDialog}
+          userConsentStatus={selectedUserForConsent}
+          onRefresh={handleConsentRefresh}
+        />
 
         {/* Verification Confirmation Dialog */}
         <Dialog

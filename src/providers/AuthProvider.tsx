@@ -5,7 +5,10 @@ import type { User, AuthError } from '@supabase/supabase-js';
 import type { UserProfile } from '@/lib/auth';
 import { Toaster } from '@/components/ui/toaster';
 import { useToast } from '@/components/ui/use-toast';
-import { sanitizeInput } from '@/lib/utils';
+import { SecurityUtils } from '@/lib/utils/securityUtils';
+import { handleApiError } from '@/lib/utils/errorHandler';
+import { SessionTimeoutHandler } from '@/components/auth/SessionTimeoutHandler';
+import type { Profile } from '@/types/enhanced';
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -80,12 +83,12 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     };
   }, []);
 
-  const getProfile = async (userId: string) => {
+  const getProfile = async (userId: string): Promise<void> => {
     try {
-      let profileData = null;
+      let profileData: Profile | null = null;
 
       // First try to get the profile from the database
-      let { data, error } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
@@ -102,31 +105,39 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
           const session = await supabase.auth.getSession();
           const metadata = session?.data?.session?.user?.user_metadata;
-          const rawMetadata = session?.data?.session?.user?.user_metadata;
 
           console.log('User metadata for profile creation:', metadata);
 
           if (metadata || session?.data?.session?.user) {
             // Create a default profile for the user with more comprehensive data
-            const userRole = metadata?.role || 'citizen';
+            const userRole =
+              (metadata?.role as 'citizen' | 'official' | 'admin') || 'citizen';
+            const userEmail = session?.data?.session?.user?.email;
+
             const defaultProfile = {
               id: userId,
-              email: session?.data?.session?.user?.email || '',
-              username:
+              email: userEmail,
+              username: SecurityUtils.escapeHtml(
                 metadata?.username ||
-                session?.data?.session?.user?.email?.split('@')[0] ||
-                userId.substring(0, 8),
-              full_name: metadata?.full_name || 'User',
-              constituency: metadata?.constituency || null,
-              department: metadata?.department || null,
+                  userEmail?.split('@')[0] ||
+                  `user_${userId.substring(0, 8)}`
+              ),
+              full_name: SecurityUtils.escapeHtml(
+                metadata?.full_name || 'User'
+              ),
+              constituency: metadata?.constituency
+                ? SecurityUtils.escapeHtml(metadata.constituency)
+                : null,
+              department_id: metadata?.department_id || null,
               avatar_url:
                 metadata?.avatar_url ||
                 `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`,
-              banner_url: null,
               role: userRole,
-              // Set verification status based on role
+              bio: null,
+              is_verified: userRole !== 'official',
               verification_status:
-                userRole === 'official' ? 'pending' : 'verified',
+                metadata?.verification_status ||
+                (userRole === 'official' ? 'pending' : 'verified'),
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
             };
@@ -183,15 +194,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           }
         } else {
           console.error('Error fetching profile:', error);
+          handleApiError(error, 'AuthProvider', 'getProfile');
           // Create a default profile in memory if we can't get it from the database
           profileData = {
             id: userId,
-            username: 'user_' + userId.substring(0, 5),
+            username: `user_${userId.substring(0, 5)}`,
             full_name: 'User',
             constituency: null,
             avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${userId}`,
-            banner_url: null,
             role: 'citizen',
+            department_id: null,
+            bio: null,
+            is_verified: true,
+            verification_status: 'verified',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
           };
         }
       } else {
@@ -205,24 +222,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           username: profileData.username || null,
           full_name: profileData.full_name || null,
           avatar_url: profileData.avatar_url || null,
-          banner_url: profileData.banner_url || null,
           constituency: profileData.constituency || null,
           role:
-            (profileData.role as 'citizen' | 'official' | 'admin' | null) ||
-            'citizen',
+            (profileData.role as 'citizen' | 'official' | 'admin') || 'citizen',
           department_id: profileData.department_id || null,
           verification_status: profileData.verification_status || null,
+          bio: profileData.bio || null,
+          is_verified: profileData.is_verified || false,
         });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Error loading user profile:', error);
-      toast({
-        title: 'Profile Error',
-        description:
-          'There was an error loading your profile. Please try refreshing the page.',
-        variant: 'destructive',
-        duration: 5000,
-      });
+      handleApiError(error, 'AuthProvider', 'getProfile');
     } finally {
       setIsLoading(false);
     }
@@ -231,12 +242,46 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   // Sign in with email and password
   const signIn = async (email: string, password: string) => {
     try {
+      // Check rate limiting before attempting sign in
+      const rateLimitCheck = await SecurityUtils.checkRateLimit(
+        'sign-in',
+        email
+      );
+      if (!rateLimitCheck.allowed) {
+        await SecurityUtils.logSecurityEvent('rate_limit_exceeded', undefined, {
+          action: 'sign-in',
+          identifier: email,
+          remainingAttempts: rateLimitCheck.remainingAttempts,
+        });
+        throw new Error(
+          rateLimitCheck.message ||
+            'Too many sign-in attempts. Please try again later.'
+        );
+      }
+
+      // Record the attempt
+      await SecurityUtils.recordRateLimitAttempt('sign-in', email, false);
+
       const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) throw error;
+      if (error) {
+        // Log failed sign-in attempt
+        await SecurityUtils.logSecurityEvent('sign_in_failed', undefined, {
+          email,
+          error: error.message,
+        });
+        throw error;
+      }
+
+      // Record successful attempt
+      await SecurityUtils.recordRateLimitAttempt('sign-in', email, true);
+      await SecurityUtils.logSecurityEvent('sign_in_success', data.user?.id, {
+        email,
+      });
+
       return { error: null };
     } catch (error) {
       console.error('Sign in error:', error);
@@ -251,19 +296,39 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     userData: Partial<UserProfile>
   ) => {
     try {
+      // Check rate limiting before attempting sign up
+      const rateLimitCheck = await SecurityUtils.checkRateLimit(
+        'sign-up',
+        email
+      );
+      if (!rateLimitCheck.allowed) {
+        await SecurityUtils.logSecurityEvent('rate_limit_exceeded', undefined, {
+          action: 'sign-up',
+          identifier: email,
+          remainingAttempts: rateLimitCheck.remainingAttempts,
+        });
+        throw new Error(
+          rateLimitCheck.message ||
+            'Too many sign-up attempts. Please try again later.'
+        );
+      }
+
+      // Record the attempt
+      await SecurityUtils.recordRateLimitAttempt('sign-up', email, false);
+
       // Sanitize user inputs
       const sanitizedData = {
         ...userData,
         full_name: userData.full_name
-          ? sanitizeInput(userData.full_name)
+          ? SecurityUtils.escapeHtml(userData.full_name)
           : null,
-        username: userData.username ? sanitizeInput(userData.username) : null,
+        username: userData.username
+          ? SecurityUtils.escapeHtml(userData.username)
+          : null,
         constituency: userData.constituency
-          ? sanitizeInput(userData.constituency)
+          ? SecurityUtils.escapeHtml(userData.constituency)
           : null,
-        department: userData.department
-          ? sanitizeInput(userData.department)
-          : null,
+        department_id: userData.department_id || null,
         role: userData.role || 'citizen',
       };
 
@@ -277,14 +342,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             full_name: sanitizedData.full_name,
             username: sanitizedData.username || email.split('@')[0],
             constituency: sanitizedData.constituency,
-            department: sanitizedData.department,
+            department_id: sanitizedData.department_id,
             role: sanitizedData.role,
+            verification_status: sanitizedData.verification_status,
             avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${Date.now()}`,
           },
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        // Log failed sign-up attempt
+        await SecurityUtils.logSecurityEvent('sign_up_failed', undefined, {
+          email,
+          error: error.message,
+        });
+        throw error;
+      }
+
+      // Record successful attempt
+      await SecurityUtils.recordRateLimitAttempt('sign-up', email, true);
+      await SecurityUtils.logSecurityEvent('sign_up_success', data.user?.id, {
+        email,
+      });
+
       return { error: null };
     } catch (error) {
       console.error('Sign up error:', error);
@@ -326,11 +406,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       // Sanitize user inputs
       const sanitizedData = {
         ...data,
-        full_name: data.full_name ? sanitizeInput(data.full_name) : undefined,
-        username: data.username ? sanitizeInput(data.username) : undefined,
-        constituency: data.constituency
-          ? sanitizeInput(data.constituency)
+        full_name: data.full_name
+          ? SecurityUtils.escapeHtml(data.full_name)
           : undefined,
+        username: data.username
+          ? SecurityUtils.escapeHtml(data.username)
+          : undefined,
+        constituency: data.constituency
+          ? SecurityUtils.escapeHtml(data.constituency)
+          : undefined,
+        bio: data.bio ? SecurityUtils.sanitizeHtml(data.bio) : undefined,
       };
 
       // Update auth metadata
@@ -354,7 +439,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           username: sanitizedData.username,
           constituency: sanitizedData.constituency,
           avatar_url: sanitizedData.avatar_url,
-          banner_url: sanitizedData.banner_url,
+          bio: sanitizedData.bio,
           updated_at: new Date().toISOString(),
         })
         .eq('id', user.id);
@@ -434,7 +519,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         refreshProfile,
       }}
     >
-      {children}
+      <SessionTimeoutHandler timeoutMinutes={30} warningMinutes={5}>
+        {children}
+      </SessionTimeoutHandler>
       <Toaster />
     </AuthContext.Provider>
   );

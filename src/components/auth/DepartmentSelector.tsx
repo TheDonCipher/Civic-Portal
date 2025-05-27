@@ -11,8 +11,8 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
 interface DepartmentSelectorProps {
-  value?: string;
-  onValueChange?: (value: string) => void;
+  value: string | undefined;
+  onValueChange: ((value: string) => void) | undefined;
   placeholder?: string;
   disabled?: boolean;
   className?: string;
@@ -23,93 +23,93 @@ const departments = [
   {
     name: 'Finance',
     description: 'Financial management and economic policy',
-    category: 'Economic Affairs'
+    category: 'Economic Affairs',
   },
   {
     name: 'International Relations',
     description: 'Foreign affairs and diplomatic relations',
-    category: 'External Affairs'
+    category: 'External Affairs',
   },
   {
     name: 'Health',
     description: 'Public health services and medical care',
-    category: 'Social Services'
+    category: 'Social Services',
   },
   {
     name: 'Child Welfare and Basic Education',
     description: 'Primary education and child protection services',
-    category: 'Education & Welfare'
+    category: 'Education & Welfare',
   },
   {
     name: 'Higher Education',
     description: 'Tertiary education and research institutions',
-    category: 'Education & Welfare'
+    category: 'Education & Welfare',
   },
   {
     name: 'Lands and Agriculture',
     description: 'Land management and agricultural development',
-    category: 'Natural Resources'
+    category: 'Natural Resources',
   },
   {
     name: 'Youth and Gender Affairs',
     description: 'Youth development and gender equality programs',
-    category: 'Social Services'
+    category: 'Social Services',
   },
   {
     name: 'State Presidency',
     description: 'Executive office and presidential administration',
-    category: 'Administration'
+    category: 'Administration',
   },
   {
     name: 'Justice and Correctional Services',
     description: 'Legal system and correctional facilities',
-    category: 'Justice & Security'
+    category: 'Justice & Security',
   },
   {
     name: 'Local Government and Traditional Affairs',
     description: 'Local governance and traditional leadership',
-    category: 'Governance'
+    category: 'Governance',
   },
   {
     name: 'Minerals and Energy',
     description: 'Mining sector and energy resources',
-    category: 'Natural Resources'
+    category: 'Natural Resources',
   },
   {
     name: 'Communications and Innovation',
     description: 'ICT development and innovation initiatives',
-    category: 'Technology & Innovation'
+    category: 'Technology & Innovation',
   },
   {
     name: 'Environment and Tourism',
     description: 'Environmental protection and tourism development',
-    category: 'Environment & Tourism'
+    category: 'Environment & Tourism',
   },
   {
     name: 'Labour and Home Affairs',
     description: 'Employment services and internal affairs',
-    category: 'Internal Affairs'
+    category: 'Internal Affairs',
   },
   {
     name: 'Sports and Arts',
     description: 'Sports development and cultural affairs',
-    category: 'Culture & Sports'
+    category: 'Culture & Sports',
   },
   {
     name: 'Trade and Entrepreneurship',
     description: 'Business development and trade promotion',
-    category: 'Economic Affairs'
+    category: 'Economic Affairs',
   },
   {
     name: 'Transport and Infrastructure',
     description: 'Transportation systems and infrastructure development',
-    category: 'Infrastructure'
+    category: 'Infrastructure',
   },
   {
     name: 'Water and Human Settlement',
     description: 'Water resources and housing development',
-    category: 'Infrastructure'
-  }
+    category: 'Infrastructure',
+  },
 ];
 
 // Group departments by category for better organization
@@ -117,7 +117,7 @@ const departmentsByCategory = departments.reduce((acc, dept) => {
   if (!acc[dept.category]) {
     acc[dept.category] = [];
   }
-  acc[dept.category].push(dept);
+  acc[dept.category]!.push(dept);
   return acc;
 }, {} as Record<string, typeof departments>);
 
@@ -128,11 +128,15 @@ export function DepartmentSelector({
   disabled = false,
   className,
 }: DepartmentSelectorProps) {
-  const selectedDepartment = departments.find(dept => dept.name === value);
+  const selectedDepartment = departments.find((dept) => dept.name === value);
 
   return (
     <div className={cn('space-y-3', className)}>
-      <Select value={value} onValueChange={onValueChange} disabled={disabled}>
+      <Select
+        value={value || ''}
+        {...(onValueChange && { onValueChange })}
+        disabled={disabled}
+      >
         <SelectTrigger className="h-11">
           <div className="flex items-center gap-2">
             <Building2 className="w-4 h-4 text-primary" />
@@ -146,8 +150,8 @@ export function DepartmentSelector({
                 {category}
               </div>
               {depts.map((department) => (
-                <SelectItem 
-                  key={department.name} 
+                <SelectItem
+                  key={department.name}
                   value={department.name}
                   className="pl-6 py-3"
                 >
@@ -170,7 +174,9 @@ export function DepartmentSelector({
           <Building2 className="w-4 h-4 text-primary mt-0.5" />
           <div className="flex-1 space-y-1">
             <div className="flex items-center gap-2">
-              <span className="font-medium text-sm">{selectedDepartment.name}</span>
+              <span className="font-medium text-sm">
+                {selectedDepartment.name}
+              </span>
               <Badge variant="secondary" className="text-xs">
                 {selectedDepartment.category}
               </Badge>

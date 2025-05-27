@@ -43,8 +43,8 @@ const AuthDialog = ({
         <Dialog open={open} onOpenChange={onOpenChange}>
           <DialogContent
             className={cn(
-              'auth-dialog-enhanced w-[95vw] max-w-[500px] sm:max-w-[600px]',
-              'max-h-[90vh] sm:max-h-[95vh] p-0',
+              'auth-dialog-enhanced w-[95vw] max-w-[420px] sm:max-w-[480px]',
+              'max-h-[85vh] sm:max-h-[90vh] p-0',
               'bg-gradient-to-br from-blue-50/98 via-white/99 to-slate-50/98',
               'dark:from-gray-900/98 dark:via-gray-800/99 dark:to-blue-900/95',
               'border-2 border-blue-200/70 dark:border-blue-700/70',
@@ -53,19 +53,14 @@ const AuthDialog = ({
               'flex flex-col overflow-hidden',
               'relative',
               // Ensure dialog is always visible and scrollable
-              'my-4 sm:my-8',
-              'top-auto translate-y-0',
+              'my-4 sm:my-6',
               'data-[state=open]:animate-in data-[state=closed]:animate-out',
               'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
               'data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95'
             )}
             style={{
               background: 'var(--civic-gradient)',
-              position: 'fixed',
-              left: '50%',
-              top: '50%',
-              transform: 'translate(-50%, -50%)',
-              maxHeight: 'calc(100vh - 2rem)',
+              maxHeight: 'calc(100vh - 3rem)',
             }}
           >
             {/* Enhanced Header with Botswana Branding */}
@@ -305,7 +300,7 @@ const AuthDialog = ({
         <DialogContent
           className={cn(
             'auth-dialog-basic w-[95vw] max-w-[400px] sm:max-w-[450px]',
-            'max-h-[90vh] sm:max-h-[95vh] p-0',
+            'max-h-[85vh] sm:max-h-[90vh] p-0',
             'bg-gradient-to-br from-blue-50/98 via-white/99 to-slate-50/98',
             'dark:from-gray-900/98 dark:via-gray-800/99 dark:to-blue-900/95',
             'border-2 border-blue-200/70 dark:border-blue-700/70',
@@ -313,19 +308,14 @@ const AuthDialog = ({
             'transition-all duration-300',
             'flex flex-col overflow-hidden',
             // Ensure dialog is always visible and scrollable
-            'my-4 sm:my-8',
-            'top-auto translate-y-0',
+            'my-4 sm:my-6',
             'data-[state=open]:animate-in data-[state=closed]:animate-out',
             'data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0',
             'data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95'
           )}
           style={{
             background: 'var(--civic-gradient)',
-            position: 'fixed',
-            left: '50%',
-            top: '50%',
-            transform: 'translate(-50%, -50%)',
-            maxHeight: 'calc(100vh - 2rem)',
+            maxHeight: 'calc(100vh - 3rem)',
           }}
         >
           {/* Improved Header with Botswana Branding */}

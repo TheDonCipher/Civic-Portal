@@ -1,4 +1,5 @@
 import { supabase } from "../supabase";
+import { validateFileUpload } from "../security/enhancedSecurity";
 
 /**
  * Uploads an image to Supabase storage
@@ -15,6 +16,12 @@ export const uploadImageToStorage = async (
   onProgress?: (progress: number) => void,
 ): Promise<string> => {
   try {
+    // Validate file security before upload
+    const validation = validateFileUpload(file);
+    if (!validation.isValid) {
+      throw new Error(`File validation failed: ${validation.errors.join(', ')}`);
+    }
+
     const fileExt = file.name.split(".").pop();
     const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
     const filePath = `${path}/${fileName}`;
@@ -148,6 +155,12 @@ export const uploadImage = async (
   path: string = "issue-images",
 ): Promise<string | null> => {
   try {
+    // Validate file security before upload
+    const validation = validateFileUpload(file);
+    if (!validation.isValid) {
+      throw new Error(`File validation failed: ${validation.errors.join(', ')}`);
+    }
+
     const fileExt = file.name.split(".").pop();
     const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
     const filePath = `${path}/${fileName}`;
@@ -192,6 +205,11 @@ export const deleteImage = async (
     const pathSegments = url.split("/");
     const filePath = pathSegments[pathSegments.length - 1];
 
+    if (!filePath) {
+      console.error("Could not extract file path from URL:", url);
+      return false;
+    }
+
     const { error } = await supabase.storage.from(bucket).remove([filePath]);
 
     if (error) {
@@ -235,6 +253,6 @@ export const getCategoryDefaultImage = (category: string): string => {
       "https://cdn.pixabay.com/photo/2015/09/02/12/25/wind-power-918947_1280.jpg",
   };
 
-  const lowerCategory = category.toLowerCase();
-  return defaultImages[lowerCategory] || defaultImages.infrastructure;
+  const lowerCategory = category?.toLowerCase() || 'infrastructure';
+  return defaultImages[lowerCategory as keyof typeof defaultImages] || defaultImages['infrastructure'];
 };

@@ -13,6 +13,7 @@ import { ProfileData } from '@/types/supabase-extensions';
 interface ExtendedProfileData {
   name: string;
   avatar: string;
+  banner_url?: string;
   email: string;
   role: string;
   joinDate: string;
@@ -35,104 +36,104 @@ const ProfilePage = () => {
   // Check if we're in settings mode
   const settingsMode = searchParams.get('tab') === 'settings';
 
-  React.useEffect(() => {
-    const fetchUserProfile = async () => {
-      try {
-        setLoading(true);
-        const targetUserId = userId || user?.id;
+  const fetchProfileData = async () => {
+    try {
+      setLoading(true);
+      const targetUserId = userId || user?.id;
 
-        if (!targetUserId) {
-          toast({
-            title: 'Error',
-            description: 'User not found',
-            variant: 'destructive',
-          });
-          navigate('/');
-          return;
-        }
-
-        // Fetch user profile
-        const { data: profile, error: profileError } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', targetUserId)
-          .single();
-
-        if (profileError) throw profileError;
-
-        // Fetch issues created by the user
-        const { data: issuesCreated, error: issuesError } = await supabase
-          .from('issues')
-          .select('*')
-          .eq('author_id', targetUserId);
-
-        if (issuesError) throw issuesError;
-
-        // Fetch issues the user is watching
-        const { data: watchingData, error: watchingError } = await supabase
-          .from('issue_watchers')
-          .select('issue_id')
-          .eq('user_id', targetUserId);
-
-        if (watchingError) throw watchingError;
-
-        // If watching any issues, fetch their details
-        let issuesWatching = [];
-        if (watchingData && watchingData.length > 0) {
-          const watchingIds = watchingData.map((item) => item.issue_id);
-          const { data: watchedIssues, error: watchedError } = await supabase
-            .from('issues')
-            .select('*')
-            .in('id', watchingIds);
-
-          if (watchedError) throw watchedError;
-          issuesWatching = watchedIssues || [];
-        }
-
-        // Fetch issues solved by the user (if they're an official)
-        let issuesSolved = [];
-        if (profile.role === 'official') {
-          const { data: solvedData, error: solvedError } = await supabase
-            .from('issues')
-            .select('*')
-            .eq('resolved_by', targetUserId);
-
-          if (solvedError) throw solvedError;
-          issuesSolved = solvedData || [];
-        }
-
-        // Format the data for the UserProfile component
-        setProfileData({
-          name: profile.full_name || 'User',
-          avatar:
-            profile.avatar_url ||
-            `https://api.dicebear.com/7.x/avataaars/svg?seed=${targetUserId}`,
-          banner_url: profile.banner_url || undefined,
-          email:
-            user?.email || user?.user_metadata?.email || 'No email provided',
-          role: profile.role || 'citizen',
-          joinDate: profile.created_at || new Date().toISOString(),
-          issuesCreated: issuesCreated || [],
-          issuesWatching: issuesWatching || [],
-          issuesSolved: issuesSolved || [],
-          isRealUser: true,
-        });
-      } catch (error) {
-        console.error('Error fetching profile:', error);
+      if (!targetUserId) {
         toast({
           title: 'Error',
-          description: 'Failed to load user profile',
+          description: 'User not found',
           variant: 'destructive',
         });
-      } finally {
-        setLoading(false);
+        navigate('/');
+        return;
       }
-    };
 
-    fetchUserProfile();
+      // Fetch user profile
+      const { data: profile, error: profileError } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', targetUserId)
+        .single();
+
+      if (profileError) throw profileError;
+
+      // Fetch issues created by the user
+      const { data: issuesCreated, error: issuesError } = await supabase
+        .from('issues')
+        .select('*')
+        .eq('author_id', targetUserId);
+
+      if (issuesError) throw issuesError;
+
+      // Fetch issues the user is watching
+      const { data: watchingData, error: watchingError } = await supabase
+        .from('issue_watchers')
+        .select('issue_id')
+        .eq('user_id', targetUserId);
+
+      if (watchingError) throw watchingError;
+
+      // If watching any issues, fetch their details
+      let issuesWatching: any[] = [];
+      if (watchingData && watchingData.length > 0) {
+        const watchingIds = watchingData.map((item) => item.issue_id);
+        const { data: watchedIssues, error: watchedError } = await supabase
+          .from('issues')
+          .select('*')
+          .in('id', watchingIds);
+
+        if (watchedError) throw watchedError;
+        issuesWatching = watchedIssues || [];
+      }
+
+      // Fetch issues solved by the user (if they're an official)
+      let issuesSolved: any[] = [];
+      if (profile.role === 'official') {
+        const { data: solvedData, error: solvedError } = await supabase
+          .from('issues')
+          .select('*')
+          .eq('resolved_by', targetUserId);
+
+        if (solvedError) throw solvedError;
+        issuesSolved = solvedData || [];
+      }
+
+      // Format the data for the UserProfile component
+      setProfileData({
+        name: profile.full_name || 'User',
+        avatar:
+          profile.avatar_url ||
+          `https://api.dicebear.com/7.x/avataaars/svg?seed=${targetUserId}`,
+        banner_url: (profile as any).banner_url || undefined,
+        email:
+          user?.email || user?.user_metadata?.['email'] || 'No email provided',
+        role: profile.role || 'citizen',
+        joinDate: profile.created_at || new Date().toISOString(),
+        issuesCreated: issuesCreated || [],
+        issuesWatching: issuesWatching || [],
+        issuesSolved: issuesSolved || [],
+        isRealUser: true,
+      });
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load user profile',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchProfileData();
   }, [userId, user, toast, navigate]);
 
-  const handleIssueClick = (issue) => {
+  const handleIssueClick = (issue: any) => {
     // Navigate to the user's issues page with the specific issue highlighted
     navigate(`/user/${user?.id}/issues?highlight=${issue.id}`);
   };

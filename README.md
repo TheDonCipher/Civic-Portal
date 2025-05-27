@@ -1,6 +1,6 @@
 # Civic Portal - Botswana Government Issue Tracking System
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
+![Version](https://img.shields.io/badge/version-1.2.0-blue.svg)
 ![License](https://img.shields.io/badge/license-MIT-green.svg)
 ![React](https://img.shields.io/badge/React-18.2.0-61dafb.svg)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.2.2-3178c6.svg)
@@ -8,6 +8,8 @@
 ![Supabase](https://img.shields.io/badge/Supabase-2.45.6-3ecf8e.svg)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind-3.4.1-38bdf8.svg)
 ![Cypress](https://img.shields.io/badge/Cypress-14.2.1-17202c.svg)
+![Playwright](https://img.shields.io/badge/Playwright-1.40.0-2EAD33.svg)
+![Vitest](https://img.shields.io/badge/Vitest-1.0.0-6E9F18.svg)
 
 A comprehensive civic engagement platform specifically designed for Botswana, enabling citizens to report, track, and collaborate on civic issues while facilitating transparent communication with government departments and stakeholders.
 
@@ -20,18 +22,22 @@ A comprehensive civic engagement platform specifically designed for Botswana, en
 - [Tech Stack](#-tech-stack)
 - [Getting Started](#-getting-started)
   - [Prerequisites](#prerequisites)
-  - [Installation](#installation)
+  - [Quick Start](#quick-start-demo-mode)
+  - [Full Installation](#full-installation)
   - [Environment Setup](#environment-setup)
 - [Development](#-development)
   - [Running the Application](#running-the-application)
   - [Project Structure](#project-structure)
+  - [Core Modules](#core-modules)
   - [Testing](#testing)
 - [Authentication & Roles](#-authentication--roles)
-- [Deployment](#-deployment)
 - [Database Setup](#-database-setup)
 - [API Documentation](#-api-documentation)
+- [Deployment](#-deployment)
+- [Documentation](#-documentation)
 - [Contributing](#-contributing)
 - [Troubleshooting](#-troubleshooting)
+- [Support](#-support)
 - [License](#-license)
 
 ## ✨ Features
@@ -128,11 +134,17 @@ The Civic Portal includes a comprehensive demo mode that allows users to explore
 
 ### Development & Testing
 
-- **Testing Framework**: Cypress 14.2.1 for comprehensive end-to-end testing
+- **Testing Frameworks**:
+  - Cypress 14.2.1 for comprehensive end-to-end testing
+  - Playwright 1.40.0 for cross-browser testing
+  - Vitest 1.0.0 for unit and integration testing
+  - Jest DOM for enhanced testing utilities
 - **Type Safety**: Full TypeScript coverage with strict configuration
 - **Code Quality**: ESLint for code linting and consistency
 - **Package Management**: npm with lock file for reproducible builds
 - **Development Server**: Vite dev server with hot module replacement
+- **Documentation**: JSDoc for API documentation generation
+- **Bundle Analysis**: Rollup visualizer and bundlesize for optimization
 
 ### Deployment & DevOps
 
@@ -154,10 +166,18 @@ The Civic Portal includes a comprehensive demo mode that allows users to explore
 
 To quickly explore the platform without setup:
 
-1. Visit the deployed application
-2. Click "Demo Mode" in the header
-3. Explore all features with sample data
-4. No registration or configuration required
+1. Clone and run the application locally:
+   ```bash
+   git clone https://github.com/your-username/civic-portal.git
+   cd civic-portal
+   npm install
+   npm run dev
+   ```
+2. Open `http://localhost:5173` in your browser
+3. Click "Demo Mode" toggle in the header navigation
+4. Explore all features with realistic sample data
+5. Switch between different user roles (citizen, stakeholder, admin)
+6. No registration or database configuration required for demo mode
 
 ### Full Installation
 
@@ -410,21 +430,53 @@ The platform supports all 18 official Botswana government departments:
 
 ### Testing
 
-The Civic Portal includes comprehensive testing coverage with end-to-end tests using Cypress.
+The Civic Portal includes comprehensive testing coverage with multiple testing frameworks for different testing needs.
 
-#### End-to-End Tests (Cypress)
+#### Testing Frameworks
 
-Cypress tests simulate real user interactions and verify complete application flows across all features.
+**End-to-End Tests (Cypress)**
 
 ```bash
 # Open Cypress test runner (interactive mode)
 npm run cypress:open
 
-# Run all E2E tests headlessly
+# Run all Cypress E2E tests headlessly
+npm run cypress:run
+
+# Run E2E tests with server startup
+npm run test:e2e:ci
+```
+
+**Cross-Browser Tests (Playwright)**
+
+```bash
+# Run Playwright tests
 npm run test:e2e
 
-# Run E2E tests in CI environment
-npm run test:e2e:ci
+# Run with UI mode
+npm run test:e2e:ui
+
+# Run in headed mode
+npm run test:e2e:headed
+
+# Debug tests
+npm run test:e2e:debug
+```
+
+**Unit & Integration Tests (Vitest)**
+
+```bash
+# Run unit tests
+npm run test
+
+# Run tests with UI
+npm run test:ui
+
+# Run tests in watch mode
+npm run test:watch
+
+# Generate coverage report
+npm run test:coverage
 ```
 
 #### Test Coverage
@@ -641,6 +693,49 @@ Full TypeScript coverage with generated Supabase types ensures type safety acros
 
 For detailed API documentation, see the individual API files in `src/lib/api/`.
 
+## 📚 Documentation
+
+The Civic Portal includes comprehensive documentation covering all aspects of the platform:
+
+### Core Documentation
+
+- **[README.md](README.md)** - Main project overview and setup guide
+- **[CONTRIBUTING.md](CONTRIBUTING.md)** - Contribution guidelines and development workflow
+- **[API.md](docs/API.md)** - Complete API documentation with examples
+- **[DEPLOYMENT.md](docs/DEPLOYMENT.md)** - Deployment guide for various environments
+- **[SECURITY.md](docs/SECURITY.md)** - Security architecture and best practices
+
+### Technical Documentation
+
+- **[Project Structure](docs/project_structure_and_architecture.md)** - Detailed architecture overview
+- **[Technical Implementation Guide](docs/TECHNICAL_IMPLEMENTATION_GUIDE.md)** - Implementation details and patterns
+- **[Performance Optimization](docs/PERFORMANCE_OPTIMIZATION.md)** - Performance best practices
+- **[Verification Workflow](docs/verification-workflow-implementation.md)** - Official verification process
+
+### Feature Documentation
+
+- **[Features Documentation](docs/Features%20Documentation%20-%20Civic%20Portal.md)** - Comprehensive feature overview
+- **[Comprehensive Review](docs/COMPREHENSIVE_REVIEW_AND_IMPLEMENTATION_PLAN.md)** - Codebase review and improvement plan
+
+### Legal Documentation
+
+- **[Privacy Policy](docs/DRAFT%20TEMPLATE%20-%20Privacy%20Policy%20-%20Botswana%20Civic%20Portal.md)** - Privacy policy template
+- **[Terms of Service](<docs/DRAFT%20TEMPLATE%20-%20Terms%20of%20Service%20(ToS)%20-%20Botswana%20Civic%20Portal.md>)** - Terms of service template
+
+### Generated Documentation
+
+Generate API documentation from code comments:
+
+```bash
+# Generate JSDoc documentation
+npm run docs:generate
+
+# Serve documentation locally
+npm run docs:serve
+```
+
+The generated documentation will be available at `http://localhost:8080`.
+
 ## 🤝 Contributing
 
 Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
@@ -704,6 +799,31 @@ Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for det
 3. Verify all environment variables are set correctly
 4. Update dependencies if needed: `npm update`
 5. Clear Vite cache: `rm -rf node_modules/.vite`
+6. Check for port conflicts: Ensure port 5173 is available
+7. Verify Node.js version: Use Node.js 18 or higher
+
+#### Testing Issues
+
+**Problem**: Test failures or testing framework issues
+
+**Solutions**:
+
+1. **Cypress Issues**:
+
+   - Clear Cypress cache: `npx cypress cache clear`
+   - Update browser: Ensure latest browser versions
+   - Check test data: Verify test database state
+
+2. **Playwright Issues**:
+
+   - Install browsers: `npx playwright install`
+   - Check browser dependencies: `npx playwright install-deps`
+   - Verify test configuration in `playwright.config.ts`
+
+3. **Vitest Issues**:
+   - Clear test cache: `npm run test -- --clearCache`
+   - Check test environment: Verify jsdom configuration
+   - Update test dependencies: Check for version conflicts
 
 #### Performance Issues
 
@@ -741,9 +861,33 @@ This project is licensed under the [MIT License](LICENSE).
 
 For support and questions:
 
-- **Documentation**: Check the `/docs` directory for detailed guides
-- **Issues**: Report bugs or request features on [GitHub Issues](https://github.com/your-username/civic-portal/issues)
-- **Discussions**: Join community discussions on [GitHub Discussions](https://github.com/your-username/civic-portal/discussions)
+### Documentation Resources
+
+- **[Complete Documentation](docs/)** - Comprehensive guides and references
+- **[API Documentation](docs/API.md)** - Detailed API reference with examples
+- **[Troubleshooting Guide](#-troubleshooting)** - Common issues and solutions
+- **[Contributing Guide](CONTRIBUTING.md)** - Development and contribution guidelines
+
+### Community Support
+
+- **[GitHub Issues](https://github.com/your-username/civic-portal/issues)** - Report bugs or request features
+- **[GitHub Discussions](https://github.com/your-username/civic-portal/discussions)** - Community discussions and Q&A
+- **[Security Issues](SECURITY.md)** - Report security vulnerabilities privately
+
+### Development Support
+
+- **Code Reviews**: Submit pull requests for community review
+- **Feature Requests**: Use GitHub Issues with the "enhancement" label
+- **Bug Reports**: Include detailed reproduction steps and environment info
+- **Documentation**: Help improve documentation through pull requests
+
+### Getting Help
+
+1. **Check Documentation**: Review relevant documentation first
+2. **Search Issues**: Look for existing solutions in GitHub Issues
+3. **Ask Questions**: Use GitHub Discussions for general questions
+4. **Report Bugs**: Create detailed bug reports with reproduction steps
+5. **Request Features**: Propose new features with clear use cases
 
 ---
 

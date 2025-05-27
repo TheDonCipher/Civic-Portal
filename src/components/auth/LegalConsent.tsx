@@ -1,17 +1,17 @@
-import React, { useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { 
-  FileText, 
-  Shield, 
-  Mail, 
-  ExternalLink, 
+import React, { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import {
+  FileText,
+  Shield,
+  Mail,
+  ExternalLink,
   CheckCircle,
   AlertCircle,
-  Info
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
+  Info,
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import {
   Form,
   FormControl,
@@ -20,24 +20,31 @@ import {
   FormLabel,
   FormMessage,
   FormDescription,
-} from "@/components/ui/form";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { cn } from "@/lib/utils";
+} from '@/components/ui/form';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
+import { getClientIpAddress } from '@/lib/utils/ipUtils';
 
 const legalConsentSchema = z.object({
-  termsAccepted: z.boolean().refine(val => val === true, {
-    message: "You must accept the Terms of Service to continue",
+  termsAccepted: z.boolean().refine((val) => val === true, {
+    message: 'You must accept the Terms of Service to continue',
   }),
-  privacyAccepted: z.boolean().refine(val => val === true, {
-    message: "You must accept the Privacy Policy to continue",
+  privacyAccepted: z.boolean().refine((val) => val === true, {
+    message: 'You must accept the Privacy Policy to continue',
   }),
   marketingOptIn: z.boolean().optional(),
-  dataProcessingConsent: z.boolean().refine(val => val === true, {
-    message: "You must consent to data processing to use this service",
+  dataProcessingConsent: z.boolean().refine((val) => val === true, {
+    message: 'You must consent to data processing to use this service',
   }),
 });
 
@@ -51,49 +58,50 @@ interface LegalConsentProps {
 }
 
 const CURRENT_VERSIONS = {
-  terms: "2024.1",
-  privacy: "2024.1",
-  dataProcessing: "2024.1",
+  terms: '2024.1',
+  privacy: '2024.1',
+  dataProcessing: '2024.1',
 };
 
 const LEGAL_DOCUMENTS = [
   {
-    id: "terms",
-    title: "Terms of Service",
-    description: "Rules and guidelines for using Civic Portal",
+    id: 'terms',
+    title: 'Terms of Service',
+    description: 'Rules and guidelines for using Civic Portal',
     icon: FileText,
-    url: "/legal/terms",
+    url: '/legal/terms',
     version: CURRENT_VERSIONS.terms,
-    lastUpdated: "December 1, 2024",
+    lastUpdated: 'December 1, 2024',
     required: true,
   },
   {
-    id: "privacy",
-    title: "Privacy Policy",
-    description: "How we collect, use, and protect your personal information",
+    id: 'privacy',
+    title: 'Privacy Policy',
+    description: 'How we collect, use, and protect your personal information',
     icon: Shield,
-    url: "/legal/privacy",
+    url: '/legal/privacy',
     version: CURRENT_VERSIONS.privacy,
-    lastUpdated: "December 1, 2024",
+    lastUpdated: 'December 1, 2024',
     required: true,
   },
   {
-    id: "dataProcessing",
-    title: "Data Processing Agreement",
-    description: "Legal basis for processing your personal data under Botswana law",
+    id: 'dataProcessing',
+    title: 'Data Processing Agreement',
+    description:
+      'Legal basis for processing your personal data under Botswana law',
     icon: Shield,
-    url: "/legal/data-processing",
+    url: '/legal/data-processing',
     version: CURRENT_VERSIONS.dataProcessing,
-    lastUpdated: "December 1, 2024",
+    lastUpdated: 'December 1, 2024',
     required: true,
   },
 ];
 
-export function LegalConsent({ 
-  onAccept = () => {}, 
+export function LegalConsent({
+  onAccept = () => {},
   onDecline = () => {},
-  className = "",
-  showOptional = true
+  className = '',
+  showOptional = true,
 }: LegalConsentProps) {
   const [isLoading, setIsLoading] = useState(false);
 
@@ -109,7 +117,7 @@ export function LegalConsent({
 
   const onSubmit = async (data: LegalConsentFormData) => {
     setIsLoading(true);
-    
+
     try {
       // Record consent with metadata
       const consentData = {
@@ -119,21 +127,22 @@ export function LegalConsent({
         ipAddress: await getClientIpAddress(),
         userAgent: navigator.userAgent,
       };
-      
+
       onAccept(consentData);
     } catch (error) {
-      console.error("Error recording consent:", error);
+      console.error('Error recording consent:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const allRequiredAccepted = form.watch("termsAccepted") && 
-                             form.watch("privacyAccepted") && 
-                             form.watch("dataProcessingConsent");
+  const allRequiredAccepted =
+    form.watch('termsAccepted') &&
+    form.watch('privacyAccepted') &&
+    form.watch('dataProcessingConsent');
 
   return (
-    <div className={cn("space-y-6", className)}>
+    <div className={cn('space-y-6', className)}>
       {/* Header */}
       <div className="text-center space-y-2">
         <div className="flex items-center justify-center w-12 h-12 mx-auto bg-primary/10 rounded-full">
@@ -177,9 +186,9 @@ export function LegalConsent({
                     asChild
                     className="flex-shrink-0"
                   >
-                    <a 
-                      href={doc.url} 
-                      target="_blank" 
+                    <a
+                      href={doc.url}
+                      target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-1"
                     >
@@ -219,7 +228,7 @@ export function LegalConsent({
                   <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                     <FormControl>
                       <Checkbox
-                        checked={field.value}
+                        checked={field.value || false}
                         onCheckedChange={field.onChange}
                         disabled={isLoading}
                       />
@@ -229,7 +238,8 @@ export function LegalConsent({
                         I accept the Terms of Service *
                       </FormLabel>
                       <FormDescription>
-                        You agree to follow our community guidelines and platform rules
+                        You agree to follow our community guidelines and
+                        platform rules
                       </FormDescription>
                       <FormMessage />
                     </div>
@@ -247,7 +257,7 @@ export function LegalConsent({
                   <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                     <FormControl>
                       <Checkbox
-                        checked={field.value}
+                        checked={field.value || false}
                         onCheckedChange={field.onChange}
                         disabled={isLoading}
                       />
@@ -257,7 +267,8 @@ export function LegalConsent({
                         I accept the Privacy Policy *
                       </FormLabel>
                       <FormDescription>
-                        You understand how we collect, use, and protect your personal information
+                        You understand how we collect, use, and protect your
+                        personal information
                       </FormDescription>
                       <FormMessage />
                     </div>
@@ -275,7 +286,7 @@ export function LegalConsent({
                   <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                     <FormControl>
                       <Checkbox
-                        checked={field.value}
+                        checked={field.value || false}
                         onCheckedChange={field.onChange}
                         disabled={isLoading}
                       />
@@ -285,7 +296,8 @@ export function LegalConsent({
                         I consent to data processing *
                       </FormLabel>
                       <FormDescription>
-                        You consent to processing of your personal data as described in our Privacy Policy
+                        You consent to processing of your personal data as
+                        described in our Privacy Policy
                       </FormDescription>
                       <FormMessage />
                     </div>
@@ -305,7 +317,7 @@ export function LegalConsent({
                       <FormItem className="flex flex-row items-start space-x-3 space-y-0">
                         <FormControl>
                           <Checkbox
-                            checked={field.value}
+                            checked={field.value || false}
                             onCheckedChange={field.onChange}
                             disabled={isLoading}
                           />
@@ -315,7 +327,8 @@ export function LegalConsent({
                             Send me updates and newsletters
                           </FormLabel>
                           <FormDescription>
-                            Receive occasional updates about platform improvements and civic engagement opportunities
+                            Receive occasional updates about platform
+                            improvements and civic engagement opportunities
                           </FormDescription>
                         </div>
                       </FormItem>
@@ -330,9 +343,10 @@ export function LegalConsent({
           <Alert>
             <Info className="h-4 w-4" />
             <AlertDescription className="text-sm">
-              <strong>Legal Notice:</strong> By accepting these agreements, you acknowledge that you have read, 
-              understood, and agree to be bound by these terms. Your consent is recorded with timestamp and 
-              IP address for legal compliance under Botswana data protection laws.
+              <strong>Legal Notice:</strong> By accepting these agreements, you
+              acknowledge that you have read, understood, and agree to be bound
+              by these terms. Your consent is recorded with timestamp and IP
+              address for legal compliance under Botswana data protection laws.
             </AlertDescription>
           </Alert>
 
@@ -353,7 +367,7 @@ export function LegalConsent({
               isLoading={isLoading}
               className="flex-1"
             >
-              {isLoading ? "Recording Consent..." : "Accept & Continue"}
+              {isLoading ? 'Recording Consent...' : 'Accept & Continue'}
             </Button>
           </div>
         </form>
@@ -362,22 +376,12 @@ export function LegalConsent({
       {/* Footer */}
       <div className="text-center">
         <p className="text-xs text-muted-foreground">
-          * Required fields. You can change your marketing preferences anytime in your account settings.
+          * Required fields. You can change your marketing preferences anytime
+          in your account settings.
         </p>
       </div>
     </div>
   );
 }
-
-// Helper function to get client IP (simplified)
-const getClientIpAddress = async (): Promise<string> => {
-  try {
-    // In a real implementation, you'd use a proper IP detection service
-    // For now, return a placeholder
-    return "unknown";
-  } catch {
-    return "unknown";
-  }
-};
 
 export default LegalConsent;

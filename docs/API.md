@@ -18,12 +18,15 @@ This document provides comprehensive documentation for the Civic Portal API, inc
 The Civic Portal API is built on Supabase, providing a RESTful interface with real-time capabilities. All API operations are organized into service modules for better maintainability and type safety.
 
 ### Base URL
+
 ```
 Production: https://your-project.supabase.co/rest/v1/
-Development: http://localhost:54321/rest/v1/
+Development: Configured via VITE_SUPABASE_URL environment variable
+Local Supabase: http://localhost:54321/rest/v1/ (if using local Supabase)
 ```
 
 ### API Architecture
+
 - **Service Layer**: Organized API functions in `src/lib/api/`
 - **Type Safety**: Full TypeScript coverage with generated types
 - **Error Handling**: Consistent error responses and logging
@@ -32,20 +35,23 @@ Development: http://localhost:54321/rest/v1/
 
 ### API Services
 
-| Service | File | Description |
-|---------|------|-------------|
-| Issues | `issuesApi.ts` | Issue CRUD operations and management |
-| Comments | `commentsApi.ts` | Comment system functionality |
-| Solutions | `solutionsApi.ts` | Solution proposals and voting |
-| Statistics | `statsApi.ts` | Analytics and reporting data |
-| Users | `userApi.ts` | User profile and management |
-| Notifications | `notificationsApi.ts` | Notification system |
+| Service       | File                  | Description                                    |
+| ------------- | --------------------- | ---------------------------------------------- |
+| Issues        | `issuesApi.ts`        | Issue CRUD operations, filtering, status mgmt  |
+| Comments      | `commentsApi.ts`      | Comment system and real-time updates           |
+| Solutions     | `solutionsApi.ts`     | Solution proposals, voting, official selection |
+| Statistics    | `statsApi.ts`         | Analytics, reporting, dashboard metrics        |
+| Users         | `userApi.ts`          | User profile management and authentication     |
+| Notifications | `notificationsApi.ts` | Notification system and real-time alerts       |
+| Updates       | `updatesApi.ts`       | Official updates from government stakeholders  |
+| Departments   | `departmentsApi.ts`   | Government department management               |
 
 ## Authentication
 
 ### Authentication Methods
 
 #### JWT Tokens
+
 All API requests require authentication using JWT tokens provided by Supabase Auth.
 
 ```typescript
@@ -57,6 +63,7 @@ headers: {
 ```
 
 #### Role-Based Access
+
 API endpoints enforce role-based access control:
 
 - **Public**: Accessible without authentication
@@ -70,7 +77,7 @@ API endpoints enforce role-based access control:
 // Login example
 const { data, error } = await supabase.auth.signInWithPassword({
   email: 'user@example.com',
-  password: 'password123'
+  password: 'password123',
 });
 
 // Use session token for API calls
@@ -85,6 +92,7 @@ const { data: issues } = await supabase
 ### Core Entities
 
 #### User Profile
+
 ```typescript
 interface Profile {
   id: string;
@@ -101,6 +109,7 @@ interface Profile {
 ```
 
 #### Issue
+
 ```typescript
 interface Issue {
   id: string;
@@ -120,6 +129,7 @@ interface Issue {
 ```
 
 #### Comment
+
 ```typescript
 interface Comment {
   id: string;
@@ -132,6 +142,7 @@ interface Comment {
 ```
 
 #### Solution
+
 ```typescript
 interface Solution {
   id: string;
@@ -149,6 +160,7 @@ interface Solution {
 ```
 
 #### Department
+
 ```typescript
 interface Department {
   id: string;
@@ -165,57 +177,62 @@ interface Department {
 ### Issues API (`issuesApi.ts`)
 
 #### Get All Issues
+
 ```typescript
 // Function signature
-async function getIssues(filters?: IssueFilters): Promise<Issue[]>
+async function getIssues(filters?: IssueFilters): Promise<Issue[]>;
 
 // Usage
 const issues = await getIssues({
   category: 'infrastructure',
   status: 'open',
-  department_id: 'dept-123'
+  department_id: 'dept-123',
 });
 ```
 
 #### Create Issue
+
 ```typescript
 // Function signature
-async function createIssue(issueData: CreateIssueData): Promise<Issue>
+async function createIssue(issueData: CreateIssueData): Promise<Issue>;
 
 // Usage
 const newIssue = await createIssue({
   title: 'Pothole on Main Street',
   description: 'Large pothole causing traffic issues',
   category: 'infrastructure',
-  location: 'Main Street, Gaborone'
+  location: 'Main Street, Gaborone',
 });
 ```
 
 #### Update Issue Status
+
 ```typescript
 // Function signature (Officials/Admins only)
 async function updateIssueStatus(
-  issueId: string, 
+  issueId: string,
   status: IssueStatus
-): Promise<Issue>
+): Promise<Issue>;
 
 // Usage
 const updatedIssue = await updateIssueStatus('issue-123', 'in_progress');
 ```
 
 #### Vote on Issue
+
 ```typescript
 // Function signature
-async function voteOnIssue(issueId: string): Promise<void>
+async function voteOnIssue(issueId: string): Promise<void>;
 
 // Usage
 await voteOnIssue('issue-123');
 ```
 
 #### Watch Issue
+
 ```typescript
 // Function signature
-async function watchIssue(issueId: string): Promise<void>
+async function watchIssue(issueId: string): Promise<void>;
 
 // Usage
 await watchIssue('issue-123');
@@ -224,25 +241,27 @@ await watchIssue('issue-123');
 ### Comments API (`commentsApi.ts`)
 
 #### Get Comments
+
 ```typescript
 // Function signature
-async function getComments(issueId: string): Promise<Comment[]>
+async function getComments(issueId: string): Promise<Comment[]>;
 
 // Usage
 const comments = await getComments('issue-123');
 ```
 
 #### Create Comment
+
 ```typescript
 // Function signature
 async function createComment(
-  issueId: string, 
+  issueId: string,
   content: string
-): Promise<Comment>
+): Promise<Comment>;
 
 // Usage
 const comment = await createComment(
-  'issue-123', 
+  'issue-123',
   'This is a serious issue that needs attention.'
 );
 ```
@@ -250,18 +269,22 @@ const comment = await createComment(
 ### Solutions API (`solutionsApi.ts`)
 
 #### Get Solutions
+
 ```typescript
 // Function signature
-async function getSolutions(issueId: string): Promise<Solution[]>
+async function getSolutions(issueId: string): Promise<Solution[]>;
 
 // Usage
 const solutions = await getSolutions('issue-123');
 ```
 
 #### Create Solution
+
 ```typescript
 // Function signature
-async function createSolution(solutionData: CreateSolutionData): Promise<Solution>
+async function createSolution(
+  solutionData: CreateSolutionData
+): Promise<Solution>;
 
 // Usage
 const solution = await createSolution({
@@ -269,14 +292,15 @@ const solution = await createSolution({
   title: 'Temporary Traffic Diversion',
   description: 'Implement temporary traffic routing while repairs are made',
   implementation_plan: 'Set up traffic cones and signage',
-  estimated_cost: 5000
+  estimated_cost: 5000,
 });
 ```
 
 #### Vote on Solution
+
 ```typescript
 // Function signature
-async function voteOnSolution(solutionId: string): Promise<void>
+async function voteOnSolution(solutionId: string): Promise<void>;
 
 // Usage
 await voteOnSolution('solution-123');
@@ -285,9 +309,10 @@ await voteOnSolution('solution-123');
 ### Statistics API (`statsApi.ts`)
 
 #### Get Dashboard Stats
+
 ```typescript
 // Function signature
-async function getDashboardStats(): Promise<DashboardStats>
+async function getDashboardStats(): Promise<DashboardStats>;
 
 // Usage
 const stats = await getDashboardStats();
@@ -295,22 +320,24 @@ const stats = await getDashboardStats();
 ```
 
 #### Get Department Performance
+
 ```typescript
 // Function signature
 async function getDepartmentPerformance(
   departmentId?: string
-): Promise<DepartmentPerformance[]>
+): Promise<DepartmentPerformance[]>;
 
 // Usage
 const performance = await getDepartmentPerformance('dept-123');
 ```
 
 #### Get Issue Trends
+
 ```typescript
 // Function signature
 async function getIssueTrends(
   timeframe: 'week' | 'month' | 'year'
-): Promise<TrendData[]>
+): Promise<TrendData[]>;
 
 // Usage
 const trends = await getIssueTrends('month');
@@ -319,33 +346,36 @@ const trends = await getIssueTrends('month');
 ### User API (`userApi.ts`)
 
 #### Get User Profile
+
 ```typescript
 // Function signature
-async function getUserProfile(userId: string): Promise<Profile>
+async function getUserProfile(userId: string): Promise<Profile>;
 
 // Usage
 const profile = await getUserProfile('user-123');
 ```
 
 #### Update Profile
+
 ```typescript
 // Function signature
 async function updateProfile(
-  userId: string, 
+  userId: string,
   updates: Partial<Profile>
-): Promise<Profile>
+): Promise<Profile>;
 
 // Usage
 const updatedProfile = await updateProfile('user-123', {
   full_name: 'John Doe',
-  username: 'johndoe'
+  username: 'johndoe',
 });
 ```
 
 #### Get User Issues
+
 ```typescript
 // Function signature
-async function getUserIssues(userId: string): Promise<Issue[]>
+async function getUserIssues(userId: string): Promise<Issue[]>;
 
 // Usage
 const userIssues = await getUserIssues('user-123');
@@ -354,18 +384,20 @@ const userIssues = await getUserIssues('user-123');
 ### Notifications API (`notificationsApi.ts`)
 
 #### Get Notifications
+
 ```typescript
 // Function signature
-async function getNotifications(userId: string): Promise<Notification[]>
+async function getNotifications(userId: string): Promise<Notification[]>;
 
 // Usage
 const notifications = await getNotifications('user-123');
 ```
 
 #### Mark as Read
+
 ```typescript
 // Function signature
-async function markNotificationAsRead(notificationId: string): Promise<void>
+async function markNotificationAsRead(notificationId: string): Promise<void>;
 
 // Usage
 await markNotificationAsRead('notification-123');
@@ -374,11 +406,13 @@ await markNotificationAsRead('notification-123');
 ## Real-time Subscriptions
 
 ### Issue Updates
+
 ```typescript
 // Subscribe to issue changes
 const subscription = supabase
   .channel('issues-realtime')
-  .on('postgres_changes', 
+  .on(
+    'postgres_changes',
     { event: '*', schema: 'public', table: 'issues' },
     (payload) => {
       console.log('Issue updated:', payload);
@@ -392,16 +426,18 @@ subscription.unsubscribe();
 ```
 
 ### Comment Updates
+
 ```typescript
 // Subscribe to new comments on specific issue
 const subscription = supabase
   .channel(`comments-${issueId}`)
-  .on('postgres_changes',
-    { 
-      event: 'INSERT', 
-      schema: 'public', 
+  .on(
+    'postgres_changes',
+    {
+      event: 'INSERT',
+      schema: 'public',
       table: 'comments',
-      filter: `issue_id=eq.${issueId}`
+      filter: `issue_id=eq.${issueId}`,
     },
     (payload) => {
       console.log('New comment:', payload.new);
@@ -412,16 +448,18 @@ const subscription = supabase
 ```
 
 ### Notification Updates
+
 ```typescript
 // Subscribe to user notifications
 const subscription = supabase
   .channel(`notifications-${userId}`)
-  .on('postgres_changes',
+  .on(
+    'postgres_changes',
     {
       event: 'INSERT',
       schema: 'public',
       table: 'notifications',
-      filter: `user_id=eq.${userId}`
+      filter: `user_id=eq.${userId}`,
     },
     (payload) => {
       console.log('New notification:', payload.new);
@@ -434,6 +472,7 @@ const subscription = supabase
 ## Error Handling
 
 ### Error Response Format
+
 ```typescript
 interface ApiError {
   message: string;
@@ -444,19 +483,21 @@ interface ApiError {
 ```
 
 ### Common Error Codes
+
 - `PGRST116`: Row not found
 - `23505`: Unique constraint violation
 - `42501`: Insufficient privileges
 - `23503`: Foreign key constraint violation
 
 ### Error Handling Example
+
 ```typescript
 try {
   const issue = await createIssue(issueData);
   return issue;
 } catch (error) {
   console.error('Failed to create issue:', error);
-  
+
   if (error.code === '23505') {
     throw new Error('Issue with this title already exists');
   } else if (error.code === '42501') {
@@ -471,15 +512,16 @@ try {
 
 ### Rate Limits by Endpoint
 
-| Endpoint Category | Rate Limit | Window |
-|------------------|------------|---------|
-| Authentication | 5 requests | 1 minute |
-| Issue Creation | 10 requests | 1 hour |
-| Comments | 30 requests | 1 hour |
-| Voting | 100 requests | 1 hour |
-| Read Operations | 1000 requests | 1 hour |
+| Endpoint Category | Rate Limit    | Window   |
+| ----------------- | ------------- | -------- |
+| Authentication    | 5 requests    | 1 minute |
+| Issue Creation    | 10 requests   | 1 hour   |
+| Comments          | 30 requests   | 1 hour   |
+| Voting            | 100 requests  | 1 hour   |
+| Read Operations   | 1000 requests | 1 hour   |
 
 ### Rate Limit Headers
+
 ```http
 X-RateLimit-Limit: 100
 X-RateLimit-Remaining: 95
@@ -489,20 +531,27 @@ X-RateLimit-Reset: 1640995200
 ## Examples
 
 ### Complete Issue Creation Flow
+
 ```typescript
 // 1. Create issue
 const issue = await createIssue({
   title: 'Street Light Outage',
   description: 'Multiple street lights are not working on Oak Avenue',
   category: 'infrastructure',
-  location: 'Oak Avenue, Gaborone'
+  location: 'Oak Avenue, Gaborone',
 });
 
 // 2. Subscribe to updates
 const subscription = supabase
   .channel(`issue-${issue.id}`)
-  .on('postgres_changes',
-    { event: '*', schema: 'public', table: 'issues', filter: `id=eq.${issue.id}` },
+  .on(
+    'postgres_changes',
+    {
+      event: '*',
+      schema: 'public',
+      table: 'issues',
+      filter: `id=eq.${issue.id}`,
+    },
     (payload) => {
       console.log('Issue updated:', payload);
     }
@@ -520,12 +569,13 @@ await watchIssue(issue.id);
 ```
 
 ### Dashboard Data Fetching
+
 ```typescript
 // Fetch all dashboard data
 const [stats, trends, recentIssues] = await Promise.all([
   getDashboardStats(),
   getIssueTrends('month'),
-  getIssues({ limit: 10, orderBy: 'created_at' })
+  getIssues({ limit: 10, orderBy: 'created_at' }),
 ]);
 
 console.log('Dashboard data:', { stats, trends, recentIssues });

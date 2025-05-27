@@ -11,8 +11,8 @@ import { cn } from '@/lib/utils';
 import { constituencies } from '@/lib/constituencies';
 
 interface ConstituencySelectorProps {
-  value?: string;
-  onValueChange?: (value: string) => void;
+  value: string | undefined;
+  onValueChange: ((value: string) => void) | undefined;
   placeholder?: string;
   disabled?: boolean;
   className?: string;
@@ -27,7 +27,11 @@ export function ConstituencySelector({
 }: ConstituencySelectorProps) {
   return (
     <div className={cn('space-y-2', className)}>
-      <Select value={value} onValueChange={onValueChange} disabled={disabled}>
+      <Select
+        value={value || ''}
+        {...(onValueChange && { onValueChange })}
+        disabled={disabled}
+      >
         <SelectTrigger className="h-11">
           <div className="flex items-center gap-2">
             <MapPin className="w-4 h-4" />
@@ -36,8 +40,8 @@ export function ConstituencySelector({
         </SelectTrigger>
         <SelectContent className="max-h-[300px]">
           {constituencies.map((constituency) => (
-            <SelectItem 
-              key={constituency} 
+            <SelectItem
+              key={constituency}
               value={constituency}
               className="capitalize"
             >

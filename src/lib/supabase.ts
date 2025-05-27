@@ -1,22 +1,11 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/supabase';
+import { env, logEnvironmentInfo } from './env';
 
-// Initialize the Supabase client
-const supabaseUrl =
-  import.meta.env.VITE_SUPABASE_URL ||
-  'https://rygyecrhevzrtfjtkfwf.supabase.co';
-const supabaseAnonKey =
-  import.meta.env.VITE_SUPABASE_ANON_KEY ||
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJ5Z3llY3JoZXZ6cnRmanRrZndmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzkwMjE2NTMsImV4cCI6MjA1NDU5NzY1M30.t_41y0qOBiBmZaudvIBW_VsNzDmmlO17iGe2s9pzi1A';
+// Log environment info in development
+logEnvironmentInfo();
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.error(
-    'Supabase URL or Anon Key is missing. Please check your environment variables.'
-  );
-  console.log('Available env vars:', import.meta.env);
-}
-
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+export const supabase = createClient<Database>(env.SUPABASE_URL, env.SUPABASE_ANON_KEY, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,

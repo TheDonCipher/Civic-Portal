@@ -11,19 +11,12 @@ import { AlertCircle, Send, Loader2, Shield } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDemoMode } from '@/providers/DemoProvider';
 import { demoUpdates } from '@/lib/demoData';
+import { safeDate } from '@/lib/utils/dateUtils';
+import { handleApiError } from '@/lib/utils/errorHandler';
+import type { UIUpdate } from '@/types/enhanced';
 
-interface Update {
-  id: string;
-  content: string;
-  type: string;
-  created_at: string;
-  author_id: string;
-  profiles: {
-    full_name: string | null;
-    avatar_url: string | null;
-    role: string | null;
-  } | null;
-}
+// ✅ Use the centralized UIUpdate type
+type Update = UIUpdate;
 
 interface UpdatesTabProps {
   issueId: string;
@@ -44,7 +37,11 @@ export const UpdatesTab: React.FC<UpdatesTabProps> = ({
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const isOfficial = profile?.role === 'official' || profile?.role === 'admin';
+  // Only verified officials and admins can post official updates
+  const isOfficial =
+    (profile?.role === 'official' &&
+      profile?.verification_status === 'verified') ||
+    profile?.role === 'admin';
 
   // Fetch updates
   useEffect(() => {
@@ -58,8 +55,9 @@ export const UpdatesTab: React.FC<UpdatesTabProps> = ({
               id: update.id,
               content: update.content,
               type: update.type,
-              created_at: update.created_at,
+              created_at: safeDate.toString(update.created_at),
               author_id: update.author_id,
+              issue_id: update.issue_id,
               profiles: {
                 full_name: update.author_name,
                 avatar_url: update.author_avatar,
@@ -86,7 +84,8 @@ export const UpdatesTab: React.FC<UpdatesTabProps> = ({
             content,
             type,
             created_at,
-            author_id
+            author_id,
+            issue_id
           `
           )
           .eq('issue_id', issueId)
@@ -110,13 +109,23 @@ export const UpdatesTab: React.FC<UpdatesTabProps> = ({
           })
         );
 
-        setUpdates(updatesWithProfiles || []);
+        // Transform database results to UI-safe format
+        const transformedUpdates = (updatesWithProfiles || []).map(
+          (update) => ({
+            ...update,
+            created_at: safeDate.toString(update.created_at),
+          })
+        );
+        setUpdates(transformedUpdates);
       } catch (error) {
         console.error('Error fetching updates:', error);
+        handleApiError(error, 'UpdatesTab', 'fetchUpdates');
         if (!isDemoMode) {
           toast({
             title: 'Error',
-            description: 'Failed to load updates',
+            description: `Failed to load updates: ${
+              error instanceof Error ? error.message : 'Unknown error'
+            }`,
             variant: 'destructive',
           });
         }
@@ -149,6 +158,9 @@ export const UpdatesTab: React.FC<UpdatesTabProps> = ({
         subscription.unsubscribe();
       };
     }
+
+    // Return empty cleanup function for demo mode
+    return () => {};
   }, [issueId, toast, isDemoMode]);
 
   // Report count changes to parent component
@@ -171,6 +183,7 @@ export const UpdatesTab: React.FC<UpdatesTabProps> = ({
           type: 'status',
           created_at: new Date().toISOString(),
           author_id: user.id || 'demo-official',
+          issue_id: issueId,
           profiles: {
             full_name: profile?.full_name || 'Demo Official',
             avatar_url: profile?.avatar_url || null,
@@ -204,9 +217,12 @@ export const UpdatesTab: React.FC<UpdatesTabProps> = ({
       });
     } catch (error) {
       console.error('Error adding update:', error);
+      handleApiError(error, 'UpdatesTab', 'handleSubmitUpdate');
       toast({
         title: 'Error',
-        description: 'Failed to post update',
+        description: `Failed to post update: ${
+          error instanceof Error ? error.message : 'Unknown error'
+        }`,
         variant: 'destructive',
       });
     } finally {
@@ -335,7 +351,12 @@ export const UpdatesTab: React.FC<UpdatesTabProps> = ({
         <div className="border-t pt-4 text-center text-muted-foreground">
           <div className="flex items-center justify-center space-x-2">
             <Shield className="h-4 w-4" />
-            <p>Only government officials can post updates</p>
+            <p>
+              {profile?.role === 'official' &&
+              profile?.verification_status !== 'verified'
+                ? 'Your account needs to be verified to post official updates'
+                : 'Only verified government officials can post updates'}
+            </p>
           </div>
         </div>
       ) : (

@@ -40,7 +40,7 @@ export const UserProfile = ({
     settingsMode ? 'settings' : 'created'
   );
   const { user: authUser } = useAuth ? useAuth() : { user: null };
-  const isCurrentUser = authUser?.id && user.isRealUser;
+  const isCurrentUser = Boolean(authUser?.id && user.isRealUser);
 
   // Process user issues to ensure no duplicates
   const userWithIssues = {
@@ -178,7 +178,7 @@ export const UserProfile = ({
                     <IssueGrid
                       issues={userWithIssues.issuesCreated}
                       onIssueClick={onIssueClick}
-                      onDelete={onDeleteIssue}
+                      onDelete={isCurrentUser ? onDeleteIssue : undefined}
                       showDeleteButton={isCurrentUser}
                       compact
                     />

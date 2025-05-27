@@ -12,6 +12,8 @@ export interface UserProfile {
   role?: 'citizen' | 'official' | 'admin' | null;
   department_id?: string | null;
   verification_status?: 'pending' | 'verified' | 'rejected' | null;
+  bio?: string | null;
+  is_verified?: boolean;
 }
 
 export interface AuthContextType {

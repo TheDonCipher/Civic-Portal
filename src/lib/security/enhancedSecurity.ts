@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase";
+import DOMPurify from 'dompurify';
 
 // Rate limiting configuration
 const RATE_LIMITS = {
@@ -17,39 +18,55 @@ interface RateLimitResult {
   message?: string;
 }
 
-// Enhanced input sanitization
-export const sanitizeInput = (input: string): string => {
-  if (!input) return "";
+// Enhanced input sanitization with DOMPurify
+export const sanitizeInput = (input: string, options?: {
+  allowedTags?: string[];
+  allowedAttributes?: string[];
+  maxLength?: number;
+}): string => {
+  if (!input) return '';
 
-  return input
+  const {
+    allowedTags = ['b', 'i', 'em', 'strong', 'p', 'br'],
+    allowedAttributes = [],
+    maxLength = 10000
+  } = options || {};
+
+  // Configure DOMPurify for basic text input
+  const cleanHtml = DOMPurify.sanitize(input, {
+    ALLOWED_TAGS: allowedTags,
+    ALLOWED_ATTR: allowedAttributes,
+    KEEP_CONTENT: true,
+    RETURN_DOM: false,
+    RETURN_DOM_FRAGMENT: false,
+    RETURN_DOM_IMPORT: false,
+  });
+
+  // Additional security measures
+  return cleanHtml
     .trim()
-    // Remove HTML tags
-    .replace(/<[^>]*>/g, "")
-    // Escape HTML entities
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#x27;")
-    .replace(/\//g, "&#x2F;")
+    .substring(0, maxLength)
     // Remove null bytes and control characters
-    .replace(/[\x00-\x1F\x7F]/g, "")
-    // Limit length to prevent DoS
-    .substring(0, 10000);
+    .replace(/[\x00-\x1F\x7F]/g, '')
+    // Normalize whitespace
+    .replace(/\s+/g, ' ');
 };
 
-// Advanced XSS protection
+// Advanced XSS protection for rich text content with DOMPurify
 export const sanitizeHtml = (html: string): string => {
-  if (!html) return "";
+  if (!html) return '';
 
-  // Basic HTML sanitization - in production, use a library like DOMPurify
-  return html
-    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
-    .replace(/<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>/gi, "")
-    .replace(/javascript:/gi, "")
-    .replace(/on\w+\s*=/gi, "")
-    .replace(/data:/gi, "")
-    .replace(/vbscript:/gi, "");
+  return DOMPurify.sanitize(html, {
+    ALLOWED_TAGS: [
+      'p', 'br', 'strong', 'em', 'b', 'i', 'u', 'ol', 'ul', 'li',
+      'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'blockquote', 'code', 'pre'
+    ],
+    ALLOWED_ATTR: ['class'],
+    KEEP_CONTENT: true,
+    ALLOW_DATA_ATTR: false,
+    FORBID_TAGS: ['script', 'object', 'embed', 'form', 'input', 'iframe'],
+    FORBID_ATTR: ['style', 'on*'],
+  });
 };
 
 // SQL injection protection for dynamic queries
@@ -103,8 +120,8 @@ export const checkRateLimit = async (
       allowed,
       remainingAttempts,
       resetTime: new Date(Date.now() + limit.windowMs),
-      message: allowed 
-        ? undefined 
+      message: allowed
+        ? undefined
         : `Too many ${action} attempts. Please try again later.`,
     };
   } catch (error) {
@@ -186,8 +203,8 @@ export const validatePasswordSecurity = (password: string): {
     "password", "123456", "password123", "admin", "qwerty",
     "letmein", "welcome", "monkey", "dragon", "master"
   ];
-  
-  if (commonPasswords.some(common => 
+
+  if (commonPasswords.some(common =>
     password.toLowerCase().includes(common.toLowerCase())
   )) {
     score -= 30;
@@ -216,7 +233,7 @@ export const validateEmailSecurity = (email: string): {
 } => {
   const feedback: string[] = [];
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  
+
   if (!emailRegex.test(email)) {
     feedback.push("Invalid email format");
     return {
@@ -228,15 +245,15 @@ export const validateEmailSecurity = (email: string): {
   }
 
   const domain = email.split("@")[1].toLowerCase();
-  
+
   // Common disposable email domains
   const disposableDomains = [
     "10minutemail.com", "tempmail.org", "guerrillamail.com",
     "mailinator.com", "throwaway.email", "temp-mail.org"
   ];
-  
+
   const isDisposable = disposableDomains.includes(domain);
-  
+
   if (isDisposable) {
     feedback.push("Disposable email addresses are not allowed");
   }
@@ -257,7 +274,7 @@ export const validateSession = async (sessionToken: string): Promise<{
 }> => {
   try {
     const { data: { user }, error } = await supabase.auth.getUser(sessionToken);
-    
+
     if (error || !user) {
       return { isValid: false };
     }
@@ -282,34 +299,68 @@ export const validateIpAddress = (ip: string): {
 } => {
   const ipv4Regex = /^(\d{1,3}\.){3}\d{1,3}$/;
   const ipv6Regex = /^([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$/;
-  
+
   if (ipv4Regex.test(ip)) {
     const parts = ip.split(".").map(Number);
     const isValid = parts.every(part => part >= 0 && part <= 255);
-    const isPrivate = 
+    const isPrivate =
       parts[0] === 10 ||
       (parts[0] === 172 && parts[1] >= 16 && parts[1] <= 31) ||
       (parts[0] === 192 && parts[1] === 168);
-    
+
     return { isValid, isPrivate, version: 4 };
   }
-  
+
   if (ipv6Regex.test(ip)) {
     return { isValid: true, isPrivate: false, version: 6 };
   }
-  
+
   return { isValid: false, isPrivate: false, version: null };
+};
+
+// File upload security validation
+export const validateFileUpload = (file: File): {
+  isValid: boolean;
+  errors: string[];
+} => {
+  const errors: string[] = [];
+  const maxSize = 10 * 1024 * 1024; // 10MB
+  const allowedTypes = [
+    'image/jpeg', 'image/png', 'image/gif', 'image/webp',
+    'application/pdf', 'text/plain', 'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+  ];
+
+  // Size validation
+  if (file.size > maxSize) {
+    errors.push('File size must be less than 10MB');
+  }
+
+  // Type validation
+  if (!allowedTypes.includes(file.type)) {
+    errors.push('File type not allowed');
+  }
+
+  // Name validation
+  if (!/^[a-zA-Z0-9._-]+$/.test(file.name)) {
+    errors.push('File name contains invalid characters');
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+  };
 };
 
 // Generate secure random tokens
 export const generateSecureToken = (length: number = 32): string => {
   const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   let result = "";
-  
+
   for (let i = 0; i < length; i++) {
     result += chars.charAt(Math.floor(Math.random() * chars.length));
   }
-  
+
   return result;
 };
 
@@ -320,6 +371,29 @@ export const hashSensitiveData = async (data: string): Promise<string> => {
   const hashBuffer = await crypto.subtle.digest("SHA-256", dataBuffer);
   const hashArray = Array.from(new Uint8Array(hashBuffer));
   return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+};
+
+// Content Security Policy configuration
+export const CSP_CONFIG = {
+  'default-src': ["'self'"],
+  'script-src': ["'self'", "'unsafe-inline'", "https://api.dicebear.com"],
+  'style-src': ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
+  'font-src': ["'self'", "https://fonts.gstatic.com"],
+  'img-src': ["'self'", "data:", "https:", "blob:"],
+  'connect-src': ["'self'", "https://*.supabase.co", "wss://*.supabase.co"],
+  'media-src': ["'self'"],
+  'object-src': ["'none'"],
+  'base-uri': ["'self'"],
+  'form-action': ["'self'"],
+  'frame-ancestors': ["'none'"],
+  'upgrade-insecure-requests': [],
+};
+
+// Generate CSP header string
+export const generateCSPHeader = (): string => {
+  return Object.entries(CSP_CONFIG)
+    .map(([directive, sources]) => `${directive} ${sources.join(' ')}`)
+    .join('; ');
 };
 
 // Content Security Policy helpers

@@ -17,7 +17,8 @@ export const getCategoryDefaultImage = (category: string) => {
       "https://cdn.pixabay.com/photo/2017/02/10/12/03/volunteer-2055010_1280.jpg",
   };
 
-  return defaultImages[category?.toLowerCase()] || defaultImages.infrastructure;
+  const key = category?.toLowerCase() || 'infrastructure';
+  return defaultImages[key as keyof typeof defaultImages] || defaultImages['infrastructure'];
 };
 
 // Validate and process thumbnail URL

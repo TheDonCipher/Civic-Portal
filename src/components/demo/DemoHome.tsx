@@ -91,13 +91,13 @@ const DemoHome: React.FC = () => {
         onCreateIssue={() => setIsCreateDialogOpen(true)}
         onSearch={handleSearch}
       >
-        <div className="max-w-[1800px] mx-auto space-y-6 sm:space-y-8 mobile-padding">
+        <div className="max-w-[1800px] mx-auto section-spacing mobile-padding">
           {/* Demo Welcome Section */}
           {showFeatureTour && (
-            <motion.div
+            <motion.section
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="relative"
+              className="relative w-full"
             >
               <Card className="bg-gradient-to-br from-blue-50 to-purple-50 border-blue-200">
                 <CardHeader>
@@ -166,66 +166,73 @@ const DemoHome: React.FC = () => {
                   </div>
                 </CardContent>
               </Card>
-            </motion.div>
+            </motion.section>
           )}
 
           {/* Demo Stats */}
-          <motion.div
+          <motion.section
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
+            className="w-full"
           >
             <StatCards demoData={demoStats} />
-          </motion.div>
+          </motion.section>
+
+          {/* Latest Updates - Mobile (appears before Issues Grid) */}
+          <section className="lg:hidden">
+            <div className="mb-6 sm:mb-8">
+              <LatestUpdates
+                onIssueClick={(issueId) => {
+                  const issue = demoIssues.find((i) => i.id === issueId);
+                  if (issue) {
+                    setSelectedIssue(issue);
+                  }
+                }}
+              />
+            </div>
+          </section>
 
           {/* Main Content Layout */}
-          <div className="flex flex-col lg:flex-row gap-8">
-            {/* Issues Grid - Main Content */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.3 }}
-              className="flex-1 min-w-0"
-            >
-              <IssueGrid
-                issues={demoIssues}
-                onFilterChange={handleFilterChange}
-                onSearch={handleSearch}
-                onIssueClick={(issue) => setSelectedIssue(issue)}
-              />
-            </motion.div>
-
-            {/* Latest Updates Sidebar - Desktop */}
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.4 }}
-              className="w-full lg:w-[400px] xl:w-[420px] hidden lg:block"
-            >
-              <div className="sticky top-[100px]">
-                <LatestUpdates
-                  onIssueClick={(issueId) => {
-                    const issue = demoIssues.find((i) => i.id === issueId);
-                    if (issue) {
-                      setSelectedIssue(issue);
-                    }
-                  }}
+          <section className="w-full">
+            <div className="flex flex-col lg:flex-row gap-6 sm:gap-8 lg:gap-10">
+              {/* Issues Grid - Main Content */}
+              <motion.div
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.3 }}
+                className="flex-1 min-w-0"
+              >
+                <IssueGrid
+                  issues={demoIssues}
+                  onFilterChange={handleFilterChange}
+                  onSearch={handleSearch}
+                  onIssueClick={(issue) => setSelectedIssue(issue)}
+                  enablePagination={true}
+                  initialPageSize={20}
                 />
-              </div>
-            </motion.div>
-          </div>
+              </motion.div>
 
-          {/* Latest Updates - Mobile */}
-          <div className="lg:hidden">
-            <LatestUpdates
-              onIssueClick={(issueId) => {
-                const issue = demoIssues.find((i) => i.id === issueId);
-                if (issue) {
-                  setSelectedIssue(issue);
-                }
-              }}
-            />
-          </div>
+              {/* Latest Updates Sidebar - Desktop */}
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: 0.4 }}
+                className="w-full lg:w-[400px] xl:w-[420px] hidden lg:block"
+              >
+                <div className="sticky top-[100px]">
+                  <LatestUpdates
+                    onIssueClick={(issueId) => {
+                      const issue = demoIssues.find((i) => i.id === issueId);
+                      if (issue) {
+                        setSelectedIssue(issue);
+                      }
+                    }}
+                  />
+                </div>
+              </motion.div>
+            </div>
+          </section>
         </div>
 
         {/* Dialogs */}

@@ -38,6 +38,14 @@ import { RoleExplainer } from '@/components/auth/RoleExplainer';
 import { ConstituencySelector } from '@/components/auth/ConstituencySelector';
 import { DepartmentSelector } from '@/components/auth/DepartmentSelector';
 import { SimpleCaptcha } from '@/components/auth/SimpleCaptcha';
+import { SimpleLegalConsent } from '@/components/auth/SimpleLegalConsent';
+import { EnhancedLegalConsent } from '@/components/auth/EnhancedLegalConsent';
+import { getDepartmentIdByName } from '@/lib/services/departmentService';
+import {
+  storeLegalConsent,
+  validateLegalConsentStorage,
+  CURRENT_LEGAL_VERSIONS,
+} from '@/lib/services/legalConsentService';
 
 // Enhanced validation schema for step 1 (Basic Info)
 const step1Schema = z
@@ -115,7 +123,7 @@ interface EnhancedSignUpFormProps {
 
 const STEPS = [
   { id: 1, title: 'Account Setup', description: 'Create your secure account' },
-  { id: 2, title: 'Personal Info', description: 'Tell us about yourself' },
+  { id: 2, title: 'Personal Info', description: 'Complete your profile' },
   { id: 3, title: 'Verification', description: 'Verify your email' },
 ];
 
@@ -131,6 +139,12 @@ export function EnhancedSignUpForm({
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [captchaVerified, setCaptchaVerified] = useState(false);
+  const [legalConsentsAccepted, setLegalConsentsAccepted] = useState(false);
+  const [consentTimestamps, setConsentTimestamps] = useState<{
+    termsAcceptedAt?: Date;
+    privacyAcceptedAt?: Date;
+    dataProcessingAcceptedAt?: Date;
+  }>({});
   const formContainerRef = useRef<HTMLDivElement>(null);
 
   const form = useForm<SignUpFormValues>({
@@ -140,7 +154,7 @@ export function EnhancedSignUpForm({
       password: '',
       confirmPassword: '',
       fullName: '',
-      role: undefined,
+      role: 'citizen' as const,
       constituency: '',
       department: '',
     },
@@ -150,12 +164,22 @@ export function EnhancedSignUpForm({
   const watchedPassword = form.watch('password');
 
   const validateCurrentStep = async () => {
-    const isValid = await form.trigger(
-      currentStep === 1
-        ? ['email', 'password', 'confirmPassword']
-        : ['fullName', 'role', 'constituency']
-    );
-    return isValid;
+    if (currentStep === 1) {
+      return await form.trigger(['email', 'password', 'confirmPassword']);
+    } else if (currentStep === 2) {
+      const role = form.getValues('role');
+      const fieldsToValidate = ['fullName', 'role'];
+
+      // Add role-specific validation
+      if (role === 'citizen') {
+        fieldsToValidate.push('constituency');
+      } else if (role === 'official') {
+        fieldsToValidate.push('department');
+      }
+
+      return await form.trigger(fieldsToValidate as any);
+    }
+    return true;
   };
 
   const nextStep = async () => {
@@ -179,7 +203,7 @@ export function EnhancedSignUpForm({
           '[role="dialog"]',
           '.auth-dialog-enhanced',
           '[data-radix-dialog-content]',
-          '.max-w-\\[600px\\]',
+          '.max-w-\\[480px\\]',
           '.overflow-y-auto',
         ];
 
@@ -217,7 +241,7 @@ export function EnhancedSignUpForm({
           '[role="dialog"]',
           '.auth-dialog-enhanced',
           '[data-radix-dialog-content]',
-          '.max-w-\\[600px\\]',
+          '.max-w-\\[480px\\]',
           '.overflow-y-auto',
         ];
 
@@ -235,51 +259,115 @@ export function EnhancedSignUpForm({
     }
   };
 
-  const onSubmit = async (data: SignUpFormValues) => {
-    if (currentStep < 2) {
-      await nextStep();
-      return;
-    }
-
-    // Check CAPTCHA verification before proceeding
-    if (!captchaVerified) {
-      toast({
-        title: 'Security Check Required',
-        description:
-          'Please complete the security verification before continuing.',
-        variant: 'destructive',
-      });
-      return;
-    }
-
+  // Create account
+  const createAccount = async (formData: SignUpFormValues) => {
     setIsLoading(true);
 
     try {
       // Sanitize inputs
       const sanitizedData = {
-        email: sanitizeInput(data.email),
-        fullName: sanitizeInput(data.fullName),
-        role: data.role,
-        constituency: data.constituency
-          ? sanitizeInput(data.constituency)
+        email: sanitizeInput(formData.email),
+        fullName: sanitizeInput(formData.fullName),
+        role: formData.role,
+        constituency: formData.constituency
+          ? sanitizeInput(formData.constituency)
           : null,
-        department: data.department ? sanitizeInput(data.department) : null,
+        department: formData.department
+          ? sanitizeInput(formData.department)
+          : null,
       };
 
-      await signUp(data.email, data.password, {
-        full_name: sanitizedData.fullName,
-        role: sanitizedData.role,
-        constituency: sanitizedData.constituency,
-        department: sanitizedData.department,
-      });
+      // For officials, get department ID from department name
+      let departmentId: string | null = null;
+      if (sanitizedData.role === 'official' && sanitizedData.department) {
+        const departmentResult = await getDepartmentIdByName(
+          sanitizedData.department
+        );
+        if (!departmentResult.success) {
+          throw new Error(
+            departmentResult.error || 'Invalid department selected'
+          );
+        }
+        departmentId = departmentResult.departmentId!;
+      }
 
-      setCurrentStep(3); // Move to verification step
+      // Create the user account
+      const { data: authData, error: authError } = await signUp(
+        formData.email,
+        formData.password,
+        {
+          full_name: sanitizedData.fullName,
+          role: sanitizedData.role,
+          constituency: sanitizedData.constituency,
+          department_id: departmentId,
+          // Set verification status based on role
+          verification_status:
+            sanitizedData.role === 'official' ? 'pending' : 'verified',
+        }
+      );
+
+      if (authError) {
+        throw authError;
+      }
+
+      // Store legal consent if user was created successfully
+      if (authData?.user?.id) {
+        try {
+          const consentResult = await storeLegalConsent(authData.user.id, {
+            termsAccepted: true,
+            termsAcceptedAt: consentTimestamps.termsAcceptedAt,
+            privacyAccepted: true,
+            privacyAcceptedAt: consentTimestamps.privacyAcceptedAt,
+            dataProcessingConsent: true,
+            dataProcessingAcceptedAt:
+              consentTimestamps.dataProcessingAcceptedAt,
+            marketingOptIn: false,
+            timestamp: new Date(),
+            versions: CURRENT_LEGAL_VERSIONS,
+            // IP address and user agent will be handled by the service
+          });
+
+          if (!consentResult.success) {
+            console.warn('Failed to store legal consent:', consentResult.error);
+            // Don't fail the signup for consent storage issues, but log it
+          } else {
+            console.log(
+              'Legal consent stored successfully with individual timestamps'
+            );
+
+            // Validate that the consent was stored correctly
+            const validationResult = await validateLegalConsentStorage(
+              authData.user.id
+            );
+            if (validationResult.success && validationResult.isValid) {
+              console.log('Legal consent validation passed');
+            } else {
+              console.warn(
+                'Legal consent validation failed:',
+                validationResult.error
+              );
+            }
+          }
+        } catch (consentError) {
+          console.error('Error storing legal consent:', consentError);
+          // Continue with signup even if consent storage fails
+        }
+      }
+
+      // Show appropriate success message based on role
+      const successMessage =
+        sanitizedData.role === 'official'
+          ? 'Account created! Please check your email for verification and wait for admin approval.'
+          : 'Account created successfully! Please check your email for a verification link.';
 
       toast({
         title: 'Account Created Successfully!',
-        description: 'Please check your email for a verification link.',
-        variant: 'success',
+        description: successMessage,
+        variant: 'default',
       });
+
+      // Move to verification step
+      setCurrentStep(3);
     } catch (error: any) {
       let errorMessage = 'Failed to create account. Please try again.';
 
@@ -288,6 +376,8 @@ export function EnhancedSignUpForm({
           'An account with this email already exists. Try signing in instead.';
       } else if (error?.message?.includes('Password')) {
         errorMessage = 'Password does not meet security requirements.';
+      } else if (error?.message?.includes('department')) {
+        errorMessage = 'Invalid department selected. Please try again.';
       }
 
       toast({
@@ -297,6 +387,66 @@ export function EnhancedSignUpForm({
       });
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const onSubmit = async (data: SignUpFormValues) => {
+    if (currentStep === 1) {
+      await nextStep();
+      return;
+    }
+
+    if (currentStep === 2) {
+      // Check CAPTCHA verification before creating account
+      if (!captchaVerified) {
+        toast({
+          title: 'Security Check Required',
+          description:
+            'Please complete the security verification before continuing.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      // Check legal consent acceptance - more flexible approach
+      if (!legalConsentsAccepted) {
+        toast({
+          title: 'Legal Consent Required',
+          description:
+            'Please accept the required legal agreements to continue. You can complete additional agreements after account creation if needed.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      // Additional validation for officials
+      if (data.role === 'official' && !data.department) {
+        toast({
+          title: 'Department Required',
+          description: 'Government officials must select their department.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      // Additional validation for citizens
+      if (data.role === 'citizen' && !data.constituency) {
+        toast({
+          title: 'Constituency Required',
+          description: 'Citizens must select their constituency.',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      // Create the account
+      await createAccount(data);
+      return;
+    }
+
+    // Step 3 (Verification) doesn't need form submission
+    if (currentStep >= 3) {
+      return;
     }
   };
 
@@ -545,6 +695,17 @@ export function EnhancedSignUpForm({
           className="border rounded-lg p-4 bg-muted/20"
         />
       </div>
+
+      {/* Legal Consent */}
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Legal Agreements</label>
+        <EnhancedLegalConsent
+          onAccept={setLegalConsentsAccepted}
+          onTimestampsChange={setConsentTimestamps}
+          className="border rounded-lg p-4 bg-muted/20"
+          disabled={isLoading}
+        />
+      </div>
     </div>
   );
 
@@ -556,10 +717,14 @@ export function EnhancedSignUpForm({
         </div>
         <div>
           <h2 className="text-2xl font-bold tracking-tight">
-            Check Your Email
+            {form.getValues('role') === 'official'
+              ? 'Account Created - Pending Approval'
+              : 'Check Your Email'}
           </h2>
           <p className="text-muted-foreground mt-2">
-            We've sent a verification link to your email address
+            {form.getValues('role') === 'official'
+              ? 'Your government official account has been created and is pending admin approval'
+              : "We've sent a verification link to your email address"}
           </p>
         </div>
       </div>
@@ -583,14 +748,14 @@ export function EnhancedSignUpForm({
             <span className="flex items-center justify-center w-5 h-5 bg-primary text-primary-foreground rounded-full text-xs font-medium">
               3
             </span>
-            {form.watch('role') === 'official'
+            {form.getValues('role') === 'official'
               ? "Wait for admin approval (you'll receive an email notification)"
               : 'Start using Civic Portal immediately'}
           </li>
         </ol>
       </div>
 
-      {form.watch('role') === 'official' && (
+      {form.getValues('role') === 'official' && (
         <Alert>
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
@@ -646,7 +811,16 @@ export function EnhancedSignUpForm({
 
               <Button
                 type="submit"
-                disabled={isLoading || (currentStep === 2 && !captchaVerified)}
+                disabled={
+                  isLoading ||
+                  (currentStep === 2 &&
+                    (!captchaVerified ||
+                      !legalConsentsAccepted ||
+                      (form.watch('role') === 'official' &&
+                        !form.watch('department')) ||
+                      (form.watch('role') === 'citizen' &&
+                        !form.watch('constituency'))))
+                }
                 isLoading={isLoading}
                 className={cn(
                   'flex-1 font-semibold transition-all duration-300',
@@ -658,7 +832,14 @@ export function EnhancedSignUpForm({
                 )}
                 style={{
                   background:
-                    isLoading || (currentStep === 2 && !captchaVerified)
+                    isLoading ||
+                    (currentStep === 2 &&
+                      (!captchaVerified ||
+                        !legalConsentsAccepted ||
+                        (form.watch('role') === 'official' &&
+                          !form.watch('department')) ||
+                        (form.watch('role') === 'citizen' &&
+                          !form.watch('constituency'))))
                       ? undefined
                       : 'var(--botswana-gradient)',
                 }}

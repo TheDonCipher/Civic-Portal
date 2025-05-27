@@ -9,6 +9,8 @@ import { z } from 'zod';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast-enhanced';
 import { useAuth } from '@/lib/auth';
+import { safeDate } from '@/lib/utils/dateUtils';
+import { handleApiError } from '@/lib/utils/errorHandler';
 
 const formSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -117,9 +119,9 @@ export const IssuesPage = () => {
             console.log('Issue thumbnail:', issue.thumbnail);
 
             // Validate and process the thumbnail URL
-            let thumbnailUrl = issue.thumbnail;
+            let thumbnailUrl: string = issue.thumbnail || '';
             const category = issue.category?.toLowerCase() || 'infrastructure';
-            const defaultImages = {
+            const defaultImages: Record<string, string> = {
               infrastructure:
                 'https://cdn.pixabay.com/photo/2018/01/10/18/49/city-3073958_1280.jpg',
               environment:
@@ -129,8 +131,10 @@ export const IssuesPage = () => {
               community:
                 'https://cdn.pixabay.com/photo/2017/02/10/12/03/volunteer-2055010_1280.jpg',
             };
-            const defaultThumbnail =
-              defaultImages[category] || defaultImages.infrastructure;
+            const defaultThumbnail: string =
+              defaultImages[category] ||
+              defaultImages['infrastructure'] ||
+              'https://cdn.pixabay.com/photo/2018/01/10/18/49/city-3073958_1280.jpg';
 
             // Validate the thumbnail URL
             if (thumbnailUrl) {
@@ -163,7 +167,7 @@ export const IssuesPage = () => {
               status: issue.status as 'open' | 'in-progress' | 'resolved',
               votes: issue.votes || 0,
               comments: [],
-              date: issue.created_at,
+              date: safeDate.toString(issue.created_at),
               author: {
                 name: issue.author_name || 'Unknown',
                 avatar:
@@ -172,9 +176,17 @@ export const IssuesPage = () => {
               },
               author_id: issue.author_id, // Add this line for delete functionality
               thumbnail: thumbnailUrl,
-              location: issue.location,
-              constituency: issue.constituency,
+              location: issue.location || '',
+              constituency: issue.constituency || '',
               watchers: issue.watchers_count || 0,
+              watchers_count: issue.watchers_count || 0,
+              created_at: safeDate.toString(issue.created_at),
+              updated_at: safeDate.toString(issue.updated_at),
+              resolved_at: issue.resolved_at
+                ? safeDate.toString(issue.resolved_at)
+                : '',
+              resolved_by: issue.resolved_by || '',
+              department_id: (issue as any).department_id || '',
             };
           });
 
@@ -182,11 +194,7 @@ export const IssuesPage = () => {
         }
       } catch (error) {
         console.error('Error fetching issues:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to load issues. Please try again later.',
-          variant: 'destructive',
-        });
+        handleApiError(error, 'IssuesPage', 'fetchIssues');
       } finally {
         setIsLoading(false);
         setHasFetched(true);
@@ -212,7 +220,7 @@ export const IssuesPage = () => {
         status: 'open' as const,
         votes: 0,
         comments: [],
-        date: data.created_at,
+        date: safeDate.toString(data.created_at),
         author: {
           name: profile.full_name || 'User',
           avatar:
@@ -220,10 +228,19 @@ export const IssuesPage = () => {
             `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}`,
         },
         author_id: user.id, // Add this line for delete functionality
-        thumbnail: data.thumbnails?.[0] || data.thumbnail,
-        location: data.location,
-        constituency: data.constituency,
+        thumbnail:
+          data.thumbnails?.[0] ||
+          data.thumbnail ||
+          'https://cdn.pixabay.com/photo/2018/01/10/18/49/city-3073958_1280.jpg',
+        location: data.location || '',
+        constituency: data.constituency || '',
         watchers: 1, // Start with 1 watcher (the creator)
+        watchers_count: 1,
+        created_at: safeDate.toString(data.created_at),
+        updated_at: safeDate.toString(new Date().toISOString()),
+        resolved_at: '',
+        resolved_by: '',
+        department_id: '',
       };
 
       setIssues([newIssue, ...issues]);
@@ -261,7 +278,7 @@ export const IssuesPage = () => {
               status: issue.status as 'open' | 'in-progress' | 'resolved',
               votes: issue.votes || 0,
               comments: [],
-              date: issue.created_at,
+              date: safeDate.toString(issue.created_at),
               author: {
                 name: issue.author_name || 'Unknown',
                 avatar:
@@ -269,29 +286,48 @@ export const IssuesPage = () => {
                   `https://api.dicebear.com/7.x/avataaars/svg?seed=${issue.author_id}`,
               },
               author_id: issue.author_id, // Add this line for delete functionality
-              thumbnail:
-                issue.thumbnail ||
-                (() => {
-                  // Select a default image based on category if thumbnail is missing
-                  const category =
-                    issue.category?.toLowerCase() || 'infrastructure';
-                  const defaultImages = {
-                    infrastructure:
-                      'https://cdn.pixabay.com/photo/2018/01/10/18/49/city-3073958_1280.jpg',
-                    environment:
-                      'https://cdn.pixabay.com/photo/2015/12/01/20/28/green-1072828_1280.jpg',
-                    safety:
-                      'https://cdn.pixabay.com/photo/2019/04/13/00/47/police-4123365_1280.jpg',
-                    community:
-                      'https://cdn.pixabay.com/photo/2017/02/10/12/03/volunteer-2055010_1280.jpg',
-                  };
-                  return (
-                    defaultImages[category] || defaultImages.infrastructure
-                  );
-                })(),
-              location: issue.location,
-              constituency: issue.constituency,
+              thumbnail: ((): string => {
+                if (issue.thumbnail) {
+                  return issue.thumbnail;
+                }
+                // Select a default image based on category if thumbnail is missing
+                const category =
+                  issue.category?.toLowerCase() || 'infrastructure';
+                const defaultImages: Record<string, string> = {
+                  infrastructure:
+                    'https://cdn.pixabay.com/photo/2018/01/10/18/49/city-3073958_1280.jpg',
+                  environment:
+                    'https://cdn.pixabay.com/photo/2015/12/01/20/28/green-1072828_1280.jpg',
+                  safety:
+                    'https://cdn.pixabay.com/photo/2019/04/13/00/47/police-4123365_1280.jpg',
+                  community:
+                    'https://cdn.pixabay.com/photo/2017/02/10/12/03/volunteer-2055010_1280.jpg',
+                };
+                const validCategories = [
+                  'infrastructure',
+                  'environment',
+                  'safety',
+                  'community',
+                ];
+                const validCategory = validCategories.includes(category)
+                  ? category
+                  : 'infrastructure';
+                return (
+                  defaultImages[validCategory as keyof typeof defaultImages] ||
+                  defaultImages['infrastructure']
+                );
+              })(),
+              location: issue.location || '',
+              constituency: issue.constituency || '',
               watchers: issue.watchers_count || 0,
+              watchers_count: issue.watchers_count || 0,
+              created_at: safeDate.toString(issue.created_at),
+              updated_at: safeDate.toString(issue.updated_at),
+              resolved_at: issue.resolved_at
+                ? safeDate.toString(issue.resolved_at)
+                : '',
+              resolved_by: issue.resolved_by || '',
+              department_id: (issue as any).department_id || '',
             }));
 
             setIssues(formattedIssues);
@@ -325,7 +361,7 @@ export const IssuesPage = () => {
             status: issue.status as 'open' | 'in-progress' | 'resolved',
             votes: issue.votes || 0,
             comments: [],
-            date: issue.created_at,
+            date: safeDate.toString(issue.created_at),
             author: {
               name: issue.author_name || 'Unknown',
               avatar:
@@ -333,27 +369,48 @@ export const IssuesPage = () => {
                 `https://api.dicebear.com/7.x/avataaars/svg?seed=${issue.author_id}`,
             },
             author_id: issue.author_id, // Add this line for delete functionality
-            thumbnail:
-              issue.thumbnail ||
-              (() => {
-                // Select a default image based on category if thumbnail is missing
-                const category =
-                  issue.category?.toLowerCase() || 'infrastructure';
-                const defaultImages = {
-                  infrastructure:
-                    'https://cdn.pixabay.com/photo/2018/01/10/18/49/city-3073958_1280.jpg',
-                  environment:
-                    'https://cdn.pixabay.com/photo/2015/12/01/20/28/green-1072828_1280.jpg',
-                  safety:
-                    'https://cdn.pixabay.com/photo/2019/04/13/00/47/police-4123365_1280.jpg',
-                  community:
-                    'https://cdn.pixabay.com/photo/2017/02/10/12/03/volunteer-2055010_1280.jpg',
-                };
-                return defaultImages[category] || defaultImages.infrastructure;
-              })(),
-            location: issue.location,
-            constituency: issue.constituency,
+            thumbnail: ((): string => {
+              if (issue.thumbnail) {
+                return issue.thumbnail;
+              }
+              // Select a default image based on category if thumbnail is missing
+              const category =
+                issue.category?.toLowerCase() || 'infrastructure';
+              const defaultImages: Record<string, string> = {
+                infrastructure:
+                  'https://cdn.pixabay.com/photo/2018/01/10/18/49/city-3073958_1280.jpg',
+                environment:
+                  'https://cdn.pixabay.com/photo/2015/12/01/20/28/green-1072828_1280.jpg',
+                safety:
+                  'https://cdn.pixabay.com/photo/2019/04/13/00/47/police-4123365_1280.jpg',
+                community:
+                  'https://cdn.pixabay.com/photo/2017/02/10/12/03/volunteer-2055010_1280.jpg',
+              };
+              const validCategories = [
+                'infrastructure',
+                'environment',
+                'safety',
+                'community',
+              ];
+              const validCategory = validCategories.includes(category)
+                ? category
+                : 'infrastructure';
+              return (
+                defaultImages[validCategory as keyof typeof defaultImages] ||
+                defaultImages['infrastructure']
+              );
+            })(),
+            location: issue.location || '',
+            constituency: issue.constituency || '',
             watchers: issue.watchers_count || 0,
+            watchers_count: issue.watchers_count || 0,
+            created_at: safeDate.toString(issue.created_at),
+            updated_at: safeDate.toString(issue.updated_at),
+            resolved_at: issue.resolved_at
+              ? safeDate.toString(issue.resolved_at)
+              : '',
+            resolved_by: issue.resolved_by || '',
+            department_id: (issue as any).department_id || '',
           }));
 
           setIssues(formattedIssues);
@@ -417,34 +474,56 @@ export const IssuesPage = () => {
             status: issue.status as 'open' | 'in-progress' | 'resolved',
             votes: issue.votes || 0,
             comments: [],
-            date: issue.created_at,
+            date: safeDate.toString(issue.created_at),
             author: {
               name: issue.author_name || 'Unknown',
               avatar:
                 issue.author_avatar ||
                 `https://api.dicebear.com/7.x/avataaars/svg?seed=${issue.author_id}`,
             },
-            thumbnail:
-              issue.thumbnail ||
-              (() => {
-                // Select a default image based on category if thumbnail is missing
-                const category =
-                  issue.category?.toLowerCase() || 'infrastructure';
-                const defaultImages = {
-                  infrastructure:
-                    'https://cdn.pixabay.com/photo/2018/01/10/18/49/city-3073958_1280.jpg',
-                  environment:
-                    'https://cdn.pixabay.com/photo/2015/12/01/20/28/green-1072828_1280.jpg',
-                  safety:
-                    'https://cdn.pixabay.com/photo/2019/04/13/00/47/police-4123365_1280.jpg',
-                  community:
-                    'https://cdn.pixabay.com/photo/2017/02/10/12/03/volunteer-2055010_1280.jpg',
-                };
-                return defaultImages[category] || defaultImages.infrastructure;
-              })(),
-            location: issue.location,
-            constituency: issue.constituency,
+            author_id: issue.author_id, // Add this line for delete functionality
+            thumbnail: ((): string => {
+              if (issue.thumbnail) {
+                return issue.thumbnail;
+              }
+              // Select a default image based on category if thumbnail is missing
+              const category =
+                issue.category?.toLowerCase() || 'infrastructure';
+              const defaultImages: Record<string, string> = {
+                infrastructure:
+                  'https://cdn.pixabay.com/photo/2018/01/10/18/49/city-3073958_1280.jpg',
+                environment:
+                  'https://cdn.pixabay.com/photo/2015/12/01/20/28/green-1072828_1280.jpg',
+                safety:
+                  'https://cdn.pixabay.com/photo/2019/04/13/00/47/police-4123365_1280.jpg',
+                community:
+                  'https://cdn.pixabay.com/photo/2017/02/10/12/03/volunteer-2055010_1280.jpg',
+              };
+              const validCategories = [
+                'infrastructure',
+                'environment',
+                'safety',
+                'community',
+              ];
+              const validCategory = validCategories.includes(category)
+                ? category
+                : 'infrastructure';
+              return (
+                defaultImages[validCategory as keyof typeof defaultImages] ||
+                defaultImages['infrastructure']
+              );
+            })(),
+            location: issue.location || '',
+            constituency: issue.constituency || '',
             watchers: issue.watchers_count || 0,
+            watchers_count: issue.watchers_count || 0,
+            created_at: safeDate.toString(issue.created_at),
+            updated_at: safeDate.toString(issue.updated_at),
+            resolved_at: issue.resolved_at
+              ? safeDate.toString(issue.resolved_at)
+              : '',
+            resolved_by: issue.resolved_by || '',
+            department_id: (issue as any).department_id || '',
           }));
 
           setIssues(formattedIssues);

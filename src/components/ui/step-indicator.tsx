@@ -156,9 +156,7 @@ export function StepIndicator({
                     'flex items-center justify-center w-8 h-8 rounded-full border-2 transition-all duration-200',
                     {
                       'bg-primary border-primary text-primary-foreground':
-                        isCompleted,
-                      'bg-primary border-primary text-primary-foreground':
-                        isCurrent,
+                        isCompleted || isCurrent,
                       'bg-background border-muted-foreground/30 text-muted-foreground':
                         isUpcoming,
                     }
@@ -234,9 +232,7 @@ export function CompactStepIndicator({
                   'flex items-center justify-center w-6 h-6 rounded-full border transition-all duration-200',
                   {
                     'bg-primary border-primary text-primary-foreground':
-                      isCompleted,
-                    'bg-primary border-primary text-primary-foreground':
-                      isCurrent,
+                      isCompleted || isCurrent,
                     'bg-background border-muted-foreground/30 text-muted-foreground':
                       !isCompleted && !isCurrent,
                   }

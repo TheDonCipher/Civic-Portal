@@ -15,6 +15,7 @@ import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { useAuth } from '@/lib/auth';
 import { useToast } from '@/components/ui/use-toast';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
+import { ConsentStatusIndicator } from '@/components/auth/ConsentStatusBanner';
 import {
   User,
   LogOut,
@@ -197,6 +198,9 @@ const Header = ({ onCreateIssue, onSearch }: HeaderProps) => {
 
             {/* Notification Bell for authenticated users */}
             {user && <NotificationBell />}
+
+            {/* Consent Status Indicator for authenticated users */}
+            {user && <ConsentStatusIndicator />}
 
             {user ? (
               <DropdownMenu>

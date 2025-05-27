@@ -71,6 +71,33 @@ export type Database = {
           },
         ]
       }
+      departments: {
+        Row: {
+          id: string
+          name: string
+          description: string | null
+          created_at: string | null
+          updated_at: string | null
+          category: string | null
+        }
+        Insert: {
+          id?: string
+          name: string
+          description?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+          category?: string | null
+        }
+        Update: {
+          id?: string
+          name?: string
+          description?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+          category?: string | null
+        }
+        Relationships: []
+      }
       issue_comments: {
         Row: {
           author_avatar: string | null
@@ -318,6 +345,78 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          id: string
+          user_id: string
+          title: string
+          message: string
+          type: string
+          data: any
+          read: boolean
+          read_at: string | null
+          related_issue_id: string | null
+          related_comment_id: string | null
+          related_solution_id: string | null
+          action_url: string | null
+          priority: string
+          expires_at: string | null
+          created_at: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          title: string
+          message: string
+          type: string
+          data?: any
+          read?: boolean
+          read_at?: string | null
+          related_issue_id?: string | null
+          related_comment_id?: string | null
+          related_solution_id?: string | null
+          action_url?: string | null
+          priority?: string
+          expires_at?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          title?: string
+          message?: string
+          type?: string
+          data?: any
+          read?: boolean
+          read_at?: string | null
+          related_issue_id?: string | null
+          related_comment_id?: string | null
+          related_solution_id?: string | null
+          action_url?: string | null
+          priority?: string
+          expires_at?: string | null
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_issue_id_fkey"
+            columns: ["issue_id"]
+            isOneToOne: false
+            referencedRelation: "issues"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -328,6 +427,10 @@ export type Database = {
           role: string | null
           updated_at: string
           username: string | null
+          department_id: string | null
+          bio: string | null
+          is_verified: boolean
+          verification_status: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -338,6 +441,10 @@ export type Database = {
           role?: string | null
           updated_at?: string
           username?: string | null
+          department_id?: string | null
+          bio?: string | null
+          is_verified?: boolean
+          verification_status?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -348,8 +455,20 @@ export type Database = {
           role?: string | null
           updated_at?: string
           username?: string | null
+          department_id?: string | null
+          bio?: string | null
+          is_verified?: boolean
+          verification_status?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_department_id_fkey"
+            columns: ["department_id"]
+            isOneToOne: false
+            referencedRelation: "departments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       solution_votes: {
         Row: {
@@ -519,6 +638,50 @@ export type Database = {
           solution_id: string
         }
         Returns: undefined
+      }
+      sync_missing_profiles: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
+      mark_solution_as_official: {
+        Args: {
+          solution_id: string
+          issue_id: string
+        }
+        Returns: undefined
+      }
+      get_issue_stats: {
+        Args: {
+          issue_id: string
+        }
+        Returns: {
+          votes_count: number
+          comments_count: number
+          watchers_count: number
+          solutions_count: number
+        }
+      }
+      get_user_stats: {
+        Args: {
+          user_id: string
+        }
+        Returns: {
+          issues_created: number
+          issues_watching: number
+          comments_made: number
+          solutions_proposed: number
+        }
+      }
+      get_department_stats: {
+        Args: {
+          department_id: string
+        }
+        Returns: {
+          total_issues: number
+          open_issues: number
+          resolved_issues: number
+          avg_resolution_time: number
+        }
       }
     }
     Enums: {

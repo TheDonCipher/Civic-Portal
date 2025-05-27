@@ -55,24 +55,40 @@ The Civic Portal is a comprehensive civic engagement platform specifically desig
 │   ├── App.tsx           # Main application component
 │   ├── main.tsx          # Application entry point
 │   └── index.css         # Global CSS and Tailwind imports
-├── cypress/              # End-to-end tests
+├── cypress/              # End-to-end tests (Cypress)
 │   ├── e2e/              # Test specifications
 │   └── support/          # Test utilities and commands
+├── e2e/                  # Cross-browser tests (Playwright)
+│   ├── *.spec.ts         # Playwright test specifications
+│   ├── global-setup.ts   # Global test setup
+│   └── global-teardown.ts# Global test cleanup
 ├── docs/                 # Comprehensive documentation
+│   ├── README.md         # Documentation index
 │   ├── API.md            # API documentation
 │   ├── DEPLOYMENT.md     # Deployment guide
-│   ├── FEATURES.md       # Feature documentation
 │   ├── SECURITY.md       # Security guide
-│   ├── TESTING.md        # Testing guide
+│   ├── Features Documentation - Civic Portal.md # Feature documentation
+│   ├── TECHNICAL_IMPLEMENTATION_GUIDE.md # Implementation guide
+│   ├── PERFORMANCE_OPTIMIZATION.md # Performance guide
 │   └── *.md              # Additional documentation
 ├── scripts/              # Utility scripts for development
 ├── supabase/             # Supabase configuration and migrations
 │   ├── config.toml       # Supabase project configuration
 │   └── migrations/       # Database migration files
 ├── Dockerfile            # Docker configuration for deployment
+├── nginx.conf            # Nginx configuration for production
 ├── cypress.config.ts     # Cypress testing configuration
+├── playwright.config.ts  # Playwright testing configuration
+├── vitest.config.ts      # Vitest unit testing configuration
 ├── tailwind.config.js    # Tailwind CSS configuration
+├── postcss.config.js     # PostCSS configuration
 ├── vite.config.ts        # Vite build configuration
+├── vite.config.bundle-analyzer.ts # Bundle analysis configuration
+├── jsdoc.config.js       # JSDoc documentation configuration
+├── bundlesize.config.json# Bundle size monitoring
+├── tsconfig.json         # TypeScript configuration
+├── tsconfig.node.json    # TypeScript Node.js configuration
+├── components.json       # Shadcn UI components configuration
 └── package.json          # Project dependencies and scripts
 ```
 

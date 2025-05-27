@@ -1,8 +1,8 @@
-import React from "react";
-import Header from "./Header";
-import Footer from "./Footer";
-import { useNavigate } from "react-router-dom";
-import { useToast } from "@/components/ui/use-toast-enhanced";
+import React from 'react';
+import Header from './Header';
+import Footer from './Footer';
+import { useNavigate } from 'react-router-dom';
+import { useToast } from '@/components/ui/use-toast-enhanced';
 
 interface MainLayoutProps {
   children: React.ReactNode;
@@ -34,14 +34,14 @@ const MainLayout = ({
       onCreateIssue();
     } else {
       // Default create issue behavior
-      navigate("/issues?create=true");
+      navigate('/issues?create=true');
     }
   };
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <Header onCreateIssue={handleCreateIssue} onSearch={handleSearch} />
-      <main className="flex-1 pt-[82px] w-full overflow-x-hidden">
+      <main className="flex-1 pt-[82px] w-full overflow-x-hidden mb-8 sm:mb-12 lg:mb-16">
         {children}
       </main>
       {!hideFooter && <Footer />}

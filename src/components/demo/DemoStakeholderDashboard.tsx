@@ -41,6 +41,7 @@ import {
 import { departments } from '@/lib/demoData';
 import PageTitle from '@/components/common/PageTitle';
 import IssueDetailDialog from '@/components/issues/IssueDetailDialog';
+import { UIIssue } from '@/types/enhanced';
 
 interface DemoIssue {
   id: string;
@@ -61,6 +62,15 @@ interface DemoIssue {
   department_id: string | null;
   resolved_at: string | null;
   resolved_by: string | null;
+  comments?: Array<{
+    id: number;
+    author: {
+      name: string;
+      avatar: string;
+    };
+    content: string;
+    date: string;
+  }>;
 }
 
 interface DepartmentStats {
@@ -82,7 +92,7 @@ const DemoStakeholderDashboard: React.FC = () => {
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState('');
   const [refreshing, setRefreshing] = useState(false);
-  const [selectedIssue, setSelectedIssue] = useState<DemoIssue | null>(null);
+  const [selectedIssue, setSelectedIssue] = useState<UIIssue | null>(null);
   const [isIssueDialogOpen, setIsIssueDialogOpen] = useState(false);
 
   const demoIssues = getDemoIssues();
@@ -165,7 +175,37 @@ const DemoStakeholderDashboard: React.FC = () => {
 
   // Handle opening issue management dialog
   const handleManageIssue = (issue: DemoIssue) => {
-    setSelectedIssue(issue);
+    // Transform DemoIssue to UIIssue format
+    const transformedIssue: UIIssue = {
+      id: issue.id,
+      title: issue.title,
+      description: issue.description,
+      category: issue.category,
+      status: issue.status as 'open' | 'in-progress' | 'resolved',
+      votes: issue.votes,
+      comments: issue.comments || [],
+      date: issue.created_at,
+      author: {
+        name: issue.author_name || 'Unknown',
+        avatar:
+          issue.author_avatar ||
+          `https://api.dicebear.com/7.x/avataaars/svg?seed=${issue.author_id}`,
+      },
+      author_id: issue.author_id,
+      thumbnail:
+        issue.thumbnail ||
+        'https://cdn.pixabay.com/photo/2018/01/10/18/49/city-3073958_1280.jpg',
+      location: issue.location || '',
+      constituency: issue.constituency || '',
+      watchers: issue.watchers_count || 0,
+      watchers_count: issue.watchers_count,
+      created_at: issue.created_at,
+      updated_at: issue.updated_at,
+      resolved_at: issue.resolved_at || '',
+      resolved_by: issue.resolved_by || '',
+      department_id: issue.department_id || '',
+    };
+    setSelectedIssue(transformedIssue);
     setIsIssueDialogOpen(true);
   };
 

@@ -59,82 +59,123 @@ export function useRealtimeReports(initialTimeframe: TimeframeType = "3m"): {
     fetchData();
   }, [timeframe, toast]);
 
-  // Set up realtime subscription for data changes
+  // Set up realtime subscription for data changes with proper cleanup
   useEffect(() => {
-    // Create a realtime channel for issues table changes
-    const channel: RealtimeChannel = supabase
-      .channel("reports-realtime-updates")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "issues" },
-        (payload: RealtimePostgresChangesPayload<any>) => {
-          console.log("Issue change detected in reports hook:", payload);
-          // Refresh the data
-          getReportData(timeframe)
-            .then((data) => {
-              setReportData(data);
-              setLastUpdated(new Date());
-              toast({
-                title: "Reports Updated",
-                description:
-                  "The reports data has been refreshed with the latest changes.",
-                variant: "default",
-              });
-            })
-            .catch((err) => {
-              console.error("Error refreshing report data:", err);
-            });
-        },
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "comments" },
-        (payload: RealtimePostgresChangesPayload<any>) => {
-          // Refresh the data when comments change
-          getReportData(timeframe)
-            .then((data) => {
-              setReportData(data);
-              setLastUpdated(new Date());
-            })
-            .catch((err) => {
-              console.error("Error refreshing report data:", err);
-            });
-        },
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "issue_votes" },
-        (payload: RealtimePostgresChangesPayload<any>) => {
-          // Refresh the data when votes change
-          getReportData(timeframe)
-            .then((data) => {
-              setReportData(data);
-              setLastUpdated(new Date());
-            })
-            .catch((err) => {
-              console.error("Error refreshing report data:", err);
-            });
-        },
-      )
-      .subscribe((status, err) => {
-        if (err) {
-          console.error("Error setting up realtime subscription:", err);
-          toast({
-            title: "Realtime Error",
-            description:
-              "Failed to set up realtime updates. Some data may not refresh automatically.",
-            variant: "destructive",
-          });
-        } else {
-          console.log("Realtime subscription status:", status);
-        }
-      });
+    let isMounted = true;
+    let channel: RealtimeChannel | null = null;
 
-    // Cleanup function
+    const setupSubscription = () => {
+      try {
+        // Create a realtime channel for issues table changes
+        channel = supabase
+          .channel(`reports-realtime-updates-${timeframe}`)
+          .on(
+            "postgres_changes",
+            { event: "*", schema: "public", table: "issues" },
+            (payload: RealtimePostgresChangesPayload<any>) => {
+              if (!isMounted) return;
+
+              console.log("Issue change detected in reports hook:", payload);
+              // Refresh the data
+              getReportData(timeframe)
+                .then((data) => {
+                  if (!isMounted) return;
+
+                  setReportData(data);
+                  setLastUpdated(new Date());
+                  toast({
+                    title: "Reports Updated",
+                    description:
+                      "The reports data has been refreshed with the latest changes.",
+                    variant: "default",
+                  });
+                })
+                .catch((err) => {
+                  if (!isMounted) return;
+
+                  console.error("Error refreshing report data:", err);
+                  setError(new Error("Failed to refresh report data"));
+                });
+            },
+          )
+          .on(
+            "postgres_changes",
+            { event: "*", schema: "public", table: "comments" },
+            (payload: RealtimePostgresChangesPayload<any>) => {
+              if (!isMounted) return;
+
+              // Refresh the data when comments change
+              getReportData(timeframe)
+                .then((data) => {
+                  if (!isMounted) return;
+
+                  setReportData(data);
+                  setLastUpdated(new Date());
+                })
+                .catch((err) => {
+                  if (!isMounted) return;
+
+                  console.error("Error refreshing report data:", err);
+                  setError(new Error("Failed to refresh report data"));
+                });
+            },
+          )
+          .on(
+            "postgres_changes",
+            { event: "*", schema: "public", table: "issue_votes" },
+            (payload: RealtimePostgresChangesPayload<any>) => {
+              if (!isMounted) return;
+
+              // Refresh the data when votes change
+              getReportData(timeframe)
+                .then((data) => {
+                  if (!isMounted) return;
+
+                  setReportData(data);
+                  setLastUpdated(new Date());
+                })
+                .catch((err) => {
+                  if (!isMounted) return;
+
+                  console.error("Error refreshing report data:", err);
+                  setError(new Error("Failed to refresh report data"));
+                });
+            },
+          )
+          .subscribe((status, err) => {
+            if (!isMounted) return;
+
+            if (err) {
+              console.error("Error setting up realtime subscription:", err);
+              setError(new Error("Failed to setup real-time updates"));
+              toast({
+                title: "Realtime Error",
+                description:
+                  "Failed to set up realtime updates. Some data may not refresh automatically.",
+                variant: "destructive",
+              });
+            } else {
+              console.log("Realtime subscription status:", status);
+            }
+          });
+      } catch (err) {
+        if (isMounted) {
+          console.error("Error in subscription setup:", err);
+          setError(err instanceof Error ? err : new Error("Subscription setup failed"));
+        }
+      }
+    };
+
+    setupSubscription();
+
+    // ✅ Cleanup function to prevent memory leaks
     return () => {
-      supabase.removeChannel(channel).catch((err) => {
-        console.error("Error removing channel:", err);
-      });
+      isMounted = false;
+      if (channel) {
+        console.log("Cleaning up reports realtime subscription");
+        supabase.removeChannel(channel);
+        channel = null;
+      }
     };
   }, [timeframe, toast]);
 

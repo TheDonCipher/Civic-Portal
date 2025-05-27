@@ -3,8 +3,8 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { AuthProvider } from '@/providers/AuthProvider';
-import { AdminPage } from '@/components/admin/AdminPage';
-import { StakeholderDashboard } from '@/components/stakeholder/StakeholderDashboard';
+import AdminPage from '@/components/admin/AdminPage';
+import StakeholderDashboard from '@/components/stakeholder/StakeholderDashboard';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { supabase } from '@/lib/supabase';
 
@@ -28,11 +28,11 @@ vi.mock('@/lib/supabase', () => ({
 vi.mock('@/lib/auth', () => ({
   useAuth: () => ({
     user: { id: 'test-user-id', email: 'test@example.com' },
-    profile: { 
-      id: 'test-user-id', 
-      role: 'admin', 
+    profile: {
+      id: 'test-user-id',
+      role: 'admin',
       full_name: 'Test Admin',
-      verification_status: 'verified'
+      verification_status: 'verified',
     },
     isLoading: false,
   }),
@@ -47,9 +47,7 @@ vi.mock('@/components/ui/use-toast', () => ({
 
 const TestWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <BrowserRouter>
-    <AuthProvider>
-      {children}
-    </AuthProvider>
+    <AuthProvider>{children}</AuthProvider>
   </BrowserRouter>
 );
 
@@ -69,8 +67,8 @@ describe('Official Verification Workflow', () => {
           verification_status: 'pending',
           department_id: 'dept-1',
           created_at: '2024-01-01T00:00:00Z',
-          department: { id: 'dept-1', name: 'Health' }
-        }
+          department: { id: 'dept-1', name: 'Health' },
+        },
       ];
 
       const mockSupabaseResponse = {
@@ -105,16 +103,18 @@ describe('Official Verification Workflow', () => {
           return {
             select: vi.fn().mockReturnValue({
               order: vi.fn().mockResolvedValue({
-                data: [{
-                  id: 'official-1',
-                  username: 'official1',
-                  full_name: 'John Official',
-                  role: 'official',
-                  verification_status: 'pending',
-                  department_id: 'dept-1',
-                  created_at: '2024-01-01T00:00:00Z',
-                  department: { id: 'dept-1', name: 'Health' }
-                }],
+                data: [
+                  {
+                    id: 'official-1',
+                    username: 'official1',
+                    full_name: 'John Official',
+                    role: 'official',
+                    verification_status: 'pending',
+                    department_id: 'dept-1',
+                    created_at: '2024-01-01T00:00:00Z',
+                    department: { id: 'dept-1', name: 'Health' },
+                  },
+                ],
                 error: null,
               }),
             }),
@@ -170,12 +170,12 @@ describe('Official Verification Workflow', () => {
       // Mock unverified official
       vi.mocked(require('@/lib/auth').useAuth).mockReturnValue({
         user: { id: 'official-1', email: 'official@example.com' },
-        profile: { 
-          id: 'official-1', 
-          role: 'official', 
+        profile: {
+          id: 'official-1',
+          role: 'official',
           full_name: 'John Official',
           verification_status: 'pending',
-          department_id: 'dept-1'
+          department_id: 'dept-1',
         },
         isLoading: false,
       });
@@ -186,7 +186,9 @@ describe('Official Verification Workflow', () => {
         </TestWrapper>
       );
 
-      expect(screen.getByText('Account Verification Pending')).toBeInTheDocument();
+      expect(
+        screen.getByText('Account Verification Pending')
+      ).toBeInTheDocument();
       expect(screen.getByText(/currently under review/)).toBeInTheDocument();
     });
 
@@ -194,12 +196,12 @@ describe('Official Verification Workflow', () => {
       // Mock verified official
       vi.mocked(require('@/lib/auth').useAuth).mockReturnValue({
         user: { id: 'official-1', email: 'official@example.com' },
-        profile: { 
-          id: 'official-1', 
-          role: 'official', 
+        profile: {
+          id: 'official-1',
+          role: 'official',
           full_name: 'John Official',
           verification_status: 'verified',
-          department_id: 'dept-1'
+          department_id: 'dept-1',
         },
         isLoading: false,
       });
@@ -220,20 +222,22 @@ describe('Official Verification Workflow', () => {
       );
 
       // Should not show verification pending message
-      expect(screen.queryByText('Account Verification Pending')).not.toBeInTheDocument();
+      expect(
+        screen.queryByText('Account Verification Pending')
+      ).not.toBeInTheDocument();
     });
 
     it('should show rejection message for rejected officials', () => {
       // Mock rejected official
       vi.mocked(require('@/lib/auth').useAuth).mockReturnValue({
         user: { id: 'official-1', email: 'official@example.com' },
-        profile: { 
-          id: 'official-1', 
-          role: 'official', 
+        profile: {
+          id: 'official-1',
+          role: 'official',
           full_name: 'John Official',
           verification_status: 'rejected',
           verification_notes: 'Invalid credentials provided',
-          department_id: 'dept-1'
+          department_id: 'dept-1',
         },
         isLoading: false,
       });
@@ -244,8 +248,12 @@ describe('Official Verification Workflow', () => {
         </TestWrapper>
       );
 
-      expect(screen.getByText('Account Verification Rejected')).toBeInTheDocument();
-      expect(screen.getByText(/Invalid credentials provided/)).toBeInTheDocument();
+      expect(
+        screen.getByText('Account Verification Rejected')
+      ).toBeInTheDocument();
+      expect(
+        screen.getByText(/Invalid credentials provided/)
+      ).toBeInTheDocument();
     });
   });
 
@@ -259,7 +267,7 @@ describe('Official Verification Workflow', () => {
           message: 'Your account has been verified',
           read: false,
           created_at: '2024-01-01T00:00:00Z',
-        }
+        },
       ];
 
       (supabase.from as any).mockReturnValue({
@@ -288,7 +296,9 @@ describe('Official Verification Workflow', () => {
 
       await waitFor(() => {
         expect(screen.getByText('Account Verified! 🎉')).toBeInTheDocument();
-        expect(screen.getByText('Your account has been verified')).toBeInTheDocument();
+        expect(
+          screen.getByText('Your account has been verified')
+        ).toBeInTheDocument();
       });
     });
 
@@ -299,14 +309,16 @@ describe('Official Verification Workflow', () => {
         select: vi.fn().mockReturnValue({
           eq: vi.fn().mockReturnValue({
             order: vi.fn().mockResolvedValue({
-              data: [{
-                id: 'notif-1',
-                type: 'verification_approved',
-                title: 'Account Verified! 🎉',
-                message: 'Your account has been verified',
-                read: false,
-                created_at: '2024-01-01T00:00:00Z',
-              }],
+              data: [
+                {
+                  id: 'notif-1',
+                  type: 'verification_approved',
+                  title: 'Account Verified! 🎉',
+                  message: 'Your account has been verified',
+                  read: false,
+                  created_at: '2024-01-01T00:00:00Z',
+                },
+              ],
               error: null,
             }),
           }),

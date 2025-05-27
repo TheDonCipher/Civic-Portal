@@ -11,12 +11,32 @@ import { AuthProvider } from './providers/AuthProvider';
 import { ThemeProvider } from './providers/ThemeProvider';
 import { DemoProvider } from './providers/DemoProvider';
 
+// Import security utilities
+import { generateCSPHeader } from './lib/security/enhancedSecurity';
+
 // Import helper functions for development (available in browser console)
 import './utils/adminHelpers';
 import './utils/seedData';
 
 // import { TempoDevtools } from 'tempo-devtools';
 // TempoDevtools.init(); // Disabled - not using Tempo
+
+// Configure Content Security Policy
+const cspMeta = document.createElement('meta');
+cspMeta.httpEquiv = 'Content-Security-Policy';
+cspMeta.content = generateCSPHeader();
+document.head.appendChild(cspMeta);
+
+// Add additional security headers via meta tags
+const xFrameOptions = document.createElement('meta');
+xFrameOptions.httpEquiv = 'X-Frame-Options';
+xFrameOptions.content = 'SAMEORIGIN';
+document.head.appendChild(xFrameOptions);
+
+const xContentTypeOptions = document.createElement('meta');
+xContentTypeOptions.httpEquiv = 'X-Content-Type-Options';
+xContentTypeOptions.content = 'nosniff';
+document.head.appendChild(xContentTypeOptions);
 
 const basename = import.meta.env.BASE_URL;
 const rootElement = document.getElementById('root');

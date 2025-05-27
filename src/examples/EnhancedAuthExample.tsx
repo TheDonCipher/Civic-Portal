@@ -1,8 +1,14 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { AuthDialog } from '@/components/auth/AuthDialog';
+import AuthDialog from '@/components/auth/AuthDialog';
 import { EnhancedAuthDialog } from '@/components/auth/EnhancedAuthDialog';
 import { OnboardingFlow } from '@/components/auth/OnboardingFlow';
 import { LegalConsent } from '@/components/auth/LegalConsent';
@@ -34,8 +40,9 @@ export function EnhancedAuthExample() {
       <div className="text-center space-y-4">
         <h1 className="text-3xl font-bold">Enhanced Authentication System</h1>
         <p className="text-muted-foreground max-w-2xl mx-auto">
-          Demonstration of the comprehensive authentication system for Botswana's Civic Portal,
-          featuring modern UI/UX, enhanced security, and Botswana-specific requirements.
+          Demonstration of the comprehensive authentication system for
+          Botswana's Civic Portal, featuring modern UI/UX, enhanced security,
+          and Botswana-specific requirements.
         </p>
       </div>
 
@@ -45,8 +52,12 @@ export function EnhancedAuthExample() {
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               Welcome back!
-              <Badge variant={profile.role === 'official' ? 'default' : 'secondary'}>
-                {profile.role === 'official' ? 'Government Official' : 'Citizen'}
+              <Badge
+                variant={profile.role === 'official' ? 'default' : 'secondary'}
+              >
+                {profile.role === 'official'
+                  ? 'Government Official'
+                  : 'Citizen'}
               </Badge>
             </CardTitle>
             <CardDescription>
@@ -54,11 +65,21 @@ export function EnhancedAuthExample() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
-            <p><strong>Name:</strong> {profile.full_name}</p>
-            <p><strong>Email:</strong> {user.email}</p>
-            <p><strong>Constituency:</strong> {profile.constituency || 'Not specified'}</p>
+            <p>
+              <strong>Name:</strong> {profile.full_name}
+            </p>
+            <p>
+              <strong>Email:</strong> {user.email}
+            </p>
+            <p>
+              <strong>Constituency:</strong>{' '}
+              {profile.constituency || 'Not specified'}
+            </p>
             {profile.role === 'official' && (
-              <p><strong>Department:</strong> {profile.department_id || 'Not assigned'}</p>
+              <p>
+                <strong>Department:</strong>{' '}
+                {profile.department_id || 'Not assigned'}
+              </p>
             )}
           </CardContent>
         </Card>
@@ -84,10 +105,7 @@ export function EnhancedAuthExample() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button 
-              onClick={() => setShowBasicAuth(true)}
-              className="w-full"
-            >
+            <Button onClick={() => setShowBasicAuth(true)} className="w-full">
               Open Basic Auth
             </Button>
           </CardContent>
@@ -98,14 +116,16 @@ export function EnhancedAuthExample() {
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
               Enhanced Authentication
-              <Badge variant="default" className="text-xs">New</Badge>
+              <Badge variant="default" className="text-xs">
+                New
+              </Badge>
             </CardTitle>
             <CardDescription>
               Modern multi-step authentication with enhanced security
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button 
+            <Button
               onClick={() => setShowEnhancedAuth(true)}
               className="w-full"
             >
@@ -123,7 +143,7 @@ export function EnhancedAuthExample() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button 
+            <Button
               onClick={() => setShowOnboarding(true)}
               className="w-full"
               disabled={!profile}
@@ -142,7 +162,7 @@ export function EnhancedAuthExample() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button 
+            <Button
               onClick={() => setShowLegalConsent(true)}
               className="w-full"
             >

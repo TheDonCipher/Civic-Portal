@@ -83,73 +83,101 @@ export function useRealtimeIssues(options: UseRealtimeIssuesOptions = {}) {
     }
   }, [filters, limit, sortBy, sortDirection]);
 
-  // Set up realtime subscription
+  // Set up realtime subscription with proper cleanup
   useEffect(() => {
-    fetchIssues();
+    let isMounted = true;
+    let channel: RealtimeChannel | null = null;
 
-    // Create a realtime channel
-    const channel: RealtimeChannel = supabase
-      .channel("public:issues")
-      .on(
-        "postgres_changes",
-        { event: "INSERT", schema: "public", table: "issues" },
-        (payload) => {
-          console.log("New issue inserted:", payload);
-          // Add the new issue to the state if it matches our filters
-          // In a real app, you might want to re-fetch to ensure it matches filters
-          setIssues((currentIssues) => {
-            // Check if we're at the limit and need to remove the oldest issue
-            const newIssues = [...currentIssues];
-            if (newIssues.length >= limit) {
-              // Remove the last issue if sorted by created_at desc
-              // This is a simplification - in a real app you'd check the sort criteria
-              newIssues.pop();
-            }
-            return [payload.new as Issue, ...newIssues];
-          });
-        },
-      )
-      .on(
-        "postgres_changes",
-        { event: "UPDATE", schema: "public", table: "issues" },
-        (payload) => {
-          console.log("Issue updated:", payload);
-          // Update the issue in the state
-          setIssues((currentIssues) =>
-            currentIssues.map((issue) =>
-              issue.id === payload.new.id
-                ? { ...issue, ...payload.new }
-                : issue,
-            ),
-          );
-        },
-      )
-      .on(
-        "postgres_changes",
-        { event: "DELETE", schema: "public", table: "issues" },
-        (payload) => {
-          console.log("Issue deleted:", payload);
-          // Remove the issue from the state
-          setIssues((currentIssues) =>
-            currentIssues.filter((issue) => issue.id !== payload.old.id),
-          );
-        },
-      )
-      .subscribe((status, err) => {
-        if (err) {
-          console.error("Error setting up realtime subscription:", err);
-        } else {
-          console.log("Realtime subscription status:", status);
+    const setupSubscription = async () => {
+      try {
+        // Only fetch if component is still mounted
+        if (isMounted) {
+          await fetchIssues();
         }
-      });
 
-    // Cleanup function
-    return () => {
-      supabase.removeChannel(channel).catch((err) => {
-        console.error("Error removing channel:", err);
-      });
+        // Create a realtime channel with unique identifier
+        const channelName = `issues-${JSON.stringify(filters)}-${limit}`;
+        channel = supabase
+          .channel(channelName)
+          .on(
+            "postgres_changes",
+            { event: "INSERT", schema: "public", table: "issues" },
+            (payload) => {
+              if (!isMounted) return;
+
+              console.log("New issue inserted:", payload);
+              // Add the new issue to the state if it matches our filters
+              setIssues((currentIssues) => {
+                // Check if we're at the limit and need to remove the oldest issue
+                const newIssues = [...currentIssues];
+                if (newIssues.length >= limit) {
+                  // Remove the last issue if sorted by created_at desc
+                  newIssues.pop();
+                }
+                return [payload.new as Issue, ...newIssues];
+              });
+            },
+          )
+          .on(
+            "postgres_changes",
+            { event: "UPDATE", schema: "public", table: "issues" },
+            (payload) => {
+              if (!isMounted) return;
+
+              console.log("Issue updated:", payload);
+              // Update the issue in the state
+              setIssues((currentIssues) =>
+                currentIssues.map((issue) =>
+                  issue.id === payload.new.id
+                    ? { ...issue, ...payload.new }
+                    : issue,
+                ),
+              );
+            },
+          )
+          .on(
+            "postgres_changes",
+            { event: "DELETE", schema: "public", table: "issues" },
+            (payload) => {
+              if (!isMounted) return;
+
+              console.log("Issue deleted:", payload);
+              // Remove the issue from the state
+              setIssues((currentIssues) =>
+                currentIssues.filter((issue) => issue.id !== payload.old.id),
+              );
+            },
+          )
+          .subscribe((status, err) => {
+            if (!isMounted) return;
+
+            if (err) {
+              console.error("Error setting up realtime subscription:", err);
+              setError(new Error("Failed to setup real-time updates"));
+            } else {
+              console.log("Realtime subscription status:", status);
+            }
+          });
+      } catch (err) {
+        if (isMounted) {
+          console.error("Error in subscription setup:", err);
+          setError(err instanceof Error ? err : new Error("Subscription setup failed"));
+        }
+      }
     };
-  }, [fetchIssues]);
+
+    setupSubscription();
+
+    // ✅ Cleanup function to prevent memory leaks
+    return () => {
+      isMounted = false;
+      if (channel) {
+        console.log("Cleaning up realtime subscription");
+        supabase.removeChannel(channel);
+        channel = null;
+      }
+    };
+  }, [filters, limit, sortBy, sortDirection, fetchIssues]);
 
   // Function to refresh issues
   const refreshIssues = useCallback(() => {

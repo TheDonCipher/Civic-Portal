@@ -34,6 +34,9 @@ const ReportsPage = React.lazy(() =>
     default: module.ReportsPage,
   }))
 );
+const PlatformUpdatesPage = React.lazy(
+  () => import('./pages/PlatformUpdatesPage')
+);
 const ProfilePage = React.lazy(
   () => import('./components/profile/ProfilePage')
 );
@@ -43,6 +46,15 @@ const StakeholderDashboard = React.lazy(
 const AdminPage = React.lazy(() => import('./components/admin/AdminPage'));
 const AboutPage = React.lazy(() => import('./components/about/AboutPage'));
 const FAQPage = React.lazy(() => import('./components/faq/FAQPage'));
+const PrivacyPolicyPage = React.lazy(
+  () => import('./components/legal/PrivacyPolicyPage')
+);
+const TermsOfServicePage = React.lazy(
+  () => import('./components/legal/TermsOfServicePage')
+);
+const DataProcessingPage = React.lazy(
+  () => import('./components/legal/DataProcessingPage')
+);
 const AuthDialog = React.lazy(() => import('./components/auth/AuthDialog'));
 const TestingBanner = React.lazy(() => import('./components/TestingBanner'));
 const UserDashboard = React.lazy(
@@ -61,6 +73,15 @@ const DatabaseTest = React.lazy(
 );
 const AuthDialogDebug = React.lazy(
   () => import('./components/debug/AuthDialogDebug')
+);
+const ConsentTimestampFixer = React.lazy(
+  () => import('./components/debug/ConsentTimestampFixer')
+);
+const ConsentManagement = React.lazy(
+  () => import('./components/admin/ConsentManagement')
+);
+const PricingPage = React.lazy(
+  () => import('./components/pricing/PricingPage')
 );
 
 function App() {
@@ -111,10 +132,30 @@ function App() {
   // Use a more permissive check for VITE_TEMPO
   // const tempoRoutes = import.meta.env.VITE_TEMPO ? useRoutes(routes) : null; // Disabled - not using Tempo
 
-  // Loading fallback component
-  const LoadingFallback = () => (
-    <div className="flex items-center justify-center min-h-screen">
-      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+  // ✅ Enhanced loading fallback component with better UX
+  const LoadingFallback = ({ name }: { name?: string }) => (
+    <div className="flex items-center justify-center min-h-screen bg-background">
+      <div className="text-center space-y-4">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mx-auto"></div>
+        <div className="space-y-2">
+          <p className="text-lg font-medium text-foreground">
+            {name ? `Loading ${name}...` : 'Loading...'}
+          </p>
+          <p className="text-sm text-muted-foreground">
+            Please wait while we prepare your content
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+
+  // ✅ Component-specific loading fallbacks
+  const ComponentLoader = ({ name }: { name: string }) => (
+    <div className="flex items-center justify-center min-h-[400px]">
+      <div className="text-center space-y-3">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary mx-auto"></div>
+        <p className="text-sm text-muted-foreground">Loading {name}...</p>
+      </div>
     </div>
   );
 
@@ -137,27 +178,102 @@ function App() {
               path="/auth/callback"
               element={<EmailVerificationCallback />}
             />
-            <Route path="/demo" element={<DemoHome />} />
-            <Route path="/demo/issues" element={<DemoIssuesPage />} />
-            <Route path="/demo/reports" element={<DemoReportsPage />} />
+
+            {/* Demo routes with specific loading states */}
+            <Route
+              path="/demo"
+              element={
+                <Suspense fallback={<ComponentLoader name="Demo Portal" />}>
+                  <DemoHome />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/demo/issues"
+              element={
+                <Suspense fallback={<ComponentLoader name="Demo Issues" />}>
+                  <DemoIssuesPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/demo/reports"
+              element={
+                <Suspense fallback={<ComponentLoader name="Demo Reports" />}>
+                  <DemoReportsPage />
+                </Suspense>
+              }
+            />
             <Route
               path="/demo/stakeholder"
-              element={<DemoStakeholderDashboard />}
+              element={
+                <Suspense
+                  fallback={
+                    <ComponentLoader name="Demo Stakeholder Dashboard" />
+                  }
+                >
+                  <DemoStakeholderDashboard />
+                </Suspense>
+              }
             />
-            <Route path="/demo/user/:userId" element={<DemoUserDashboard />} />
-            <Route path="/demo/profile" element={<DemoUserDashboard />} />
+            <Route
+              path="/demo/user/:userId"
+              element={
+                <Suspense
+                  fallback={<ComponentLoader name="Demo User Dashboard" />}
+                >
+                  <DemoUserDashboard />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/demo/profile"
+              element={
+                <Suspense fallback={<ComponentLoader name="Demo Profile" />}>
+                  <DemoUserDashboard />
+                </Suspense>
+              }
+            />
+
+            {/* Static pages */}
             <Route path="/about" element={<AboutPage />} />
             <Route path="/faq" element={<FAQPage />} />
+            <Route
+              path="/pricing"
+              element={
+                <Suspense fallback={<ComponentLoader name="Pricing" />}>
+                  <PricingPage />
+                </Suspense>
+              }
+            />
+
+            {/* Legal pages */}
+            <Route path="/privacy" element={<PrivacyPolicyPage />} />
+            <Route path="/terms" element={<TermsOfServicePage />} />
+            <Route path="/legal/privacy" element={<PrivacyPolicyPage />} />
+            <Route path="/legal/terms" element={<TermsOfServicePage />} />
+            <Route
+              path="/legal/data-processing"
+              element={<DataProcessingPage />}
+            />
+
+            {/* Debug and test pages */}
             <Route path="/test-tabs" element={<TabsTestComponent />} />
             <Route path="/debug-db" element={<DatabaseTest />} />
             <Route path="/debug-auth" element={<AuthDialogDebug />} />
+            <Route path="/debug-consent" element={<ConsentTimestampFixer />} />
+            <Route path="/admin/consent" element={<ConsentManagement />} />
 
             {/* User-specific routes - require authentication */}
             <Route
               path="/user/:userId"
               element={
                 <ProtectedRoute>
-                  <UserDashboard />
+                  <Suspense
+                    fallback={<ComponentLoader name="User Dashboard" />}
+                  >
+                    <UserDashboard />
+                  </Suspense>
                 </ProtectedRoute>
               }
             />
@@ -165,7 +281,9 @@ function App() {
               path="/user/:userId/issues"
               element={
                 <ProtectedRoute>
-                  <IssuesPage />
+                  <Suspense fallback={<ComponentLoader name="Issues" />}>
+                    <IssuesPage />
+                  </Suspense>
                 </ProtectedRoute>
               }
             />
@@ -174,23 +292,67 @@ function App() {
               path="/user/:userId/profile"
               element={
                 <ProtectedRoute>
-                  <ProfilePage />
+                  <Suspense fallback={<ComponentLoader name="Profile" />}>
+                    <ProfilePage />
+                  </Suspense>
                 </ProtectedRoute>
               }
             />
 
             {/* Legacy routes for backward compatibility */}
-            <Route path="/issues" element={<IssuesPage />} />
-            <Route path="/reports" element={<ReportsPage />} />
-            <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/profile/:userId" element={<ProfilePage />} />
+            <Route
+              path="/issues"
+              element={
+                <Suspense fallback={<ComponentLoader name="Issues" />}>
+                  <IssuesPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/reports"
+              element={
+                <Suspense fallback={<ComponentLoader name="Reports" />}>
+                  <ReportsPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/platform-updates"
+              element={
+                <Suspense
+                  fallback={<ComponentLoader name="Platform Updates" />}
+                >
+                  <PlatformUpdatesPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <Suspense fallback={<ComponentLoader name="Profile" />}>
+                  <ProfilePage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/profile/:userId"
+              element={
+                <Suspense fallback={<ComponentLoader name="Profile" />}>
+                  <ProfilePage />
+                </Suspense>
+              }
+            />
 
             {/* Stakeholder dashboard - requires specific role */}
             <Route
               path="/stakeholder"
               element={
                 <ProtectedRoute allowedRoles={['official', 'admin']}>
-                  <StakeholderDashboard />
+                  <Suspense
+                    fallback={<ComponentLoader name="Stakeholder Dashboard" />}
+                  >
+                    <StakeholderDashboard />
+                  </Suspense>
                 </ProtectedRoute>
               }
             />
@@ -200,13 +362,15 @@ function App() {
               path="/admin"
               element={
                 <ProtectedRoute allowedRoles={['admin']}>
-                  <AdminPage />
+                  <Suspense fallback={<ComponentLoader name="Admin Panel" />}>
+                    <AdminPage />
+                  </Suspense>
                 </ProtectedRoute>
               }
             />
 
             {/* Add this for Tempo storyboards */}
-            {import.meta.env.VITE_TEMPO && (
+            {import.meta.env['VITE_TEMPO'] && (
               <Route path="/tempobook/*" element={null} />
             )}
 

@@ -97,7 +97,7 @@ export const setupLazyLoading = () => {
     entries.forEach((entry) => {
       if (entry.isIntersecting) {
         const img = entry.target as HTMLImageElement;
-        img.src = img.dataset.src || "";
+        img.src = img.dataset['src'] || "";
         img.removeAttribute("data-src");
         imageObserver.unobserve(img);
       }
@@ -133,4 +133,68 @@ export const measurePerformance = async <T>(
     );
     throw error;
   }
+};
+
+// ✅ Enhanced performance utilities for Phase 2
+
+/**
+ * Bundle size optimization utilities
+ */
+export const optimizeBundleSize = {
+  // Preload critical resources
+  preloadCriticalResources: () => {
+    const criticalResources = [
+      '/fonts/inter-400.woff2',
+      '/fonts/inter-500.woff2',
+      '/fonts/inter-600.woff2',
+    ];
+
+    criticalResources.forEach(resource => {
+      const link = document.createElement('link');
+      link.rel = 'preload';
+      link.href = resource;
+      link.as = resource.includes('.woff') ? 'font' : 'style';
+      if (resource.includes('.woff')) {
+        link.type = 'font/woff2';
+        link.crossOrigin = 'anonymous';
+      }
+      document.head.appendChild(link);
+    });
+  },
+
+  // Lazy load non-critical CSS
+  loadNonCriticalCSS: (href: string) => {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = href;
+    link.media = 'print';
+    link.onload = () => {
+      link.media = 'all';
+    };
+    document.head.appendChild(link);
+  },
+};
+
+/**
+ * Memory leak prevention utilities
+ */
+export const memoryLeakPrevention = {
+  // Monitor memory usage
+  monitorMemoryUsage: (threshold: number = 50) => {
+    const checkMemory = () => {
+      if ('memory' in performance) {
+        const memory = (performance as any).memory;
+        const usedMB = memory.usedJSHeapSize / (1024 * 1024);
+        if (usedMB > threshold) {
+          console.warn(`High memory usage detected: ${usedMB.toFixed(2)}MB`);
+          // Trigger garbage collection if available
+          if ('gc' in window) {
+            (window as any).gc();
+          }
+        }
+      }
+    };
+
+    return setInterval(checkMemory, 10000); // Check every 10 seconds
+  },
 };

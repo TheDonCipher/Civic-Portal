@@ -110,11 +110,17 @@ In short, we expect all contributors to:
 4. Run tests to ensure your changes don't break existing functionality:
 
    ```bash
-   # Run end-to-end tests
+   # Run unit tests
+   npm run test
+
+   # Run end-to-end tests (Playwright)
    npm run test:e2e
 
-   # Or run tests interactively
+   # Run Cypress tests interactively
    npm run cypress:open
+
+   # Run all tests
+   npm run test && npm run test:e2e && npm run cypress:run
    ```
 
 5. Commit your changes with a descriptive commit message:
@@ -169,7 +175,22 @@ Pull requests will be merged once they have been approved by at least one mainta
 
 ## Testing Guidelines
 
-The Civic Portal uses comprehensive end-to-end testing with Cypress to ensure all features work correctly across different user scenarios.
+The Civic Portal uses multiple testing frameworks to ensure comprehensive coverage and reliability across all features and user scenarios.
+
+### Testing Strategy
+
+- **Unit Tests (Vitest)**: Test individual functions and components in isolation
+- **Integration Tests (Vitest)**: Test component interactions and API integrations
+- **End-to-End Tests (Cypress)**: Test complete user workflows and critical paths
+- **Cross-Browser Tests (Playwright)**: Ensure compatibility across different browsers
+
+### Unit and Integration Tests (Vitest)
+
+- **Write unit tests** for utility functions, hooks, and complex logic
+- **Test components** with React Testing Library for user interaction testing
+- **Mock external dependencies** to isolate units under test
+- **Place tests** alongside source files with `.test.ts` or `.spec.ts` extensions
+- **Aim for high coverage** of critical business logic
 
 ### End-to-End Tests (Cypress)
 
@@ -177,6 +198,13 @@ The Civic Portal uses comprehensive end-to-end testing with Cypress to ensure al
 - **Focus on critical user flows** including authentication, issue management, and role-based access
 - **Place E2E tests** in the `cypress/e2e` directory
 - **Follow existing patterns** for test organization and naming conventions
+
+### Cross-Browser Tests (Playwright)
+
+- **Test critical flows** across Chrome, Firefox, and Safari
+- **Focus on browser-specific issues** and compatibility
+- **Place tests** in the `e2e` directory
+- **Use Playwright's built-in assertions** and utilities
 
 ### Test Categories
 
@@ -204,14 +232,25 @@ The Civic Portal uses comprehensive end-to-end testing with Cypress to ensure al
 ### Running Tests
 
 ```bash
-# Run all tests headlessly
-npm run test:e2e
+# Unit and Integration Tests
+npm run test                    # Run unit tests
+npm run test:ui                 # Run tests with UI
+npm run test:watch              # Run tests in watch mode
+npm run test:coverage           # Generate coverage report
 
-# Open Cypress test runner (interactive)
-npm run cypress:open
+# End-to-End Tests (Cypress)
+npm run cypress:open            # Open Cypress test runner (interactive)
+npm run cypress:run             # Run Cypress tests headlessly
+npm run test:e2e:ci             # Run tests with server startup
 
-# Run tests in CI environment
-npm run test:e2e:ci
+# Cross-Browser Tests (Playwright)
+npm run test:e2e                # Run Playwright tests
+npm run test:e2e:ui             # Run with UI mode
+npm run test:e2e:headed         # Run in headed mode
+npm run test:e2e:debug          # Debug tests
+
+# Run All Tests
+npm run test && npm run test:e2e && npm run cypress:run
 ```
 
 ### Writing Tests

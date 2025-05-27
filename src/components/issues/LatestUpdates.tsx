@@ -1,25 +1,40 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '../ui/avatar';
 import { Badge } from '../ui/badge';
 import { ScrollArea } from '../ui/scroll-area';
-import { MessageCircle } from 'lucide-react';
+import { Button } from '../ui/button';
+import {
+  MessageCircle,
+  ExternalLink,
+  Bell,
+  Zap,
+  Settings,
+  Megaphone,
+  Info,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useDemoMode } from '@/providers/DemoProvider';
 import { supabase } from '@/lib/supabase';
 import { demoUpdates } from '@/lib/demoData';
+import { safeDate, formatters } from '@/lib/utils/dateUtils';
+import { handleApiError } from '@/lib/utils/errorHandler';
 
 interface Update {
   id: string;
-  author: {
-    name: string;
-    avatar: string;
-  };
+  title: string;
   content: string;
-  date: string;
   type: string;
-  issueTitle: string;
-  issueId: string;
+  author_name: string;
+  author_role: string;
+  author_avatar: string;
+  created_at: string;
+  issue_id?: string;
+  issue_title?: string;
+  platform_update_id?: string;
+  is_official: boolean;
+  source_type: 'issue' | 'platform';
 }
 
 interface LatestUpdatesProps {
@@ -28,6 +43,7 @@ interface LatestUpdatesProps {
 
 const LatestUpdates = ({ onIssueClick = () => {} }: LatestUpdatesProps) => {
   const { isDemoMode, getDemoIssues } = useDemoMode();
+  const navigate = useNavigate();
   const [updates, setUpdates] = useState<Update[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -37,89 +53,98 @@ const LatestUpdates = ({ onIssueClick = () => {} }: LatestUpdatesProps) => {
       setIsLoading(true);
       try {
         if (isDemoMode) {
-          // Use demo data - get all demo issues and extract their updates
+          // Demo data combining issue updates and platform updates
           const demoIssues = getDemoIssues();
           const allUpdates: Update[] = [];
 
-          // Get updates from demo data (only official updates, not comments or solutions)
+          // Add issue updates from demo data
           demoUpdates.forEach((update) => {
             const issue = demoIssues.find((i) => i.id === update.issue_id);
             if (issue) {
               allUpdates.push({
                 id: update.id,
-                author: {
-                  name: update.author_name,
-                  avatar:
-                    update.author_avatar ||
-                    `https://api.dicebear.com/7.x/avataaars/svg?seed=${update.author_id}`,
-                },
+                title: update.title || `Update on ${issue.title}`,
                 content: update.content,
-                date: update.created_at,
                 type: update.type,
-                issueTitle: issue.title,
-                issueId: issue.id,
+                author_name: update.author_name,
+                author_role: 'official',
+                author_avatar:
+                  update.author_avatar ||
+                  `https://api.dicebear.com/7.x/avataaars/svg?seed=${update.author_id}`,
+                created_at: update.created_at,
+                issue_id: issue.id,
+                issue_title: issue.title,
+                is_official: true,
+                source_type: 'issue' as const,
               });
             }
           });
 
-          // Sort by date (newest first) and take the latest 10
+          // Add demo platform updates
+          const demoPlatformUpdates: Update[] = [
+            {
+              id: 'platform-1',
+              title: 'New Feature: Enhanced Issue Tracking',
+              content:
+                'We have launched an enhanced issue tracking system with real-time updates.',
+              type: 'feature',
+              author_name: 'System Administrator',
+              author_role: 'admin',
+              author_avatar:
+                'https://api.dicebear.com/7.x/avataaars/svg?seed=admin',
+              created_at: new Date(
+                Date.now() - 1 * 24 * 60 * 60 * 1000
+              ).toISOString(),
+              is_official: true,
+              source_type: 'platform' as const,
+              platform_update_id: 'platform-1',
+            },
+            {
+              id: 'platform-2',
+              title: 'Scheduled Maintenance Notice',
+              content:
+                'The platform will undergo scheduled maintenance on Sunday, 3 AM - 6 AM.',
+              type: 'maintenance',
+              author_name: 'Technical Team',
+              author_role: 'admin',
+              author_avatar:
+                'https://api.dicebear.com/7.x/avataaars/svg?seed=tech',
+              created_at: new Date(
+                Date.now() - 3 * 24 * 60 * 60 * 1000
+              ).toISOString(),
+              is_official: true,
+              source_type: 'platform' as const,
+              platform_update_id: 'platform-2',
+            },
+          ];
+
+          allUpdates.push(...demoPlatformUpdates);
+
+          // Sort by date (newest first) and take the latest 8
           const sortedUpdates = allUpdates
             .sort(
-              (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+              (a, b) =>
+                new Date(b.created_at).getTime() -
+                new Date(a.created_at).getTime()
             )
-            .slice(0, 10);
+            .slice(0, 8);
 
           setUpdates(sortedUpdates);
         } else {
-          // Fetch real updates from database
-          const { data: updatesData, error } = await supabase
-            .from('updates')
-            .select(
-              `
-              id,
-              content,
-              type,
-              created_at,
-              author_id,
-              issue_id,
-              issues!inner(title)
-            `
-            )
-            .order('created_at', { ascending: false })
-            .limit(10);
-
-          if (error) throw error;
-
-          // Fetch profile data for each update
-          const updatesWithProfiles = await Promise.all(
-            (updatesData || []).map(async (update) => {
-              const { data: profile } = await supabase
-                .from('profiles')
-                .select('full_name, avatar_url')
-                .eq('id', update.author_id)
-                .single();
-
-              return {
-                id: update.id,
-                author: {
-                  name: profile?.full_name || 'Official',
-                  avatar:
-                    profile?.avatar_url ||
-                    `https://api.dicebear.com/7.x/avataaars/svg?seed=${update.author_id}`,
-                },
-                content: update.content,
-                date: update.created_at,
-                type: update.type,
-                issueTitle: update.issues?.title || 'Unknown Issue',
-                issueId: update.issue_id,
-              };
-            })
+          // Use the new combined updates function
+          const { data: updatesData, error } = await supabase.rpc(
+            'get_latest_combined_updates',
+            {
+              p_limit: 8,
+            }
           );
 
-          setUpdates(updatesWithProfiles);
+          if (error) throw error;
+          setUpdates(updatesData || []);
         }
       } catch (error) {
         console.error('Error fetching updates:', error);
+        handleApiError(error, 'LatestUpdates', 'fetchUpdates');
         setUpdates([]);
       } finally {
         setIsLoading(false);
@@ -130,7 +155,7 @@ const LatestUpdates = ({ onIssueClick = () => {} }: LatestUpdatesProps) => {
 
     // Set up real-time subscriptions for updates (only when not in demo mode)
     if (!isDemoMode) {
-      const subscription = supabase
+      const updatesSubscription = supabase
         .channel('latest-updates-realtime')
         .on(
           'postgres_changes',
@@ -139,27 +164,72 @@ const LatestUpdates = ({ onIssueClick = () => {} }: LatestUpdatesProps) => {
             schema: 'public',
             table: 'updates',
           },
-          (payload) => {
-            console.log('New update detected in LatestUpdates:', payload);
-            // Refresh updates when new ones are added
-            fetchUpdates();
-          }
+          () => fetchUpdates()
+        )
+        .subscribe();
+
+      const platformUpdatesSubscription = supabase
+        .channel('latest-platform-updates-realtime')
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'platform_updates',
+          },
+          () => fetchUpdates()
         )
         .subscribe();
 
       return () => {
-        subscription.unsubscribe();
+        updatesSubscription.unsubscribe();
+        platformUpdatesSubscription.unsubscribe();
       };
     }
+
+    return () => {};
   }, [isDemoMode, getDemoIssues]);
 
-  const getUpdateTypeColor = (type: string) => {
+  const getUpdateTypeIcon = (type: string, sourceType: string) => {
+    if (sourceType === 'platform') {
+      switch (type) {
+        case 'feature':
+          return <Zap className="h-4 w-4 text-blue-500" />;
+        case 'maintenance':
+          return <Settings className="h-4 w-4 text-orange-500" />;
+        case 'announcement':
+          return <Megaphone className="h-4 w-4 text-green-500" />;
+        case 'policy':
+          return <Info className="h-4 w-4 text-purple-500" />;
+        default:
+          return <Bell className="h-4 w-4 text-gray-500" />;
+      }
+    }
+    return <MessageCircle className="h-4 w-4 text-blue-500" />;
+  };
+
+  const getUpdateTypeColor = (type: string, sourceType: string) => {
+    if (sourceType === 'platform') {
+      switch (type) {
+        case 'feature':
+          return 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300';
+        case 'maintenance':
+          return 'bg-orange-100 text-orange-800 dark:bg-orange-900/50 dark:text-orange-300';
+        case 'announcement':
+          return 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300';
+        case 'policy':
+          return 'bg-purple-100 text-purple-800 dark:bg-purple-900/50 dark:text-purple-300';
+        default:
+          return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300';
+      }
+    }
+
     switch (type) {
       case 'status':
         return 'bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-300';
-      case 'solution':
+      case 'official':
         return 'bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300';
-      case 'comment':
+      case 'update':
         return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300';
       default:
         return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300';
@@ -188,6 +258,10 @@ const LatestUpdates = ({ onIssueClick = () => {} }: LatestUpdatesProps) => {
     return 'Just now';
   };
 
+  const handleHeaderClick = () => {
+    navigate('/platform-updates');
+  };
+
   return (
     <Card className="bg-background border-border shadow-lg h-[calc(100vh-120px)] flex flex-col overflow-hidden">
       <CardHeader className="flex-shrink-0 px-6 py-4 border-b border-border/50 bg-muted/20">
@@ -196,7 +270,13 @@ const LatestUpdates = ({ onIssueClick = () => {} }: LatestUpdatesProps) => {
             <div className="p-2 bg-primary/10 rounded-lg">
               <MessageCircle className="h-4 w-4 text-primary" />
             </div>
-            <span>Latest Updates</span>
+            <button
+              onClick={handleHeaderClick}
+              className="flex items-center gap-2 hover:text-primary transition-colors cursor-pointer"
+            >
+              <span>Latest Updates</span>
+              <ExternalLink className="h-4 w-4" />
+            </button>
             <Badge variant="secondary" className="ml-auto text-xs">
               {updates.length}
             </Badge>
@@ -233,7 +313,13 @@ const LatestUpdates = ({ onIssueClick = () => {} }: LatestUpdatesProps) => {
                 <div
                   key={update.id}
                   className="group relative p-4 border border-border/50 rounded-xl bg-card hover:bg-accent/30 hover:border-primary/20 cursor-pointer transition-all duration-300 hover:shadow-md"
-                  onClick={() => onIssueClick(update.issueId)}
+                  onClick={() => {
+                    if (update.source_type === 'issue' && update.issue_id) {
+                      onIssueClick(update.issue_id);
+                    } else if (update.source_type === 'platform') {
+                      navigate('/platform-updates');
+                    }
+                  }}
                 >
                   {/* Left accent line */}
                   <div className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-primary/20 to-primary/5 group-hover:from-primary/40 group-hover:to-primary/10 rounded-l-xl transition-all duration-300" />
@@ -241,11 +327,11 @@ const LatestUpdates = ({ onIssueClick = () => {} }: LatestUpdatesProps) => {
                   <div className="flex gap-3">
                     <Avatar className="h-10 w-10 shrink-0 ring-2 ring-background shadow-sm">
                       <AvatarImage
-                        src={update.author.avatar}
-                        alt={update.author.name}
+                        src={update.author_avatar}
+                        alt={update.author_name}
                       />
                       <AvatarFallback className="text-sm font-medium bg-primary/10 text-primary">
-                        {update.author.name.charAt(0)}
+                        {update.author_name.charAt(0)}
                       </AvatarFallback>
                     </Avatar>
 
@@ -253,35 +339,63 @@ const LatestUpdates = ({ onIssueClick = () => {} }: LatestUpdatesProps) => {
                       {/* Header with author and time */}
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
-                          <p className="font-semibold text-sm text-foreground truncate">
-                            {update.author.name}
-                          </p>
+                          <div className="flex items-center gap-2">
+                            <p className="font-semibold text-sm text-foreground truncate">
+                              {update.author_name}
+                            </p>
+                            <Badge variant="outline" className="text-xs">
+                              {update.author_role}
+                            </Badge>
+                            {update.source_type === 'platform' && (
+                              <Badge
+                                variant="secondary"
+                                className="text-xs bg-purple-100 text-purple-800"
+                              >
+                                Platform
+                              </Badge>
+                            )}
+                          </div>
                           <p className="text-xs text-muted-foreground">
-                            {formatDate(update.date)}
+                            {formatDate(update.created_at)}
                           </p>
                         </div>
-                        <Badge
-                          variant="secondary"
-                          className={cn(
-                            'text-xs font-medium shrink-0',
-                            getUpdateTypeColor(update.type)
-                          )}
-                        >
-                          {update.type.charAt(0).toUpperCase() +
-                            update.type.slice(1)}
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          {getUpdateTypeIcon(update.type, update.source_type)}
+                          <Badge
+                            variant="secondary"
+                            className={cn(
+                              'text-xs font-medium shrink-0',
+                              getUpdateTypeColor(
+                                update.type,
+                                update.source_type
+                              )
+                            )}
+                          >
+                            {update.type.charAt(0).toUpperCase() +
+                              update.type.slice(1)}
+                          </Badge>
+                        </div>
                       </div>
+
+                      {/* Title (for platform updates) */}
+                      {update.source_type === 'platform' && (
+                        <h4 className="font-medium text-sm text-foreground line-clamp-1">
+                          {update.title}
+                        </h4>
+                      )}
 
                       {/* Content */}
                       <p className="text-sm text-muted-foreground leading-relaxed line-clamp-2">
                         {update.content}
                       </p>
 
-                      {/* Issue reference */}
+                      {/* Issue reference or platform indicator */}
                       <div className="flex items-center gap-2 pt-1">
                         <div className="h-1 w-1 rounded-full bg-muted-foreground/40" />
                         <span className="text-xs text-muted-foreground/80 truncate">
-                          on "{update.issueTitle}"
+                          {update.source_type === 'issue' && update.issue_title
+                            ? `on "${update.issue_title}"`
+                            : 'Platform Update'}
                         </span>
                       </div>
                     </div>

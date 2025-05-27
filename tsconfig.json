@@ -5,7 +5,7 @@
     "lib": ["ES2020", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "skipLibCheck": true,
-    "noEmitOnError": false,
+    "noEmitOnError": true,
 
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
@@ -14,7 +14,22 @@
     "noEmit": true,
     "jsx": "react-jsx",
 
-    "strict": false,
+    // ✅ Re-enabled strict mode after Phase 2 completion
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+
+    // ✅ Re-enabled additional safety checks
+    "exactOptionalPropertyTypes": true,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "allowUnusedLabels": false,
+    "allowUnreachableCode": false,
+
     "paths": {
       "@/*": ["./src/*"]
     },

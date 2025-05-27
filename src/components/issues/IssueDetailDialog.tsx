@@ -1,10 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { useState, useEffect } from 'react';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -13,15 +8,12 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from '@/components/ui/select';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/lib/auth';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/lib/supabase';
-import { Issue } from './IssueGrid';
+import type { UIIssue } from '@/types/enhanced';
 import { CommentsTab } from './tabs/CommentsTab';
 import { UpdatesTab } from './tabs/UpdatesTab';
 import { SolutionsTab } from './tabs/SolutionsTab';
@@ -51,13 +43,16 @@ import {
   Share2,
   Bookmark,
   Flag,
-  ChevronDown,
+  AlertCircle,
+  Clock,
+  CheckCircle,
+  Circle,
 } from 'lucide-react';
 
 interface IssueDetailDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  issue: Issue;
+  issue: UIIssue;
   onDelete?: (issueId: string) => void;
   highlightedUpdateId?: string; // For navigation from LatestUpdates
   isStakeholderMode?: boolean; // For stakeholder management features
@@ -84,13 +79,12 @@ const IssueDetailDialog = ({
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [localVotes, setLocalVotes] = useState(issue?.votes || 0);
   const [localWatchers, setLocalWatchers] = useState(issue?.watchers || 0);
-  const [isScrolled, setIsScrolled] = useState(false);
 
   // Track actual counts from tab components
   const [actualCounts, setActualCounts] = useState({
     comments: issue?.comments?.length || 0,
-    updates: issue?.updates?.length || 0,
-    solutions: issue?.solutions?.length || 0,
+    updates: 0, // Will be updated by UpdatesTab component
+    solutions: 0, // Will be updated by SolutionsTab component
   });
 
   // Auto-navigate to updates tab if highlighted update is provided
@@ -113,12 +107,6 @@ const IssueDetailDialog = ({
     setActualCounts((prev) => ({ ...prev, solutions: count }));
   };
 
-  // Handle scroll detection for visual feedback
-  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
-    const scrollTop = e.currentTarget.scrollTop;
-    setIsScrolled(scrollTop > 20);
-  };
-
   // Format date for display
   const formatDate = (dateString: string) => {
     try {
@@ -132,19 +120,39 @@ const IssueDetailDialog = ({
     }
   };
 
-  // Get status color
-  const getStatusColor = (status: string) => {
+  // Get status color and icon
+  const getStatusInfo = (status: string) => {
     switch (status?.toLowerCase()) {
       case 'open':
-        return 'bg-orange-100 text-orange-800 border-orange-200';
+        return {
+          color:
+            'bg-red-100 text-red-800 border-red-200 hover:bg-red-200 dark:bg-red-950/50 dark:text-red-400 dark:border-red-800 dark:hover:bg-red-950/70',
+          icon: AlertCircle,
+        };
       case 'in-progress':
-        return 'bg-blue-100 text-blue-800 border-blue-200';
+        return {
+          color:
+            'bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-200 dark:bg-blue-950/50 dark:text-blue-400 dark:border-blue-800 dark:hover:bg-blue-950/70',
+          icon: Clock,
+        };
       case 'resolved':
-        return 'bg-green-100 text-green-800 border-green-200';
+        return {
+          color:
+            'bg-green-100 text-green-800 border-green-200 hover:bg-green-200 dark:bg-green-950/50 dark:text-green-400 dark:border-green-800 dark:hover:bg-green-950/70',
+          icon: CheckCircle,
+        };
       case 'closed':
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return {
+          color:
+            'bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:bg-gray-700',
+          icon: Circle,
+        };
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200';
+        return {
+          color:
+            'bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:border-gray-600 dark:hover:bg-gray-700',
+          icon: Circle,
+        };
     }
   };
 
@@ -226,7 +234,7 @@ const IssueDetailDialog = ({
     }
 
     if (onStatusUpdate) {
-      await onStatusUpdate(issue.id, newStatus);
+      onStatusUpdate(issue.id, newStatus);
     } else {
       // Fallback to direct database update if no callback provided
       try {
@@ -336,499 +344,420 @@ const IssueDetailDialog = ({
     }
   };
 
+  // Get status info including icon
+  const statusInfo = getStatusInfo(issue?.status || '');
+  const StatusIcon = statusInfo.icon;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[95vh] p-0 flex flex-col">
+      <DialogContent className="max-w-5xl max-h-[90vh] p-0 flex flex-col overflow-hidden">
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
           transition={{ duration: 0.2 }}
-          className="flex flex-col h-full max-h-[95vh]"
+          className="flex flex-col h-full max-h-[90vh]"
         >
-          {/* Header Section */}
-          <div className="relative">
-            {/* Hero Image */}
-            <div className="h-48 sm:h-64 overflow-hidden">
-              <img
-                src={
-                  issue?.thumbnail ||
-                  'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=800&q=80'
-                }
-                alt={issue?.title || 'Issue'}
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-            </div>
+          {/* Compact Header */}
+          <div className="relative bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 border-b border-border/50">
+            <div className="p-6 pb-4">
+              {/* Close Button */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute top-4 right-4 h-8 w-8 hover:bg-background/80"
+                onClick={() => onOpenChange(false)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
 
-            {/* Close Button */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="absolute top-4 right-4 bg-black/20 hover:bg-black/40 text-white backdrop-blur-sm"
-              onClick={() => onOpenChange(false)}
-            >
-              <X className="h-4 w-4" />
-            </Button>
-
-            {/* Title and Status Overlay */}
-            <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1 min-w-0">
+              {/* Status and Title */}
+              <div className="pr-12 space-y-3">
+                <div className="flex items-center gap-3">
                   {isStakeholderMode && isStakeholder ? (
-                    <div className="mb-3">
-                      <Select
-                        value={issue?.status || 'open'}
-                        onValueChange={handleStatusUpdate}
-                      >
-                        <SelectTrigger className="w-auto h-auto p-0 border-none bg-transparent hover:bg-white/10 transition-colors">
-                          <Badge
-                            className={`${getStatusColor(
-                              issue?.status || ''
-                            )} cursor-pointer hover:opacity-80 transition-opacity`}
-                          >
-                            {issue?.status?.charAt(0).toUpperCase() +
-                              issue?.status?.slice(1).replace('-', ' ') ||
-                              'Unknown'}
-                          </Badge>
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="open">Open</SelectItem>
-                          <SelectItem value="in-progress">
-                            In Progress
-                          </SelectItem>
-                          <SelectItem value="resolved">Resolved</SelectItem>
-                          <SelectItem value="closed">Closed</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  ) : (
-                    <Badge
-                      className={`mb-3 ${getStatusColor(issue?.status || '')}`}
-                    >
-                      {issue?.status?.charAt(0).toUpperCase() +
-                        issue?.status?.slice(1).replace('-', ' ') || 'Unknown'}
-                    </Badge>
-                  )}
-                  <h1 className="text-2xl sm:text-3xl font-bold leading-tight mb-2">
-                    {issue?.title || 'Issue Details'}
-                  </h1>
-                  <div className="flex items-center gap-4 text-sm text-white/90">
-                    <div className="flex items-center gap-2">
-                      <Avatar className="h-6 w-6 ring-2 ring-white/20">
-                        <AvatarImage
-                          src={issue?.author?.avatar}
-                          alt={issue?.author?.name}
-                        />
-                        <AvatarFallback className="text-xs">
-                          {issue?.author?.name?.charAt(0) || '?'}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span>{issue?.author?.name || 'Unknown'}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Calendar className="h-4 w-4" />
-                      <span>
-                        {formatDate(issue?.date || issue?.created_at || '')}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Action Bar */}
-          <div className="px-6 py-4 border-b border-border/50 bg-muted/20">
-            <div className="flex items-center justify-between">
-              {/* Left side - Engagement */}
-              <div className="flex items-center gap-2">
-                <motion.div whileTap={{ scale: 0.95 }}>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className={`gap-2 ${
-                      isLiked
-                        ? 'text-primary bg-primary/10'
-                        : 'text-muted-foreground'
-                    }`}
-                    onClick={handleLike}
-                  >
-                    <ThumbsUp className="h-4 w-4" />
-                    <span className="font-medium">{localVotes}</span>
-                  </Button>
-                </motion.div>
-
-                <motion.div whileTap={{ scale: 0.95 }}>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className={`gap-2 ${
-                      isWatching
-                        ? 'text-primary bg-primary/10'
-                        : 'text-muted-foreground'
-                    }`}
-                    onClick={handleWatch}
-                  >
-                    <Eye className="h-4 w-4" />
-                    <span className="font-medium">{localWatchers}</span>
-                  </Button>
-                </motion.div>
-
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="gap-2 text-muted-foreground"
-                >
-                  <MessageCircle className="h-4 w-4" />
-                  <span className="font-medium">
-                    {issue?.comments?.length || 0}
-                  </span>
-                </Button>
-              </div>
-
-              {/* Right side - Actions */}
-              <div className="flex items-center gap-2">
-                {/* Stakeholder Status Management */}
-                {isStakeholderMode && isStakeholder && (
-                  <div className="flex items-center gap-2 mr-2">
-                    <span className="text-sm text-muted-foreground">
-                      Status:
-                    </span>
                     <Select
                       value={issue?.status || 'open'}
                       onValueChange={handleStatusUpdate}
                     >
-                      <SelectTrigger className="w-32 h-8">
-                        <SelectValue />
+                      <SelectTrigger className="w-auto h-auto p-0 border-none bg-transparent">
+                        <Badge
+                          className={`${statusInfo.color} cursor-pointer transition-colors px-3 py-1.5 font-medium`}
+                        >
+                          <StatusIcon className="h-3.5 w-3.5 mr-1.5" />
+                          {issue?.status?.charAt(0).toUpperCase() +
+                            issue?.status?.slice(1).replace('-', ' ') ||
+                            'Unknown'}
+                        </Badge>
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="open">Open</SelectItem>
-                        <SelectItem value="in-progress">In Progress</SelectItem>
-                        <SelectItem value="resolved">Resolved</SelectItem>
-                        <SelectItem value="closed">Closed</SelectItem>
+                        <SelectItem value="open">
+                          <div className="flex items-center gap-2">
+                            <AlertCircle className="h-4 w-4 text-red-500" />
+                            Open
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="in-progress">
+                          <div className="flex items-center gap-2">
+                            <Clock className="h-4 w-4 text-blue-500" />
+                            In Progress
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="resolved">
+                          <div className="flex items-center gap-2">
+                            <CheckCircle className="h-4 w-4 text-green-500" />
+                            Resolved
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="closed">
+                          <div className="flex items-center gap-2">
+                            <Circle className="h-4 w-4 text-gray-500" />
+                            Closed
+                          </div>
+                        </SelectItem>
                       </SelectContent>
                     </Select>
+                  ) : (
+                    <Badge
+                      className={`${statusInfo.color} px-3 py-1.5 font-medium`}
+                    >
+                      <StatusIcon className="h-3.5 w-3.5 mr-1.5" />
+                      {issue?.status?.charAt(0).toUpperCase() +
+                        issue?.status?.slice(1).replace('-', ' ') || 'Unknown'}
+                    </Badge>
+                  )}
+
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Calendar className="h-4 w-4" />
+                    {formatDate(issue?.date || issue?.created_at || '')}
                   </div>
-                )}
+                </div>
 
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className={`${
-                    isBookmarked ? 'text-primary' : 'text-muted-foreground'
-                  }`}
-                  onClick={handleBookmark}
-                >
-                  <Bookmark className="h-4 w-4" />
-                </Button>
+                <h1 className="text-2xl font-bold text-foreground leading-tight">
+                  {issue?.title || 'Issue Details'}
+                </h1>
 
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-muted-foreground"
-                  onClick={handleShare}
-                >
-                  <Share2 className="h-4 w-4" />
-                </Button>
+                {/* Author info */}
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-8 w-8 ring-2 ring-background">
+                    <AvatarImage
+                      src={issue?.author?.avatar}
+                      alt={issue?.author?.name}
+                    />
+                    <AvatarFallback className="text-sm">
+                      {issue?.author?.name?.charAt(0) || '?'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <p className="font-medium text-sm">
+                      {issue?.author?.name || 'Unknown'}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Issue Author
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
 
-                {user &&
-                  issue &&
-                  (user.id === (issue.author as any)?.id ||
-                    profile?.role === 'admin') && (
+            {/* Enhanced Action Bar */}
+            <div className="px-6 py-3 bg-background/50 dark:bg-background/80 backdrop-blur-sm border-t border-border/30">
+              <div className="flex items-center justify-between">
+                {/* Left side - Engagement metrics */}
+                <div className="flex items-center gap-1">
+                  <motion.div whileTap={{ scale: 0.95 }}>
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                      onClick={() => setIsDeleteDialogOpen(true)}
+                      className={`gap-2 h-9 px-3 rounded-full transition-all ${
+                        isLiked
+                          ? 'text-red-600 bg-red-50 hover:bg-red-100 dark:text-red-400 dark:bg-red-950/50 dark:hover:bg-red-950/70'
+                          : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                      }`}
+                      onClick={handleLike}
                     >
-                      <Flag className="h-4 w-4" />
+                      <ThumbsUp className="h-4 w-4" />
+                      <span className="font-medium">{localVotes}</span>
                     </Button>
-                  )}
+                  </motion.div>
+
+                  <motion.div whileTap={{ scale: 0.95 }}>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className={`gap-2 h-9 px-3 rounded-full transition-all ${
+                        isWatching
+                          ? 'text-blue-600 bg-blue-50 hover:bg-blue-100 dark:text-blue-400 dark:bg-blue-950/50 dark:hover:bg-blue-950/70'
+                          : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                      }`}
+                      onClick={handleWatch}
+                    >
+                      <Eye className="h-4 w-4" />
+                      <span className="font-medium">{localWatchers}</span>
+                    </Button>
+                  </motion.div>
+
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="gap-2 h-9 px-3 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                    <span className="font-medium">{actualCounts.comments}</span>
+                  </Button>
+                </div>
+
+                {/* Right side - Actions */}
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className={`h-9 w-9 rounded-full transition-all ${
+                      isBookmarked
+                        ? 'text-yellow-600 bg-yellow-50 hover:bg-yellow-100 dark:text-yellow-400 dark:bg-yellow-950/50 dark:hover:bg-yellow-950/70'
+                        : 'text-muted-foreground hover:text-foreground hover:bg-muted'
+                    }`}
+                    onClick={handleBookmark}
+                  >
+                    <Bookmark className="h-4 w-4" />
+                  </Button>
+
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-9 w-9 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
+                    onClick={handleShare}
+                  >
+                    <Share2 className="h-4 w-4" />
+                  </Button>
+
+                  {user &&
+                    issue &&
+                    (user.id === (issue.author as any)?.id ||
+                      profile?.role === 'admin') && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-9 w-9 rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
+                        onClick={() => setIsDeleteDialogOpen(true)}
+                      >
+                        <Flag className="h-4 w-4" />
+                      </Button>
+                    )}
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Content Section - Scrollable */}
-          <div className="flex-1 min-h-0 flex flex-col">
-            <Tabs
-              value={activeTab}
-              onValueChange={setActiveTab}
-              className="flex-1 flex flex-col min-h-0"
-            >
-              {/* Tab Navigation - Fixed */}
-              <div
-                className={`flex-shrink-0 px-6 pt-4 pb-2 border-b border-border/50 bg-background/95 backdrop-blur-sm sticky top-0 z-10 transition-all duration-200 ${
-                  isScrolled ? 'shadow-md' : ''
-                }`}
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <h2 className="text-lg font-semibold text-foreground">
-                    {activeTab === 'comments' && 'Comments & Discussion'}
-                    {activeTab === 'updates' && 'Official Updates'}
-                    {activeTab === 'solutions' && 'Proposed Solutions'}
-                  </h2>
-                  {isScrolled && (
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.8 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      className="flex items-center text-xs text-muted-foreground"
-                    >
-                      <ChevronDown className="h-3 w-3 mr-1" />
-                      Scroll for more
-                    </motion.div>
-                  )}
+          {/* Main Content Area */}
+          <div className="flex-1 min-h-0 flex">
+            {/* Left Panel - Issue Details */}
+            <div className="w-80 flex-shrink-0 border-r border-border/50 bg-slate-50/50 dark:bg-slate-900/50">
+              <div className="p-6 space-y-6 h-full overflow-y-auto">
+                {/* Issue Image */}
+                {issue?.thumbnail && (
+                  <div className="space-y-3">
+                    <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+                      Image
+                    </h3>
+                    <div className="aspect-video rounded-lg overflow-hidden bg-muted">
+                      <img
+                        src={issue.thumbnail}
+                        alt={issue.title}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Description */}
+                <div className="space-y-3">
+                  <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+                    Description
+                  </h3>
+                  <div className="bg-background rounded-lg p-4 border border-border/50">
+                    <p className="text-sm text-foreground leading-relaxed">
+                      {issue?.description || 'No description provided.'}
+                    </p>
+                  </div>
                 </div>
-                <TabsList className="grid w-full grid-cols-3 bg-muted/50 h-12">
-                  <TabsTrigger
-                    value="comments"
-                    className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm transition-all duration-300 relative"
-                  >
-                    <MessageSquare className="h-4 w-4" />
-                    <span className="hidden sm:inline font-medium">
-                      Comments
-                    </span>
-                    <Badge
-                      variant="secondary"
-                      className={`ml-1 text-xs transition-colors duration-300 ${
-                        activeTab === 'comments'
-                          ? 'bg-primary-foreground/20 text-primary-foreground'
-                          : 'bg-primary/10 text-primary'
-                      }`}
-                    >
-                      {actualCounts.comments}
-                    </Badge>
-                    {activeTab === 'comments' && (
-                      <motion.div
-                        layoutId="activeTab"
-                        className="absolute inset-0 bg-primary rounded-md -z-10"
-                        transition={{
-                          type: 'spring',
-                          bounce: 0.2,
-                          duration: 0.6,
-                        }}
-                      />
-                    )}
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="updates"
-                    className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm transition-all duration-300 relative"
-                  >
-                    <Settings className="h-4 w-4" />
-                    <span className="hidden sm:inline font-medium">
-                      Updates
-                    </span>
-                    <Badge
-                      variant="secondary"
-                      className={`ml-1 text-xs transition-colors duration-300 ${
-                        activeTab === 'updates'
-                          ? 'bg-primary-foreground/20 text-primary-foreground'
-                          : 'bg-primary/10 text-primary'
-                      }`}
-                    >
-                      {actualCounts.updates}
-                    </Badge>
-                    {activeTab === 'updates' && (
-                      <motion.div
-                        layoutId="activeTab"
-                        className="absolute inset-0 bg-primary rounded-md -z-10"
-                        transition={{
-                          type: 'spring',
-                          bounce: 0.2,
-                          duration: 0.6,
-                        }}
-                      />
-                    )}
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="solutions"
-                    className="flex items-center gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm transition-all duration-300 relative"
-                  >
-                    <Lightbulb className="h-4 w-4" />
-                    <span className="hidden sm:inline font-medium">
-                      Solutions
-                    </span>
-                    <Badge
-                      variant="secondary"
-                      className={`ml-1 text-xs transition-colors duration-300 ${
-                        activeTab === 'solutions'
-                          ? 'bg-primary-foreground/20 text-primary-foreground'
-                          : 'bg-primary/10 text-primary'
-                      }`}
-                    >
-                      {actualCounts.solutions}
-                    </Badge>
-                    {activeTab === 'solutions' && (
-                      <motion.div
-                        layoutId="activeTab"
-                        className="absolute inset-0 bg-primary rounded-md -z-10"
-                        transition={{
-                          type: 'spring',
-                          bounce: 0.2,
-                          duration: 0.6,
-                        }}
-                      />
-                    )}
-                  </TabsTrigger>
-                </TabsList>
-              </div>
 
-              {/* Scrollable Content Area */}
-              <div
-                className="flex-1 overflow-y-auto min-h-0 scroll-smooth"
-                onScroll={handleScroll}
-              >
-                {/* Issue Details Card - Always Visible */}
-                <div className="px-6 py-4 border-b border-border/50">
-                  <Card className="border-border/50">
-                    <CardContent className="p-4">
-                      <div className="space-y-4">
-                        {/* Description */}
-                        <div>
-                          <h3 className="font-semibold text-foreground mb-2">
-                            Description
-                          </h3>
-                          <p className="text-muted-foreground leading-relaxed">
-                            {issue?.description || 'No description provided.'}
-                          </p>
-                        </div>
-
-                        {/* Location and Category Info */}
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t border-border/50">
-                          <div className="flex items-center gap-2">
-                            <MapPin className="h-4 w-4 text-muted-foreground" />
-                            <div>
-                              <p className="text-xs text-muted-foreground">
-                                Location
-                              </p>
-                              <p className="text-sm font-medium">
-                                {issue?.location || 'Not specified'}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Building className="h-4 w-4 text-muted-foreground" />
-                            <div>
-                              <p className="text-xs text-muted-foreground">
-                                Category
-                              </p>
-                              <p className="text-sm font-medium">
-                                {issue?.category || 'Uncategorized'}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Users className="h-4 w-4 text-muted-foreground" />
-                            <div>
-                              <p className="text-xs text-muted-foreground">
-                                Constituency
-                              </p>
-                              <p className="text-sm font-medium">
-                                {issue?.constituency || 'Not specified'}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
+                {/* Key Information */}
+                <div className="space-y-4">
+                  <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+                    Details
+                  </h3>
+                  <div className="space-y-3">
+                    <div className="flex items-start gap-3 p-3 bg-background rounded-lg border border-border/50">
+                      <MapPin className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-xs font-medium text-muted-foreground mb-1">
+                          Location
+                        </p>
+                        <p className="text-sm font-medium text-foreground">
+                          {issue?.location || 'Not specified'}
+                        </p>
                       </div>
-                    </CardContent>
-                  </Card>
+                    </div>
+
+                    <div className="flex items-start gap-3 p-3 bg-background rounded-lg border border-border/50">
+                      <Building className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-xs font-medium text-muted-foreground mb-1">
+                          Category
+                        </p>
+                        <p className="text-sm font-medium text-foreground">
+                          {issue?.category || 'Uncategorized'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3 p-3 bg-background rounded-lg border border-border/50">
+                      <Users className="h-4 w-4 text-muted-foreground mt-0.5 flex-shrink-0" />
+                      <div className="min-w-0">
+                        <p className="text-xs font-medium text-muted-foreground mb-1">
+                          Constituency
+                        </p>
+                        <p className="text-sm font-medium text-foreground">
+                          {issue?.constituency || 'Not specified'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Panel - Tabs Content */}
+            <div className="flex-1 min-h-0 flex flex-col">
+              <Tabs
+                value={activeTab}
+                onValueChange={setActiveTab}
+                className="flex-1 flex flex-col min-h-0"
+              >
+                {/* Enhanced Tab Navigation */}
+                <div className="flex-shrink-0 px-6 pt-6 pb-4 bg-background">
+                  <TabsList className="grid w-full grid-cols-3 bg-muted/30 h-12 p-1">
+                    <TabsTrigger
+                      value="comments"
+                      className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm transition-all duration-200 rounded-md font-medium"
+                    >
+                      <MessageSquare className="h-4 w-4" />
+                      <span className="hidden sm:inline">Comments</span>
+                      <Badge
+                        variant="secondary"
+                        className="ml-1 text-xs bg-muted-foreground/10 text-muted-foreground"
+                      >
+                        {actualCounts.comments}
+                      </Badge>
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="updates"
+                      className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm transition-all duration-200 rounded-md font-medium"
+                    >
+                      <Settings className="h-4 w-4" />
+                      <span className="hidden sm:inline">Updates</span>
+                      <Badge
+                        variant="secondary"
+                        className="ml-1 text-xs bg-muted-foreground/10 text-muted-foreground"
+                      >
+                        {actualCounts.updates}
+                      </Badge>
+                    </TabsTrigger>
+                    <TabsTrigger
+                      value="solutions"
+                      className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm transition-all duration-200 rounded-md font-medium"
+                    >
+                      <Lightbulb className="h-4 w-4" />
+                      <span className="hidden sm:inline">Solutions</span>
+                      <Badge
+                        variant="secondary"
+                        className="ml-1 text-xs bg-muted-foreground/10 text-muted-foreground"
+                      >
+                        {actualCounts.solutions}
+                      </Badge>
+                    </TabsTrigger>
+                  </TabsList>
                 </div>
 
-                {/* Tab Content - Scrollable */}
-                <AnimatePresence mode="wait">
+                {/* Scrollable Tab Content */}
+                <div className="flex-1 overflow-y-auto min-h-0 scroll-smooth">
                   <TabsContent
                     value="comments"
-                    className="px-6 py-4 m-0 data-[state=inactive]:hidden"
+                    className="px-6 pb-6 m-0 data-[state=inactive]:hidden"
                   >
-                    <motion.div
-                      key="comments"
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      transition={{ duration: 0.2 }}
-                      className="space-y-4"
-                    >
-                      <div className="flex items-center justify-between">
-                        <h3 className="text-lg font-semibold text-foreground">
-                          Comments & Discussion
-                        </h3>
-                        <Badge variant="outline" className="text-xs">
-                          {actualCounts.comments} comments
-                        </Badge>
-                      </div>
-                      {issue && (
-                        <CommentsTab
-                          issueId={issue.id}
-                          onCountChange={updateCommentsCount}
-                        />
+                    <AnimatePresence mode="wait">
+                      {activeTab === 'comments' && (
+                        <motion.div
+                          key="comments"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
+                          transition={{ duration: 0.2 }}
+                        >
+                          {issue && (
+                            <CommentsTab
+                              issueId={issue.id}
+                              onCountChange={updateCommentsCount}
+                            />
+                          )}
+                        </motion.div>
                       )}
-                    </motion.div>
+                    </AnimatePresence>
                   </TabsContent>
 
                   <TabsContent
                     value="updates"
-                    className="px-6 py-4 m-0 data-[state=inactive]:hidden"
+                    className="px-6 pb-6 m-0 data-[state=inactive]:hidden"
                   >
-                    <motion.div
-                      key="updates"
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      transition={{ duration: 0.2 }}
-                      className="space-y-4"
-                    >
-                      <div className="flex items-center justify-between">
-                        <h3 className="text-lg font-semibold text-foreground">
-                          Official Updates
-                        </h3>
-                        <Badge variant="outline" className="text-xs">
-                          {actualCounts.updates} updates
-                        </Badge>
-                      </div>
-                      {issue && (
-                        <UpdatesTab
-                          issueId={issue.id}
-                          highlightedUpdateId={highlightedUpdateId}
-                          onCountChange={updateUpdatesCount}
-                        />
+                    <AnimatePresence mode="wait">
+                      {activeTab === 'updates' && (
+                        <motion.div
+                          key="updates"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
+                          transition={{ duration: 0.2 }}
+                        >
+                          {issue && (
+                            <UpdatesTab
+                              issueId={issue.id}
+                              {...(highlightedUpdateId && {
+                                highlightedUpdateId,
+                              })}
+                              onCountChange={updateUpdatesCount}
+                            />
+                          )}
+                        </motion.div>
                       )}
-                    </motion.div>
+                    </AnimatePresence>
                   </TabsContent>
 
                   <TabsContent
                     value="solutions"
-                    className="px-6 py-4 m-0 data-[state=inactive]:hidden"
+                    className="px-6 pb-6 m-0 data-[state=inactive]:hidden"
                   >
-                    <motion.div
-                      key="solutions"
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: -10 }}
-                      transition={{ duration: 0.2 }}
-                      className="space-y-4"
-                    >
-                      <div className="flex items-center justify-between">
-                        <h3 className="text-lg font-semibold text-foreground">
-                          Proposed Solutions
-                        </h3>
-                        <Badge variant="outline" className="text-xs">
-                          {actualCounts.solutions} solutions
-                        </Badge>
-                      </div>
-                      {issue && (
-                        <SolutionsTab
-                          issueId={issue.id}
-                          onCountChange={updateSolutionsCount}
-                        />
+                    <AnimatePresence mode="wait">
+                      {activeTab === 'solutions' && (
+                        <motion.div
+                          key="solutions"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
+                          transition={{ duration: 0.2 }}
+                        >
+                          {issue && (
+                            <SolutionsTab
+                              issueId={issue.id}
+                              onCountChange={updateSolutionsCount}
+                            />
+                          )}
+                        </motion.div>
                       )}
-                    </motion.div>
+                    </AnimatePresence>
                   </TabsContent>
-                </AnimatePresence>
-
-                {/* Bottom padding for better scrolling */}
-                <div className="h-6" />
-              </div>
-            </Tabs>
+                </div>
+              </Tabs>
+            </div>
           </div>
         </motion.div>
       </DialogContent>

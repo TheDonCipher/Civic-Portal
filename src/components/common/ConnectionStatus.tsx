@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, CheckCircle2 } from "lucide-react";
+import { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { AlertCircle, CheckCircle2 } from 'lucide-react';
 
 export function ConnectionStatus() {
   const [isConnected, setIsConnected] = useState<boolean | null>(null);
@@ -11,9 +11,9 @@ export function ConnectionStatus() {
 
   useEffect(() => {
     // Skip connection check in production unless explicitly enabled
-    const isProduction = import.meta.env.MODE === "production";
+    const isProduction = import.meta.env.MODE === 'production';
     const showConnectionStatus =
-      import.meta.env.VITE_SHOW_CONNECTION_STATUS === "true";
+      import.meta.env['VITE_SHOW_CONNECTION_STATUS'] === 'true';
 
     if (isProduction && !showConnectionStatus) {
       return;
@@ -26,33 +26,35 @@ export function ConnectionStatus() {
         try {
           // First check if we have valid credentials
           if (!supabase || !supabase.from) {
-            console.error("Supabase client not properly initialized");
+            console.error('Supabase client not properly initialized');
             setIsConnected(false);
             setIsVisible(true);
             return;
           }
 
           const { data, error } = await supabase
-            .from("issues")
-            .select("count")
+            .from('issues')
+            .select('count')
             .limit(1);
 
           if (error) {
-            console.error("Supabase connection error:", error);
+            console.error('Supabase connection error:', error);
             setIsConnected(false);
             setIsVisible(true);
 
             // Retry logic
             if (retryCount < maxRetries) {
               console.log(
-                `Connection failed. Retrying (${retryCount + 1}/${maxRetries})...`,
+                `Connection failed. Retrying (${
+                  retryCount + 1
+                }/${maxRetries})...`
               );
               setRetryCount((prev) => prev + 1);
               // Exponential backoff
               setTimeout(checkConnection, 1000 * Math.pow(2, retryCount));
             }
           } else {
-            console.log("Supabase connection successful");
+            console.log('Supabase connection successful');
             setIsConnected(true);
             // Only show success briefly
             setIsVisible(true);
@@ -61,21 +63,21 @@ export function ConnectionStatus() {
             setRetryCount(0);
           }
         } catch (networkErr) {
-          console.error("Network error connecting to Supabase:", networkErr);
+          console.error('Network error connecting to Supabase:', networkErr);
           setIsConnected(false);
           setIsVisible(true);
 
           // Retry logic for network errors
           if (retryCount < maxRetries) {
             console.log(
-              `Network error. Retrying (${retryCount + 1}/${maxRetries})...`,
+              `Network error. Retrying (${retryCount + 1}/${maxRetries})...`
             );
             setRetryCount((prev) => prev + 1);
             setTimeout(checkConnection, 1000 * Math.pow(2, retryCount));
           }
         }
       } catch (err) {
-        console.error("Connection check failed:", err);
+        console.error('Connection check failed:', err);
         setIsConnected(false);
         setIsVisible(true);
       }

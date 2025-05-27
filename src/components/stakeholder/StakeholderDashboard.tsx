@@ -17,11 +17,17 @@ import { useAuth } from '@/lib/auth';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
+import { getDepartmentStats, getBudgetAllocations } from '@/lib/api/statsApi';
+import {
+  getIssuesByDepartment,
+  updateIssueStatus,
+} from '@/lib/api/enhancedIssues';
 import VerificationPending from '@/components/auth/VerificationPending';
 import MainLayout from '../layout/MainLayout';
 import PageTitle from '../common/PageTitle';
 import IssueCard from '../issues/IssueCard';
 import IssueDetailDialog from '../issues/IssueDetailDialog';
+import type { UIIssue, DepartmentWithStats } from '@/types/enhanced';
 import {
   AlertCircle,
   CheckCircle,
@@ -46,17 +52,17 @@ interface Issue {
   description: string;
   category: string;
   status: string;
-  votes: number;
-  watchers_count: number;
+  votes: number | null;
+  watchers_count: number | null;
   location: string | null;
   constituency: string | null;
   thumbnail: string | null;
   author_id: string;
   author_name: string | null;
   author_avatar: string | null;
-  created_at: string;
-  updated_at: string;
-  department_id: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+  department_id?: string | null;
   resolved_at: string | null;
   resolved_by: string | null;
 }
@@ -72,9 +78,56 @@ interface DepartmentStats {
   openIssues: number;
   inProgressIssues: number;
   resolvedIssues: number;
-  avgResponseTime: number;
+  avgResponseTime: number | string;
   monthlyResolved: number;
+  budgetAllocated?: number;
+  budgetSpent?: number;
+  budgetUtilization?: number;
 }
+
+interface BudgetAllocation {
+  id: string;
+  category: string;
+  allocated_amount: number;
+  spent_amount: number;
+  fiscal_year: number;
+  description?: string;
+  departments?: {
+    id: string;
+    name: string;
+  };
+}
+
+// Helper function to convert Issue to UIIssue
+const convertIssueToUIIssue = (issue: Issue): UIIssue => {
+  return {
+    id: issue.id,
+    title: issue.title,
+    description: issue.description,
+    category: issue.category,
+    status: issue.status as 'open' | 'in-progress' | 'resolved',
+    votes: issue.votes || 0,
+    comments: [], // Empty array for now, would need to fetch separately
+    date: issue.created_at || new Date().toISOString(),
+    author: {
+      name: issue.author_name || 'Unknown',
+      avatar:
+        issue.author_avatar ||
+        `https://api.dicebear.com/7.x/avataaars/svg?seed=${issue.author_id}`,
+    },
+    author_id: issue.author_id,
+    thumbnail: issue.thumbnail || '',
+    location: issue.location || '',
+    constituency: issue.constituency || '',
+    watchers: issue.watchers_count || 0,
+    watchers_count: issue.watchers_count || 0,
+    created_at: issue.created_at || new Date().toISOString(),
+    updated_at: issue.updated_at || new Date().toISOString(),
+    resolved_at: issue.resolved_at || '',
+    resolved_by: issue.resolved_by || '',
+    department_id: issue.department_id || '',
+  };
+};
 
 const StakeholderDashboard = () => {
   const { user, profile } = useAuth();
@@ -97,6 +150,9 @@ const StakeholderDashboard = () => {
   const [departmentStats, setDepartmentStats] =
     useState<DepartmentStats | null>(null);
   const [allStats, setAllStats] = useState<DepartmentStats | null>(null);
+  const [budgetAllocations, setBudgetAllocations] = useState<
+    BudgetAllocation[]
+  >([]);
 
   // Derived state
   const selectedDepartmentInfo = departments.find(
@@ -167,9 +223,10 @@ const StakeholderDashboard = () => {
         case 'rejected':
           return {
             title: 'Account Verification Rejected',
-            message: profile.verification_notes
-              ? `Your verification was not approved. Reason: ${profile.verification_notes}`
-              : 'Your verification was not approved. Please contact support for more information.',
+            message:
+              profile.verification_status === 'rejected'
+                ? `Your verification was not approved. Please contact support for more information.`
+                : 'Your verification was not approved. Please contact support for more information.',
             icon: '❌',
             color: 'text-red-600',
           };
@@ -304,7 +361,7 @@ const StakeholderDashboard = () => {
         (payload) => {
           console.log('New update detected:', payload);
           // Show notification for new updates
-          if (payload.new && payload.new.author_id !== user.id) {
+          if (payload.new && payload.new['author_id'] !== user.id) {
             toast({
               title: 'New Update',
               description: 'An issue has been updated',
@@ -417,30 +474,51 @@ const StakeholderDashboard = () => {
 
     try {
       setRefreshing(true);
-      console.log('Fetching issues for department:', targetDepartment);
+      console.log('Fetching enhanced department data for:', targetDepartment);
 
-      // Fetch issues for the selected department with proper filtering
-      const { data: issuesData, error: issuesError } = await supabase
-        .from('issues')
-        .select('*')
-        .eq('department_id', targetDepartment)
-        .order('created_at', { ascending: false });
-
-      if (issuesError) {
-        console.error('Error fetching issues:', issuesError);
-        throw issuesError;
-      }
-
-      console.log(
-        `Found ${
-          issuesData?.length || 0
-        } issues for department ${targetDepartment}`
+      // Use enhanced API to get comprehensive department statistics
+      const [departmentStatsData, budgetData, issuesResult] = await Promise.all(
+        [
+          getDepartmentStats(targetDepartment),
+          getBudgetAllocations(targetDepartment),
+          getIssuesByDepartment(targetDepartment, {}, { pageSize: 100 }),
+        ]
       );
-      setIssues(issuesData || []);
 
-      // Calculate department stats
-      const stats = calculateStats(issuesData || []);
-      setDepartmentStats(stats);
+      console.log('Enhanced department data fetched:', {
+        issues: issuesResult.data?.length || 0,
+        budget: budgetData?.length || 0,
+        stats: departmentStatsData,
+      });
+
+      // Convert UIIssue back to Issue format for compatibility
+      const convertedIssues = issuesResult.data.map((uiIssue) => ({
+        id: uiIssue.id,
+        title: uiIssue.title,
+        description: uiIssue.description,
+        category: uiIssue.category,
+        status: uiIssue.status,
+        votes: uiIssue.vote_count,
+        watchers_count: uiIssue.watchers_count,
+        location: uiIssue.location,
+        constituency: uiIssue.constituency,
+        thumbnail: uiIssue.thumbnail,
+        author_id: uiIssue.author_id,
+        author_name: uiIssue.author.name,
+        author_avatar: uiIssue.author.avatar,
+        created_at: uiIssue.created_at,
+        updated_at: uiIssue.updated_at,
+        department_id: uiIssue.department_id,
+        resolved_at: uiIssue.resolved_at,
+        resolved_by: uiIssue.resolved_by,
+      }));
+
+      // Set the fetched data
+      setIssues(convertedIssues);
+      setBudgetAllocations(budgetData || []);
+
+      // Use enhanced stats from API
+      setDepartmentStats(departmentStatsData);
 
       // For officials, ensure they can only see their department's data
       if (
@@ -526,7 +604,10 @@ const StakeholderDashboard = () => {
     };
   };
 
-  const updateIssueStatus = async (issueId: string, newStatus: string) => {
+  const handleUpdateIssueStatus = async (
+    issueId: string,
+    newStatus: string
+  ) => {
     try {
       // Validate status transition
       const currentIssue = issues.find((i) => i.id === issueId);
@@ -534,12 +615,13 @@ const StakeholderDashboard = () => {
         throw new Error('Issue not found');
       }
 
-      // Validate status workflow
+      // Validate status workflow for enhanced schema
       const validTransitions: Record<string, string[]> = {
-        open: ['in-progress', 'resolved', 'closed'],
-        'in-progress': ['resolved', 'closed', 'open'],
-        resolved: ['closed', 'in-progress'],
-        closed: ['in-progress'],
+        draft: ['open'],
+        open: ['in_progress', 'resolved', 'closed'],
+        in_progress: ['resolved', 'closed', 'open'],
+        resolved: ['closed', 'in_progress'],
+        closed: ['in_progress'],
       };
 
       if (!validTransitions[currentIssue.status]?.includes(newStatus)) {
@@ -551,35 +633,26 @@ const StakeholderDashboard = () => {
         return;
       }
 
-      const updateData: any = {
-        status: newStatus,
-        updated_at: new Date().toISOString(),
-      };
-
-      if (newStatus === 'resolved' || newStatus === 'closed') {
-        updateData.resolved_at = new Date().toISOString();
-        updateData.resolved_by = user?.id;
-      }
-
-      // Update issue status
-      const { error } = await supabase
-        .from('issues')
-        .update(updateData)
-        .eq('id', issueId);
-
-      if (error) throw error;
+      // Use enhanced API for status update
+      await updateIssueStatus(
+        issueId,
+        newStatus as 'draft' | 'open' | 'in_progress' | 'resolved' | 'closed',
+        user?.id
+      );
 
       // Add an update record
-      const { error: updateError } = await supabase.from('updates').insert({
-        issue_id: issueId,
-        author_id: user?.id,
-        content: `Issue status updated to ${newStatus.replace('-', ' ')}`,
-        type: 'status',
-        created_at: new Date().toISOString(),
-      });
+      if (user?.id) {
+        const { error: updateError } = await supabase.from('updates').insert({
+          issue_id: issueId,
+          author_id: user.id,
+          content: `Issue status updated to ${newStatus.replace('-', ' ')}`,
+          type: 'status',
+          created_at: new Date().toISOString(),
+        });
 
-      if (updateError) {
-        console.error('Error creating update record:', updateError);
+        if (updateError) {
+          console.error('Error creating update record:', updateError);
+        }
       }
 
       // Send notifications to issue author and watchers
@@ -1058,6 +1131,89 @@ const StakeholderDashboard = () => {
             </Card>
           )}
 
+        {/* Budget Tracking Section for Officials and Admins */}
+        {(profile?.role === 'official' || profile?.role === 'admin') &&
+          selectedDepartmentInfo &&
+          budgetAllocations.length > 0 && (
+            <Card className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950 dark:to-emerald-950 border-green-200 dark:border-green-800">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-green-800 dark:text-green-200">
+                  <TrendingUp className="h-5 w-5" />
+                  {selectedDepartmentInfo.name} Budget Overview
+                </CardTitle>
+                <p className="text-sm text-green-600 dark:text-green-400 mt-1">
+                  Financial allocation and spending for fiscal year{' '}
+                  {new Date().getFullYear()}
+                </p>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                  {budgetAllocations.map((budget) => (
+                    <div
+                      key={budget.id}
+                      className="bg-white dark:bg-gray-800 p-4 rounded-lg border"
+                    >
+                      <h4 className="font-medium text-sm mb-2">
+                        {budget.category}
+                      </h4>
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-xs">
+                          <span className="text-muted-foreground">
+                            Allocated:
+                          </span>
+                          <span className="font-medium">
+                            P{budget.allocated_amount.toLocaleString()}
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-xs">
+                          <span className="text-muted-foreground">Spent:</span>
+                          <span className="font-medium">
+                            P{budget.spent_amount.toLocaleString()}
+                          </span>
+                        </div>
+                        <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                          <div
+                            className="bg-green-600 h-2 rounded-full transition-all duration-300"
+                            style={{
+                              width: `${Math.min(
+                                (budget.spent_amount /
+                                  budget.allocated_amount) *
+                                  100,
+                                100
+                              )}%`,
+                            }}
+                          />
+                        </div>
+                        <div className="text-xs text-center text-muted-foreground">
+                          {Math.round(
+                            (budget.spent_amount / budget.allocated_amount) *
+                              100
+                          )}
+                          % utilized
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {currentStats?.budgetAllocated && currentStats?.budgetSpent && (
+                  <div className="mt-4 p-3 bg-green-50 dark:bg-green-950 rounded-lg border border-green-200 dark:border-green-800">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm font-medium text-green-800 dark:text-green-200">
+                        Total Budget Utilization:{' '}
+                        {currentStats.budgetUtilization}%
+                      </span>
+                      <span className="text-xs text-green-600 dark:text-green-400">
+                        P{currentStats.budgetSpent.toLocaleString()} of P
+                        {currentStats.budgetAllocated.toLocaleString()}
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
         {/* Enhanced Stats Cards */}
         {currentStats && (
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -1112,7 +1268,7 @@ const StakeholderDashboard = () => {
               <TabsTrigger value="open" className="flex items-center gap-2">
                 <AlertCircle className="h-4 w-4" />
                 <span className="hidden sm:inline">Open</span>
-                {currentStats?.openIssues > 0 && (
+                {currentStats && currentStats.openIssues > 0 && (
                   <Badge variant="destructive" className="ml-1 text-xs">
                     {currentStats.openIssues}
                   </Badge>
@@ -1124,7 +1280,7 @@ const StakeholderDashboard = () => {
               >
                 <Clock className="h-4 w-4" />
                 <span className="hidden sm:inline">In Progress</span>
-                {currentStats?.inProgressIssues > 0 && (
+                {currentStats && currentStats.inProgressIssues > 0 && (
                   <Badge variant="default" className="ml-1 text-xs">
                     {currentStats.inProgressIssues}
                   </Badge>
@@ -1133,7 +1289,7 @@ const StakeholderDashboard = () => {
               <TabsTrigger value="resolved" className="flex items-center gap-2">
                 <CheckCircle className="h-4 w-4" />
                 <span className="hidden sm:inline">Resolved</span>
-                {currentStats?.resolvedIssues > 0 && (
+                {currentStats && currentStats.resolvedIssues > 0 && (
                   <Badge variant="secondary" className="ml-1 text-xs">
                     {currentStats.resolvedIssues}
                   </Badge>
@@ -1218,7 +1374,9 @@ const StakeholderDashboard = () => {
                           <h4 className="font-medium">{issue.title}</h4>
                           <p className="text-sm text-muted-foreground">
                             {issue.location} •{' '}
-                            {new Date(issue.created_at).toLocaleDateString()}
+                            {new Date(
+                              issue.created_at || new Date()
+                            ).toLocaleDateString()}
                           </p>
                         </div>
                         <div className="flex items-center gap-2">
@@ -1270,7 +1428,7 @@ const StakeholderDashboard = () => {
                 <CardContent>
                   <IssueManagementGrid
                     issues={filteredIssues.filter((i) => i.status === status)}
-                    onStatusUpdate={updateIssueStatus}
+                    onStatusUpdate={handleUpdateIssueStatus}
                     onManageIssue={handleManageIssue}
                     currentUserRole={profile?.role || 'citizen'}
                   />
@@ -1286,24 +1444,28 @@ const StakeholderDashboard = () => {
         <IssueDetailDialog
           open={isIssueDialogOpen}
           onOpenChange={handleCloseIssueDialog}
-          issue={selectedIssue}
+          issue={convertIssueToUIIssue(selectedIssue)}
           isStakeholderMode={true}
           initialTab="updates"
-          onStatusUpdate={updateIssueStatus}
+          onStatusUpdate={handleUpdateIssueStatus}
         />
       )}
     </MainLayout>
   );
 };
 
-// Helper function to get status badge variant
+// Helper function to get status badge variant for enhanced schema
 const getStatusVariant = (status: string) => {
   switch (status) {
+    case 'draft':
+      return 'outline';
     case 'open':
       return 'destructive';
-    case 'in-progress':
+    case 'in_progress':
+    case 'in-progress': // Legacy support
       return 'default';
     case 'resolved':
+      return 'secondary';
     case 'closed':
       return 'secondary';
     default:
@@ -1404,7 +1566,9 @@ const IssueManagementGrid: React.FC<IssueManagementGridProps> = ({
               <div className="space-y-2 text-xs text-muted-foreground mb-3">
                 <div className="flex items-center gap-1">
                   <Calendar className="h-3 w-3" />
-                  {new Date(issue.created_at).toLocaleDateString()}
+                  {new Date(
+                    issue.created_at || new Date()
+                  ).toLocaleDateString()}
                 </div>
                 {issue.location && (
                   <div className="flex items-center gap-1">
@@ -1414,7 +1578,8 @@ const IssueManagementGrid: React.FC<IssueManagementGridProps> = ({
                 )}
                 <div className="flex items-center gap-1">
                   <Users className="h-3 w-3" />
-                  {issue.votes} votes • {issue.watchers_count} watching
+                  {issue.votes || 0} votes • {issue.watchers_count || 0}{' '}
+                  watching
                 </div>
               </div>
 
@@ -1435,7 +1600,7 @@ const IssueManagementGrid: React.FC<IssueManagementGridProps> = ({
                       High Interest
                     </Badge>
                   )}
-                  {new Date(issue.created_at) >
+                  {new Date(issue.created_at || new Date()) >
                     new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) && (
                     <Badge
                       variant="outline"
@@ -1489,8 +1654,9 @@ const StatusUpdateSelect: React.FC<StatusUpdateSelectProps> = ({
   disabled = false,
 }) => {
   const statusOptions = [
+    { value: 'draft', label: 'Draft' },
     { value: 'open', label: 'Open' },
-    { value: 'in-progress', label: 'In Progress' },
+    { value: 'in_progress', label: 'In Progress' },
     { value: 'resolved', label: 'Resolved' },
     { value: 'closed', label: 'Closed' },
   ];

@@ -35,37 +35,32 @@ const AuthDebugPanel: React.FC = () => {
     setIsRefreshing(true);
     try {
       // Check session
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-      
+      const {
+        data: { session },
+        error: sessionError,
+      } = await supabase.auth.getSession();
+
       // Test notification insertion capability
       let canInsert = false;
       let lastError = null;
-      
+
       if (session) {
         try {
-          // Try to insert a test notification (this will fail due to RLS, but we can see the error)
-          const { error: insertError } = await supabase
+          // Test notification access without creating test data
+          const { error: selectError } = await supabase
             .from('notifications')
-            .insert({
-              user_id: session.user.id,
-              type: 'general',
-              title: 'Test',
-              message: 'Test message',
-              data: { test: true }
-            });
-          
-          if (insertError) {
-            lastError = insertError.message;
+            .select('id')
+            .eq('user_id', session.user.id)
+            .limit(1);
+
+          if (selectError) {
+            lastError = selectError.message;
             // If the error is about RLS policy, it means we're authenticated but the policy is blocking
-            canInsert = insertError.code === '42501' && insertError.message.includes('row-level security');
+            canInsert =
+              selectError.code === '42501' &&
+              selectError.message.includes('row-level security');
           } else {
             canInsert = true;
-            // Clean up the test notification
-            await supabase
-              .from('notifications')
-              .delete()
-              .eq('user_id', session.user.id)
-              .eq('title', 'Test');
           }
         } catch (error) {
           lastError = error instanceof Error ? error.message : 'Unknown error';
@@ -84,9 +79,9 @@ const AuthDebugPanel: React.FC = () => {
       });
     } catch (error) {
       console.error('Error checking auth status:', error);
-      setDebugInfo(prev => ({
+      setDebugInfo((prev) => ({
         ...prev,
-        lastError: error instanceof Error ? error.message : 'Unknown error'
+        lastError: error instanceof Error ? error.message : 'Unknown error',
       }));
     }
     setIsRefreshing(false);
@@ -104,7 +99,11 @@ const AuthDebugPanel: React.FC = () => {
     );
   };
 
-  const getStatusBadge = (status: boolean, trueText: string, falseText: string) => {
+  const getStatusBadge = (
+    status: boolean,
+    trueText: string,
+    falseText: string
+  ) => {
     return (
       <Badge variant={status ? 'default' : 'destructive'}>
         {status ? trueText : falseText}
@@ -115,7 +114,9 @@ const AuthDebugPanel: React.FC = () => {
   return (
     <Card className="mb-6">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">Authentication Debug Panel</CardTitle>
+        <CardTitle className="text-sm font-medium">
+          Authentication Debug Panel
+        </CardTitle>
         <Button
           variant="outline"
           size="sm"
@@ -137,37 +138,46 @@ const AuthDebugPanel: React.FC = () => {
             <span className="text-sm">User Object:</span>
             {getStatusBadge(debugInfo.hasUser, 'Present', 'Missing')}
           </div>
-          
+
           <div className="flex items-center space-x-2">
             {getStatusIcon(debugInfo.hasProfile)}
             <span className="text-sm">Profile Object:</span>
             {getStatusBadge(debugInfo.hasProfile, 'Present', 'Missing')}
           </div>
-          
+
           <div className="flex items-center space-x-2">
             {getStatusIcon(debugInfo.sessionValid)}
             <span className="text-sm">Session Valid:</span>
             {getStatusBadge(debugInfo.sessionValid, 'Valid', 'Invalid')}
           </div>
-          
+
           <div className="flex items-center space-x-2">
             {getStatusIcon(debugInfo.canInsertNotifications)}
             <span className="text-sm">Can Send Notifications:</span>
             {getStatusBadge(debugInfo.canInsertNotifications, 'Yes', 'No')}
           </div>
         </div>
-        
+
         <div className="space-y-2 text-xs text-muted-foreground">
-          <div>User Role: <Badge variant="outline">{debugInfo.userRole || 'None'}</Badge></div>
-          <div>Session User: <Badge variant="outline">{debugInfo.sessionUser || 'None'}</Badge></div>
-          <div>Session Role: <Badge variant="outline">{debugInfo.sessionRole || 'None'}</Badge></div>
+          <div>
+            User Role:{' '}
+            <Badge variant="outline">{debugInfo.userRole || 'None'}</Badge>
+          </div>
+          <div>
+            Session User:{' '}
+            <Badge variant="outline">{debugInfo.sessionUser || 'None'}</Badge>
+          </div>
+          <div>
+            Session Role:{' '}
+            <Badge variant="outline">{debugInfo.sessionRole || 'None'}</Badge>
+          </div>
           {debugInfo.lastError && (
             <div className="text-red-500">
               Last Error: {debugInfo.lastError}
             </div>
           )}
         </div>
-        
+
         <div className="text-xs text-muted-foreground">
           <strong>Expected for working verification:</strong>
           <ul className="list-disc list-inside mt-1 space-y-1">

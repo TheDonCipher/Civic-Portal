@@ -111,7 +111,7 @@ export function EmailVerificationCallback() {
                 variant: 'success',
               });
               setTimeout(() => {
-                navigate(`/user/${data.user.id}`, { replace: true });
+                navigate(`/user/${data.user?.id}`, { replace: true });
               }, 2000);
               return;
             }
@@ -149,7 +149,7 @@ export function EmailVerificationCallback() {
               variant: 'success',
             });
             setTimeout(() => {
-              navigate(`/user/${data.user.id}`, { replace: true });
+              navigate(`/user/${data.user?.id}`, { replace: true });
             }, 2000);
             return;
           }

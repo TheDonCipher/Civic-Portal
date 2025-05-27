@@ -18,12 +18,12 @@ const DatabaseTest: React.FC = () => {
         .from('profiles')
         .select('*')
         .limit(1);
-      
+
       testResults.profiles = {
         success: !profilesError,
         error: profilesError?.message,
         data: profilesData,
-        columns: profilesData?.[0] ? Object.keys(profilesData[0]) : []
+        columns: profilesData?.[0] ? Object.keys(profilesData[0]) : [],
       };
 
       // Test departments table
@@ -32,12 +32,12 @@ const DatabaseTest: React.FC = () => {
         .from('departments')
         .select('*')
         .limit(1);
-      
+
       testResults.departments = {
         success: !departmentsError,
         error: departmentsError?.message,
         data: departmentsData,
-        columns: departmentsData?.[0] ? Object.keys(departmentsData[0]) : []
+        columns: departmentsData?.[0] ? Object.keys(departmentsData[0]) : [],
       };
 
       // Test issues table
@@ -46,12 +46,12 @@ const DatabaseTest: React.FC = () => {
         .from('issues')
         .select('*')
         .limit(1);
-      
+
       testResults.issues = {
         success: !issuesError,
         error: issuesError?.message,
         data: issuesData,
-        columns: issuesData?.[0] ? Object.keys(issuesData[0]) : []
+        columns: issuesData?.[0] ? Object.keys(issuesData[0]) : [],
       };
 
       // Test the specific query that was failing
@@ -61,16 +61,16 @@ const DatabaseTest: React.FC = () => {
         .select('id, title, status, category, created_at, author_id')
         .order('created_at', { ascending: false })
         .limit(5);
-      
+
       testResults.adminQuery = {
         success: !adminQueryError,
         error: adminQueryError?.message,
-        data: adminQueryData
+        data: adminQueryData,
       };
-
     } catch (error) {
       console.error('Test error:', error);
-      testResults.generalError = error.message;
+      testResults.generalError =
+        error instanceof Error ? error.message : String(error);
     }
 
     setResults(testResults);
@@ -96,9 +96,13 @@ const DatabaseTest: React.FC = () => {
               <div key={table} className="border p-4 rounded">
                 <h3 className="font-semibold text-lg mb-2">{table}</h3>
                 <div className="space-y-2">
-                  <p><strong>Success:</strong> {result.success ? 'Yes' : 'No'}</p>
+                  <p>
+                    <strong>Success:</strong> {result.success ? 'Yes' : 'No'}
+                  </p>
                   {result.error && (
-                    <p className="text-red-600"><strong>Error:</strong> {result.error}</p>
+                    <p className="text-red-600">
+                      <strong>Error:</strong> {result.error}
+                    </p>
                   )}
                   {result.columns && (
                     <div>

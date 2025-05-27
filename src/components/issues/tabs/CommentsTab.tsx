@@ -10,18 +10,13 @@ import { MessageCircle, Send, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useDemoMode } from '@/providers/DemoProvider';
 import { demoComments } from '@/lib/demoData';
+import { safeDate } from '@/lib/utils/dateUtils';
+import { handleApiError } from '@/lib/utils/errorHandler';
+import { sanitizeText } from '@/lib/sanitization';
+import type { UIComment } from '@/types/enhanced';
 
-interface Comment {
-  id: string;
-  content: string;
-  created_at: string;
-  author_id: string;
-  profiles: {
-    full_name: string | null;
-    avatar_url: string | null;
-    role: string | null;
-  } | null;
-}
+// ✅ Use the centralized UIComment type
+type Comment = UIComment;
 
 interface CommentsTabProps {
   issueId: string;
@@ -51,8 +46,9 @@ export const CommentsTab: React.FC<CommentsTabProps> = ({
             .map((comment) => ({
               id: comment.id,
               content: comment.content,
-              created_at: comment.created_at,
+              created_at: safeDate.toString(comment.created_at),
               author_id: comment.author_id,
+              issue_id: comment.issue_id,
               profiles: {
                 full_name: comment.author_name,
                 avatar_url: comment.author_avatar,
@@ -75,7 +71,8 @@ export const CommentsTab: React.FC<CommentsTabProps> = ({
             id,
             content,
             created_at,
-            author_id
+            author_id,
+            issue_id
           `
           )
           .eq('issue_id', issueId)
@@ -99,14 +96,22 @@ export const CommentsTab: React.FC<CommentsTabProps> = ({
           })
         );
 
-        setComments(commentsWithProfiles || []);
+        // Transform database results to UI-safe format
+        const transformedComments = (commentsWithProfiles || []).map(
+          (comment) => ({
+            ...comment,
+            created_at: safeDate.toString(comment.created_at),
+          })
+        );
+        setComments(transformedComments);
       } catch (error) {
         console.error('Error fetching comments:', error);
+        handleApiError(error, 'CommentsTab', 'fetchComments');
         if (!isDemoMode) {
           toast({
             title: 'Error',
             description: `Failed to load comments: ${
-              error.message || 'Unknown error'
+              error instanceof Error ? error.message : 'Unknown error'
             }`,
             variant: 'destructive',
           });
@@ -140,6 +145,9 @@ export const CommentsTab: React.FC<CommentsTabProps> = ({
         subscription.unsubscribe();
       };
     }
+
+    // Return empty cleanup function for demo mode
+    return () => {};
   }, [issueId, toast, isDemoMode]);
 
   // Report count changes to parent component
@@ -154,13 +162,26 @@ export const CommentsTab: React.FC<CommentsTabProps> = ({
 
     setIsSubmitting(true);
     try {
+      // Sanitize comment content before submission
+      const sanitizedContent = sanitizeText(newComment, 2000);
+
+      if (!sanitizedContent) {
+        toast({
+          title: 'Error',
+          description: 'Please enter a valid comment',
+          variant: 'destructive',
+        });
+        return;
+      }
+
       if (isDemoMode) {
         // In demo mode, just simulate adding a comment
         const newDemoComment = {
           id: `comment-demo-${Date.now()}`,
-          content: newComment.trim(),
+          content: sanitizedContent,
           created_at: new Date().toISOString(),
           author_id: user.id || 'demo-user',
+          issue_id: issueId,
           profiles: {
             full_name: profile?.full_name || 'Demo User',
             avatar_url: profile?.avatar_url || null,
@@ -181,7 +202,7 @@ export const CommentsTab: React.FC<CommentsTabProps> = ({
       const { error } = await supabase.from('comments').insert({
         issue_id: issueId,
         author_id: user.id,
-        content: newComment.trim(),
+        content: sanitizedContent,
       });
 
       if (error) throw error;
@@ -193,10 +214,11 @@ export const CommentsTab: React.FC<CommentsTabProps> = ({
       });
     } catch (error) {
       console.error('Error adding comment:', error);
+      handleApiError(error, 'CommentsTab', 'handleSubmitComment');
       toast({
         title: 'Error',
         description: `Failed to add comment: ${
-          error.message || 'Unknown error'
+          error instanceof Error ? error.message : 'Unknown error'
         }`,
         variant: 'destructive',
       });

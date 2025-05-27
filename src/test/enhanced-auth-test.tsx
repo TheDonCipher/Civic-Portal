@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { AuthDialog } from '@/components/auth/AuthDialog';
+import AuthDialog from '@/components/auth/AuthDialog';
 
 /**
  * Simple test component to verify enhanced authentication works
@@ -14,7 +14,7 @@ export function EnhancedAuthTest() {
       <p className="text-muted-foreground">
         Click the button below to test the enhanced authentication system.
       </p>
-      
+
       <Button onClick={() => setShowAuth(true)}>
         Test Enhanced Authentication
       </Button>

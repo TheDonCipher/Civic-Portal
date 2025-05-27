@@ -1,7 +1,8 @@
-import React from "react";
-import { getAppInfo } from "@/lib/utils/info";
-import { Github, Mail, MapPin, Phone } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { getAppInfo } from '@/lib/utils/info';
+import { Github, Mail, MapPin, Phone } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const Footer = () => {
   const info = getAppInfo();
@@ -35,36 +36,44 @@ const Footer = () => {
             <h3 className="text-lg font-semibold">Quick Links</h3>
             <ul className="space-y-2">
               <li>
-                <a
-                  href="/"
+                <Link
+                  to="/"
                   className="text-muted-foreground hover:text-foreground transition-colors"
                 >
                   Home
-                </a>
+                </Link>
               </li>
               <li>
-                <a
-                  href="/issues"
+                <Link
+                  to="/issues"
                   className="text-muted-foreground hover:text-foreground transition-colors"
                 >
                   Issues
-                </a>
+                </Link>
               </li>
               <li>
-                <a
-                  href="/reports"
+                <Link
+                  to="/reports"
                   className="text-muted-foreground hover:text-foreground transition-colors"
                 >
                   Reports
-                </a>
+                </Link>
               </li>
               <li>
-                <a
-                  href="/profile"
+                <Link
+                  to="/pricing"
                   className="text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  My Profile
-                </a>
+                  Pricing
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/about"
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  About
+                </Link>
               </li>
             </ul>
           </div>
@@ -73,36 +82,36 @@ const Footer = () => {
             <h3 className="text-lg font-semibold">Resources</h3>
             <ul className="space-y-2">
               <li>
-                <a
-                  href="/about"
-                  className="text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  About Us
-                </a>
-              </li>
-              <li>
-                <a
-                  href="/faq"
+                <Link
+                  to="/faq"
                   className="text-muted-foreground hover:text-foreground transition-colors"
                 >
                   FAQ
-                </a>
+                </Link>
               </li>
               <li>
-                <a
-                  href="/privacy"
+                <Link
+                  to="/privacy"
                   className="text-muted-foreground hover:text-foreground transition-colors"
                 >
                   Privacy Policy
-                </a>
+                </Link>
               </li>
               <li>
-                <a
-                  href="/terms"
+                <Link
+                  to="/terms"
                   className="text-muted-foreground hover:text-foreground transition-colors"
                 >
                   Terms of Service
-                </a>
+                </Link>
+              </li>
+              <li>
+                <Link
+                  to="/legal/data-processing"
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Data Processing
+                </Link>
               </li>
             </ul>
           </div>
@@ -116,7 +125,14 @@ const Footer = () => {
               </li>
               <li className="flex items-center gap-2 text-muted-foreground">
                 <Phone className="h-4 w-4" />
-                <span>+267 123 4567</span>
+                <a
+                  href="https://wa.me/26772977535"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-foreground transition-colors"
+                >
+                  +267 72977535 (WhatsApp)
+                </a>
               </li>
               <li className="flex items-center gap-2 text-muted-foreground">
                 <Mail className="h-4 w-4" />

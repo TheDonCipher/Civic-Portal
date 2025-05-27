@@ -56,7 +56,7 @@ const ProfileSettings = ({ onUpdate }: ProfileSettingsProps) => {
 
   // Get the email from user object, with fallback handling
   const userEmail =
-    user?.email || user?.user_metadata?.email || 'No email provided';
+    user?.email || user?.user_metadata?.['email'] || 'No email provided';
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -128,8 +128,8 @@ const ProfileSettings = ({ onUpdate }: ProfileSettingsProps) => {
       const { error } = await updateProfile({
         username: data.username,
         constituency: data.constituency,
-        avatar_url: avatarUrl,
-        banner_url: bannerUrl,
+        avatar_url: avatarUrl || null,
+        banner_url: bannerUrl || null,
       });
 
       if (error) throw error;
@@ -144,11 +144,7 @@ const ProfileSettings = ({ onUpdate }: ProfileSettingsProps) => {
       }
     } catch (error) {
       console.error('Error updating profile:', error);
-      handleApiError(error, {
-        context: 'Profile update',
-        toastTitle: 'Update Failed',
-        toastDescription: "We couldn't update your profile. Please try again.",
-      });
+      handleApiError(error, 'ProfileSettings', 'updateProfile');
     } finally {
       setIsLoading(false);
     }

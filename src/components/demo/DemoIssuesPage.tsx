@@ -6,17 +6,18 @@ import IssueDetailDialog from '@/components/issues/IssueDetailDialog';
 import CreateIssueDialog from '@/components/issues/CreateIssueDialog';
 import { DemoBanner } from './DemoBanner';
 import type { Issue } from '@/components/issues/IssueGrid';
+import type { UIIssue } from '@/types/enhanced';
 
 const DemoIssuesPage: React.FC = () => {
   const { getDemoIssues, demoUser } = useDemoMode();
-  const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
+  const [selectedIssue, setSelectedIssue] = useState<UIIssue | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-  const [filteredIssues, setFilteredIssues] = useState<Issue[]>([]);
+  const [filteredIssues, setFilteredIssues] = useState<UIIssue[]>([]);
 
   const rawDemoIssues = getDemoIssues();
 
-  // Format demo issues to match the Issue interface
-  const demoIssues: Issue[] = React.useMemo(() => {
+  // Format demo issues to match the UIIssue interface
+  const demoIssues: UIIssue[] = React.useMemo(() => {
     return rawDemoIssues.map((issue) => ({
       id: issue.id,
       title: issue.title,
@@ -35,14 +36,16 @@ const DemoIssuesPage: React.FC = () => {
           `https://api.dicebear.com/7.x/avataaars/svg?seed=${issue.author_id}`,
       },
       author_id: issue.author_id,
-      thumbnail: issue.thumbnail,
-      location: issue.location,
-      constituency: issue.constituency,
+      thumbnail: issue.thumbnail || '',
+      location: issue.location || '',
+      constituency: issue.constituency || '',
       watchers: issue.watchers || issue.watchers_count || 0,
-      created_at: issue.created_at,
-      // Include other properties that might be needed
-      solutions: issue.solutions || [],
-      updates: issue.updates || [],
+      watchers_count: issue.watchers_count || 0,
+      created_at: issue.created_at || new Date().toISOString(),
+      updated_at: issue.updated_at || new Date().toISOString(),
+      resolved_at: issue.resolved_at || '',
+      resolved_by: issue.resolved_by || '',
+      department_id: issue.department_id || '',
     }));
   }, [rawDemoIssues]);
 
