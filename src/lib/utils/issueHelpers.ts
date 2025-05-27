@@ -4,17 +4,29 @@ import { supabase } from "@/lib/supabase";
  * Helper functions for issue-related operations
  */
 
-// Default images for different categories
+// Default images for different categories - using reliable Unsplash URLs
 export const getCategoryDefaultImage = (category: string) => {
   const defaultImages = {
     infrastructure:
-      "https://cdn.pixabay.com/photo/2018/01/10/18/49/city-3073958_1280.jpg",
+      "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=800&h=600&fit=crop&crop=center",
     environment:
-      "https://cdn.pixabay.com/photo/2015/12/01/20/28/green-1072828_1280.jpg",
+      "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&h=600&fit=crop&crop=center",
     safety:
-      "https://cdn.pixabay.com/photo/2019/04/13/00/47/police-4123365_1280.jpg",
+      "https://images.unsplash.com/photo-1593115057322-e94b77572f20?w=800&h=600&fit=crop&crop=center",
     community:
-      "https://cdn.pixabay.com/photo/2017/02/10/12/03/volunteer-2055010_1280.jpg",
+      "https://images.unsplash.com/photo-1559027615-cd4628902d4a?w=800&h=600&fit=crop&crop=center",
+    healthcare:
+      "https://images.unsplash.com/photo-1576091160399-112ba8d25d1f?w=800&h=600&fit=crop&crop=center",
+    education:
+      "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=800&h=600&fit=crop&crop=center",
+    transportation:
+      "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=800&h=600&fit=crop&crop=center",
+    housing:
+      "https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800&h=600&fit=crop&crop=center",
+    water:
+      "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=800&h=600&fit=crop&crop=center",
+    electricity:
+      "https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?w=800&h=600&fit=crop&crop=center",
   };
 
   const key = category?.toLowerCase() || 'infrastructure';

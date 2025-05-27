@@ -22,6 +22,19 @@ import {
   getIssuesByDepartment,
   updateIssueStatus,
 } from '@/lib/api/enhancedIssues';
+import {
+  getCategoriesByDepartment,
+  getCategoryStats,
+} from '@/lib/api/categoriesApi';
+import {
+  fetchIssues,
+  updateIssueStatus as updateIssueStatusApi,
+} from '@/lib/api/issuesApi';
+import {
+  getUserDisplayName,
+  getUserAvatarUrl,
+  getUserInitials,
+} from '@/lib/utils/userUtils';
 import VerificationPending from '@/components/auth/VerificationPending';
 import MainLayout from '../layout/MainLayout';
 import PageTitle from '../common/PageTitle';
@@ -153,6 +166,7 @@ const StakeholderDashboard = () => {
   const [budgetAllocations, setBudgetAllocations] = useState<
     BudgetAllocation[]
   >([]);
+  const [categoryStats, setCategoryStats] = useState<any>({});
 
   // Derived state
   const selectedDepartmentInfo = departments.find(
@@ -477,13 +491,13 @@ const StakeholderDashboard = () => {
       console.log('Fetching enhanced department data for:', targetDepartment);
 
       // Use enhanced API to get comprehensive department statistics
-      const [departmentStatsData, budgetData, issuesResult] = await Promise.all(
-        [
+      const [departmentStatsData, budgetData, issuesResult, categoryStatsData] =
+        await Promise.all([
           getDepartmentStats(targetDepartment),
           getBudgetAllocations(targetDepartment),
           getIssuesByDepartment(targetDepartment, {}, { pageSize: 100 }),
-        ]
-      );
+          getCategoryStats(targetDepartment),
+        ]);
 
       console.log('Enhanced department data fetched:', {
         issues: issuesResult.data?.length || 0,
@@ -516,6 +530,7 @@ const StakeholderDashboard = () => {
       // Set the fetched data
       setIssues(convertedIssues);
       setBudgetAllocations(budgetData || []);
+      setCategoryStats(categoryStatsData || {});
 
       // Use enhanced stats from API
       setDepartmentStats(departmentStatsData);
@@ -633,12 +648,8 @@ const StakeholderDashboard = () => {
         return;
       }
 
-      // Use enhanced API for status update
-      await updateIssueStatus(
-        issueId,
-        newStatus as 'draft' | 'open' | 'in_progress' | 'resolved' | 'closed',
-        user?.id
-      );
+      // Use centralized API for status update
+      await updateIssueStatusApi(issueId, newStatus, user?.id || '');
 
       // Add an update record
       if (user?.id) {

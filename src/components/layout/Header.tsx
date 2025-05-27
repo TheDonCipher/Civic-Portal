@@ -17,6 +17,13 @@ import { useToast } from '@/components/ui/use-toast';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { ConsentStatusIndicator } from '@/components/auth/ConsentStatusBanner';
 import {
+  getUserDisplayName,
+  getUserAvatarUrl,
+  getUserInitials,
+  getUserRoleDisplay,
+  getUserEmail,
+} from '@/lib/utils/userUtils';
+import {
   User,
   LogOut,
   Settings,
@@ -211,16 +218,11 @@ const Header = ({ onCreateIssue, onSearch }: HeaderProps) => {
                   >
                     <Avatar className="h-8 w-8">
                       <AvatarImage
-                        src={
-                          profile?.avatar_url ||
-                          'https://api.dicebear.com/7.x/avataaars/svg?seed=john'
-                        }
-                        alt={profile?.full_name || ''}
+                        src={getUserAvatarUrl(profile, user)}
+                        alt={getUserDisplayName(profile, user)}
                       />
                       <AvatarFallback>
-                        {profile?.full_name?.charAt(0) ||
-                          user.email?.charAt(0) ||
-                          'U'}
+                        {getUserInitials(profile, user)}
                       </AvatarFallback>
                     </Avatar>
                   </Button>
@@ -233,17 +235,13 @@ const Header = ({ onCreateIssue, onSearch }: HeaderProps) => {
                   <DropdownMenuLabel className="font-normal">
                     <div className="flex flex-col space-y-1">
                       <p className="text-sm font-medium leading-none">
-                        {profile?.full_name || 'User'}
+                        {getUserDisplayName(profile, user)}
                       </p>
                       <p className="text-xs leading-none text-muted-foreground">
-                        {user.email}
+                        {getUserEmail(user)}
                       </p>
                       <Badge variant="secondary" className="w-fit mt-1">
-                        {profile?.role === 'citizen'
-                          ? 'Citizen'
-                          : profile?.role === 'official'
-                          ? 'Official'
-                          : 'Admin'}
+                        {getUserRoleDisplay(profile)}
                       </Badge>
                     </div>
                   </DropdownMenuLabel>

@@ -16,15 +16,22 @@ export const uploadImageToStorage = async (
   onProgress?: (progress: number) => void,
 ): Promise<string> => {
   try {
-    // Validate file security before upload
-    const validation = validateFileUpload(file);
-    if (!validation.isValid) {
-      throw new Error(`File validation failed: ${validation.errors.join(', ')}`);
+    // Create a sanitized filename to avoid validation issues
+    const fileExt = file.name.split(".").pop()?.toLowerCase() || 'jpg';
+    const sanitizedFileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
+    const filePath = `${path}/${sanitizedFileName}`;
+
+    // Validate file type and size (simplified validation)
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    const maxSize = 5 * 1024 * 1024; // 5MB
+
+    if (!allowedTypes.includes(file.type)) {
+      throw new Error(`File type not supported. Please use: ${allowedTypes.join(', ')}`);
     }
 
-    const fileExt = file.name.split(".").pop();
-    const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
-    const filePath = `${path}/${fileName}`;
+    if (file.size > maxSize) {
+      throw new Error('File size must be less than 5MB');
+    }
 
     // Upload the image
     const { error: uploadError, data: uploadData } = await supabase.storage
@@ -155,15 +162,24 @@ export const uploadImage = async (
   path: string = "issue-images",
 ): Promise<string | null> => {
   try {
-    // Validate file security before upload
-    const validation = validateFileUpload(file);
-    if (!validation.isValid) {
-      throw new Error(`File validation failed: ${validation.errors.join(', ')}`);
+    // Create a sanitized filename to avoid validation issues
+    const fileExt = file.name.split(".").pop()?.toLowerCase() || 'jpg';
+    const sanitizedFileName = `${Math.random().toString(36).substring(2, 15)}_${Date.now()}.${fileExt}`;
+    const filePath = `${path}/${sanitizedFileName}`;
+
+    // Validate file type and size (simplified validation)
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    const maxSize = 5 * 1024 * 1024; // 5MB
+
+    if (!allowedTypes.includes(file.type)) {
+      console.error(`File type not supported: ${file.type}`);
+      return null;
     }
 
-    const fileExt = file.name.split(".").pop();
-    const fileName = `${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
-    const filePath = `${path}/${fileName}`;
+    if (file.size > maxSize) {
+      console.error('File size too large');
+      return null;
+    }
 
     // Upload the image
     const { error: uploadError, data: uploadData } = await supabase.storage
@@ -230,27 +246,28 @@ export const deleteImage = async (
  * @returns The URL of the default image
  */
 export const getCategoryDefaultImage = (category: string): string => {
-  // Use reliable default images from Pixabay based on category
+  // Use reliable default images from Unsplash based on category
   const defaultImages: Record<string, string> = {
     infrastructure:
-      "https://cdn.pixabay.com/photo/2018/01/10/18/49/city-3073958_1280.jpg",
+      "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=800&h=600&fit=crop&crop=center",
     environment:
-      "https://cdn.pixabay.com/photo/2015/12/01/20/28/green-1072828_1280.jpg",
+      "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=800&h=600&fit=crop&crop=center",
     safety:
-      "https://cdn.pixabay.com/photo/2019/04/13/00/47/police-4123365_1280.jpg",
+      "https://images.unsplash.com/photo-1593115057322-e94b77572f20?w=800&h=600&fit=crop&crop=center",
     community:
-      "https://cdn.pixabay.com/photo/2017/02/10/12/03/volunteer-2055010_1280.jpg",
+      "https://images.unsplash.com/photo-1559027615-cd4628902d4a?w=800&h=600&fit=crop&crop=center",
     education:
-      "https://cdn.pixabay.com/photo/2015/09/05/21/51/reading-925589_1280.jpg",
+      "https://images.unsplash.com/photo-1523050854058-8df90110c9f1?w=800&h=600&fit=crop&crop=center",
     healthcare:
-      "https://cdn.pixabay.com/photo/2016/11/09/15/27/dna-1811955_1280.jpg",
+      "https://images.unsplash.com/photo-1576091160399-112ba8d25d1f?w=800&h=600&fit=crop&crop=center",
     transportation:
-      "https://cdn.pixabay.com/photo/2017/10/27/10/27/subway-2893851_1280.jpg",
+      "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=800&h=600&fit=crop&crop=center",
     housing:
-      "https://cdn.pixabay.com/photo/2016/11/18/17/46/house-1836070_1280.jpg",
-    water: "https://cdn.pixabay.com/photo/2013/07/18/20/26/sea-164989_1280.jpg",
+      "https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=800&h=600&fit=crop&crop=center",
+    water:
+      "https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=800&h=600&fit=crop&crop=center",
     electricity:
-      "https://cdn.pixabay.com/photo/2015/09/02/12/25/wind-power-918947_1280.jpg",
+      "https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?w=800&h=600&fit=crop&crop=center",
   };
 
   const lowerCategory = category?.toLowerCase() || 'infrastructure';

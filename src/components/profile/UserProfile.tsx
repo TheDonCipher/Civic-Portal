@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Plus, Mail, MapPin, Calendar, Settings } from 'lucide-react';
 import IssueGrid from '../issues/IssueGrid';
 import ProfileSettings from './ProfileSettings';
+import { getUserInitials, getUserRoleDisplay } from '@/lib/utils/userUtils';
 import type { Issue } from '../issues/IssueGrid';
 import { useAuth } from '@/lib/auth';
 
@@ -81,7 +82,9 @@ export const UserProfile = ({
                 src={userWithIssues.avatar}
                 alt={userWithIssues.name}
               />
-              <AvatarFallback>{userWithIssues.name.charAt(0)}</AvatarFallback>
+              <AvatarFallback>
+                {getUserInitials({ full_name: userWithIssues.name })}
+              </AvatarFallback>
             </Avatar>
             <div className="space-y-2">
               <div className="space-y-1">
@@ -93,7 +96,7 @@ export const UserProfile = ({
                   className="text-sm"
                   data-testid="user-role"
                 >
-                  {userWithIssues.role}
+                  {getUserRoleDisplay({ role: userWithIssues.role as any })}
                 </Badge>
               </div>
               <div className="flex flex-col sm:flex-row gap-4 text-sm text-muted-foreground">

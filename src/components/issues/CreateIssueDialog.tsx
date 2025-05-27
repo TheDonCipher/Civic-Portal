@@ -38,6 +38,10 @@ import {
 } from '@/hooks/useRateLimit';
 import { sanitizeText, sanitizeFormData } from '@/lib/utils';
 import {
+  getAllCategories,
+  getCategoriesByDepartment,
+} from '@/lib/api/categoriesApi';
+import {
   Image,
   Loader2,
   Upload,
@@ -62,7 +66,9 @@ interface Category {
   id: string;
   name: string;
   description?: string;
-  department_id: string;
+  department_id?: string;
+  icon?: string;
+  color?: string;
 }
 
 const formSchema = z.object({
@@ -163,34 +169,26 @@ const CreateIssueDialog = ({
             .select('*')
             .order('name');
 
-        if (departmentsError) throw departmentsError;
+        if (departmentsError) {
+          console.error('Error fetching departments:', departmentsError);
+          throw departmentsError;
+        }
         setDepartments((departmentsData as Department[]) || []);
 
-        // Fetch categories
-        const { data: categoriesData, error: categoriesError } = await supabase
-          .from('issue_categories' as any)
-          .select('*')
-          .order('name');
+        // Fetch categories using the new API
+        const categoriesData = await getAllCategories();
+        setCategories(categoriesData as Category[]);
 
-        if (categoriesError) throw categoriesError;
-        setCategories((categoriesData as Category[]) || []);
-
-        // If no categories found in the new table, fall back to the old categories
-        if (!categoriesData || categoriesData.length === 0) {
-          const fallbackCategories = [
-            { id: '1', name: 'infrastructure', department_id: '' },
-            { id: '2', name: 'environment', department_id: '' },
-            { id: '3', name: 'safety', department_id: '' },
-            { id: '4', name: 'community', department_id: '' },
-          ];
-          setCategories(fallbackCategories);
-          setFilteredCategories(fallbackCategories);
-        }
+        // Set initial filtered categories
+        setFilteredCategories(categoriesData as Category[]);
       } catch (error) {
         console.error('Error fetching departments and categories:', error);
+
+        // Show error message
         toast({
           title: 'Error',
-          description: 'Failed to load departments and categories.',
+          description:
+            'Failed to load departments and categories. Please try again.',
           variant: 'destructive',
         });
       } finally {
@@ -205,23 +203,37 @@ const CreateIssueDialog = ({
 
   // Filter categories when department changes
   useEffect(() => {
-    if (selectedDepartmentId) {
-      const filtered = categories.filter(
-        (category) => category.department_id === selectedDepartmentId
-      );
-      setFilteredCategories(filtered);
+    const filterCategories = async () => {
+      if (selectedDepartmentId) {
+        try {
+          // Fetch department-specific categories
+          const departmentCategories = await getCategoriesByDepartment(
+            selectedDepartmentId
+          );
+          setFilteredCategories(departmentCategories as Category[]);
 
-      // Reset category selection if the current category doesn't belong to the selected department
-      const currentCategory = form.getValues('category');
-      const categoryExists = filtered.some(
-        (cat) => cat.name === currentCategory
-      );
-      if (currentCategory && !categoryExists) {
-        form.setValue('category', '');
+          // Reset category selection if the current category doesn't belong to the selected department
+          const currentCategory = form.getValues('category');
+          const categoryExists = departmentCategories.some(
+            (cat) => cat.name === currentCategory
+          );
+          if (currentCategory && !categoryExists) {
+            form.setValue('category', '');
+          }
+        } catch (error) {
+          console.error('Error fetching department categories:', error);
+          // Fall back to filtering from all categories
+          const filtered = categories.filter(
+            (category) => category.department_id === selectedDepartmentId
+          );
+          setFilteredCategories(filtered);
+        }
+      } else {
+        setFilteredCategories(categories);
       }
-    } else {
-      setFilteredCategories(categories);
-    }
+    };
+
+    filterCategories();
   }, [selectedDepartmentId, categories, form]);
 
   const handleSubmit = async (data: z.infer<typeof formSchema>) => {
@@ -417,50 +429,61 @@ const CreateIssueDialog = ({
         return;
       }
 
-      // Create the issue in the database
+      // Create the issue in the database with proper error handling
+      const issuePayload = {
+        title: sanitizedData.title,
+        description: sanitizedData.description,
+        category: sanitizedData.category,
+        location: sanitizedData.location,
+        constituency: sanitizedData.constituency,
+        department_id: sanitizedData.department_id || null,
+        author_id: user.id,
+        author_name: profile.full_name || profile.username || 'Anonymous User',
+        author_avatar:
+          profile.avatar_url ||
+          `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}`,
+        status: 'open',
+        thumbnail: thumbnails[0], // Main thumbnail for backward compatibility
+        watchers_count: 1, // Start with 1 watcher (the creator)
+        vote_count: 0,
+        comment_count: 0,
+        view_count: 0,
+        created_at: new Date().toISOString(),
+      };
+
+      console.log('Creating issue with payload:', issuePayload);
+
       const { data: issueData, error } = await supabase
         .from('issues')
-        .insert({
-          title: sanitizedData.title,
-          description: sanitizedData.description,
-          category: sanitizedData.category,
-          location: sanitizedData.location,
-          constituency: sanitizedData.constituency,
-          author_id: user.id,
-          author_name: profile.full_name || 'Anonymous User',
-          author_avatar: profile.avatar_url,
-          status: 'open',
-          thumbnail: thumbnails[0], // Keep the first image as the main thumbnail for backward compatibility
-          created_at: new Date().toISOString(),
-          watchers_count: 1, // Start with 1 watcher (the creator)
-          // Note: department_id and thumbnails fields will be added when Supabase types are regenerated
-        } as any) // Type assertion to work around outdated Supabase types
+        .insert(issuePayload)
         .select()
         .single();
 
-      // Log the created issue data for debugging
-      console.log('Created issue with data:', issueData);
+      if (error) {
+        console.error('Database error creating issue:', error);
+        throw new Error(`Failed to create issue: ${error.message}`);
+      }
 
-      console.log('Issue created:', issueData);
+      if (!issueData) {
+        throw new Error('Issue was not created successfully');
+      }
 
-      if (error) throw error;
+      console.log('Issue created successfully:', issueData);
 
       // Automatically add the user as a watcher of their own issue
-      // First check if the user is already watching this issue to prevent duplicates
-      const { data: existingWatcher } = await supabase
-        .from('issue_watchers')
-        .select('*')
-        .eq('issue_id', issueData.id)
-        .eq('user_id', user.id)
-        .maybeSingle();
-
-      if (!existingWatcher) {
-        await supabase.from('issue_watchers').insert({
+      // Use the unified watchers table
+      try {
+        const { error: watcherError } = await supabase.from('watchers').insert({
           issue_id: issueData.id,
           user_id: user.id,
         });
-      } else {
-        console.log('User already watching this issue, skipping insert');
+
+        if (watcherError) {
+          console.warn('Failed to add user as watcher:', watcherError);
+          // Don't fail the entire operation if watcher creation fails
+        }
+      } catch (watcherErr) {
+        console.warn('Error adding watcher:', watcherErr);
       }
 
       // Call the onSubmit callback with the created issue data instead of form data

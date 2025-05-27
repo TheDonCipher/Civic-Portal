@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Search, SlidersHorizontal, X } from 'lucide-react';
 import { constituencies } from '@/lib/constituencies';
 import { departments } from '@/lib/demoData';
+import { getAllCategories } from '@/lib/api/categoriesApi';
 
 interface FilterBarProps {
   onFilterChange?: (filters: FilterState) => void;
@@ -25,8 +26,8 @@ interface FilterState {
   constituency: string;
 }
 
-// Issue categories from demo data
-const issueCategories = [
+// Fallback categories if database table doesn't exist
+const fallbackCategories = [
   'Infrastructure',
   'Healthcare',
   'Education',
@@ -46,6 +47,13 @@ const issueCategories = [
   'Labour',
 ];
 
+interface Category {
+  id: string;
+  name: string;
+  description?: string;
+  department_id?: string;
+}
+
 const FilterBar = ({
   onFilterChange = () => {},
   onSearch = () => {},
@@ -59,6 +67,34 @@ const FilterBar = ({
   });
 
   const [showAdvancedFilters, setShowAdvancedFilters] = React.useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
+
+  // Fetch categories from database or use fallback
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const categoriesData = await getAllCategories();
+        setCategories(categoriesData);
+      } catch (error) {
+        console.warn('Error fetching categories:', error);
+        // Use fallback categories
+        const fallbackCategoryObjects = fallbackCategories.map(
+          (name, index) => ({
+            id: (index + 1).toString(),
+            name,
+            description: '',
+            department_id: '',
+          })
+        );
+        setCategories(fallbackCategoryObjects);
+      } finally {
+        setCategoriesLoading(false);
+      }
+    };
+
+    fetchCategories();
+  }, []);
 
   const handleFilterChange = (key: keyof FilterState, value: string) => {
     const newFilters = { ...filters, [key]: value };
@@ -135,11 +171,17 @@ const FilterBar = ({
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Categories</SelectItem>
-            {issueCategories.map((category) => (
-              <SelectItem key={category} value={category}>
-                {category}
+            {categoriesLoading ? (
+              <SelectItem value="loading" disabled>
+                Loading categories...
               </SelectItem>
-            ))}
+            ) : (
+              categories.map((category) => (
+                <SelectItem key={category.id} value={category.name}>
+                  {category.name}
+                </SelectItem>
+              ))
+            )}
           </SelectContent>
         </Select>
 

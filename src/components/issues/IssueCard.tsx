@@ -20,6 +20,11 @@ import { getCategoryDefaultImage } from '@/lib/utils/imageUpload';
 import { handleApiError } from '@/lib/utils/errorHandler';
 import { ariaLabels, generateAriaId } from '@/lib/utils/accessibilityUtils';
 import { useConsentGuard } from '@/hooks/useConsentStatus';
+import {
+  getUserDisplayName,
+  getUserAvatarUrl,
+  getUserInitials,
+} from '@/lib/utils/userUtils';
 import type { UIIssue } from '@/types/enhanced';
 
 import {
@@ -683,9 +688,19 @@ const IssueCard = memo<IssueCardProps>(
           {/* Compact Author Information */}
           <div className="flex items-center space-x-2 pt-1">
             <Avatar className="h-7 w-7 ring-1 ring-background shadow-sm">
-              <AvatarImage src={author.avatar} alt={author.name} />
+              <AvatarImage
+                src={getUserAvatarUrl({
+                  id: author_id,
+                  avatar_url: author?.avatar,
+                })}
+                alt={getUserDisplayName(
+                  { full_name: author?.name },
+                  null,
+                  'User'
+                )}
+              />
               <AvatarFallback className="text-xs font-medium">
-                {author.name.charAt(0)}
+                {getUserInitials({ full_name: author?.name })}
               </AvatarFallback>
             </Avatar>
             <div className="flex-1 min-w-0">
@@ -693,7 +708,11 @@ const IssueCard = memo<IssueCardProps>(
                 className="text-xs font-medium text-foreground truncate"
                 data-testid="issue-author"
               >
-                {author.name}
+                {getUserDisplayName(
+                  { full_name: author?.name },
+                  null,
+                  'Anonymous User'
+                )}
               </p>
               <div className="flex items-center text-xs text-muted-foreground">
                 <Calendar className="h-3 w-3 mr-1" />
