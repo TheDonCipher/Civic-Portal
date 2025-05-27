@@ -889,6 +889,7 @@ For support and questions:
 4. **Report Bugs**: Create detailed bug reports with reproduction steps
 5. **Request Features**: Propose new features with clear use cases
 
+![CodeRabbit Pull Request Reviews](https://img.shields.io/coderabbit/prs/github/TheDonCipher/Civic-Portal?utm_source=oss&utm_medium=github&utm_campaign=TheDonCipher%2FCivic-Portal&labelColor=171717&color=FF570A&link=https%3A%2F%2Fcoderabbit.ai&label=CodeRabbit+Reviews)
 ---
 
 **Built with ❤️ for better civic engagement and government transparency in Botswana.**
