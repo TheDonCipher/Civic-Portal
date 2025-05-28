@@ -41,7 +41,7 @@ const MainLayout = ({
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <Header onCreateIssue={handleCreateIssue} onSearch={handleSearch} />
-      <main className="flex-1 pt-[82px] w-full overflow-x-hidden mb-8 sm:mb-12 lg:mb-16">
+      <main className="flex-1 pt-[82px] w-full overflow-x-hidden mb-8 sm:mb-12 lg:mb-16 md:pt-[120px]">
         {children}
       </main>
       {!hideFooter && <Footer />}
