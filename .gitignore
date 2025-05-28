@@ -35,3 +35,4 @@ checklist.md
 
 # env
 .env.local
+.env
