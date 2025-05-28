@@ -8,10 +8,18 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import {
+  SubscriptionStatusIndicator,
+  SubscriptionFeatureGate,
+} from '@/components/subscription';
+import { useDemoMode } from '@/providers/DemoProvider';
+import { getDemoSubscriptionData } from '@/lib/demoData';
 import MainLayout from '../layout/MainLayout';
 import PageTitle from '../common/PageTitle';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/lib/supabase';
+import { useUserAvatar } from '@/hooks/useUserAvatar';
+import { getUserInitials } from '@/lib/utils/userUtils';
 import {
   Settings,
   FileText,
@@ -24,6 +32,9 @@ import {
   MapPin,
   Users,
   Mail,
+  Crown,
+  TrendingUp,
+  Zap,
 } from 'lucide-react';
 
 interface UserStats {
@@ -50,8 +61,10 @@ interface RecentActivity {
 const UserDashboard = () => {
   const { userId } = useParams<{ userId: string }>();
   const { user, profile } = useAuth();
+  const { isDemoMode } = useDemoMode();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { avatarUrl } = useUserAvatar(user?.id);
   const [userStats, setUserStats] = useState<UserStats>({
     issuesCreated: 0,
     issuesWatching: 0,
@@ -61,6 +74,47 @@ const UserDashboard = () => {
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
   const [loading, setLoading] = useState(true);
   const [isOwnDashboard, setIsOwnDashboard] = useState(false);
+
+  // Get subscription data - use demo data in demo mode, otherwise mock data
+  const getSubscriptionData = () => {
+    if (isDemoMode && user?.id) {
+      return getDemoSubscriptionData(user.id);
+    }
+
+    // Enhanced fallback mock data for Mmogo Impact Ecosystem
+    return {
+      tier:
+        profile?.role === 'official'
+          ? 'kgotla'
+          : profile?.role === 'admin'
+          ? 'tlhaloso'
+          : profile?.role === 'business'
+          ? 'tirisano'
+          : 'motse',
+      status: 'active' as const,
+      nextBillingDate: '2024-02-01',
+      amount:
+        profile?.role === 'official'
+          ? 750
+          : profile?.role === 'admin'
+          ? 2000
+          : profile?.role === 'business'
+          ? 500
+          : 0,
+      currency: 'BWP',
+      billingCycle: profile?.role === 'citizen' ? 'forever' : 'monthly',
+      usageLimit:
+        profile?.role === 'official'
+          ? 100
+          : profile?.role === 'business'
+          ? 50
+          : 10,
+      currentUsage: userStats.issuesCreated + userStats.commentsPosted,
+      tierLevel: profile?.role === 'official' ? 'ward' : undefined,
+    };
+  };
+
+  const mockSubscriptionData = getSubscriptionData();
 
   useEffect(() => {
     // Check if this is the user's own dashboard
@@ -338,13 +392,11 @@ const UserDashboard = () => {
               <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
                 <Avatar className="h-16 w-16 mx-auto sm:mx-0">
                   <AvatarImage
-                    src={profile.avatar_url || ''}
-                    alt={profile.full_name || ''}
+                    src={avatarUrl}
+                    alt={profile?.full_name || 'User'}
                   />
                   <AvatarFallback>
-                    {profile.full_name?.charAt(0) ||
-                      user.email?.charAt(0) ||
-                      'U'}
+                    {getUserInitials(profile, user)}
                   </AvatarFallback>
                 </Avatar>
                 <div className="space-y-2 text-center sm:text-left w-full">
@@ -452,6 +504,103 @@ const UserDashboard = () => {
                 </p>
               </CardContent>
             </Card>
+          </div>
+
+          {/* Subscription Status Section */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold">Subscription Status</h3>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate('/subscription')}
+              >
+                <Crown className="h-4 w-4 mr-2" />
+                Manage
+              </Button>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              {/* Current Subscription Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Crown className="h-5 w-5" />
+                    Current Plan
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <SubscriptionStatusIndicator
+                    tier={mockSubscriptionData.tier as any}
+                    status={mockSubscriptionData.status}
+                    variant="detailed"
+                    showUpgradePrompt={mockSubscriptionData.tier === 'motse'}
+                    onUpgradeClick={() => navigate('/pricing')}
+                    tierLevel={mockSubscriptionData.tierLevel}
+                    showMmogoContext={true}
+                  />
+                </CardContent>
+              </Card>
+
+              {/* Usage & Limits Card */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <TrendingUp className="h-5 w-5" />
+                    Usage & Limits
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <div className="flex justify-between text-sm mb-2">
+                      <span>Monthly Activity</span>
+                      <span>
+                        {mockSubscriptionData.currentUsage} /{' '}
+                        {mockSubscriptionData.usageLimit}
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div
+                        className="bg-primary h-2 rounded-full transition-all duration-300"
+                        style={{
+                          width: `${Math.min(
+                            (mockSubscriptionData.currentUsage /
+                              mockSubscriptionData.usageLimit) *
+                              100,
+                            100
+                          )}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="text-sm text-muted-foreground">
+                    <p>
+                      Next billing:{' '}
+                      {new Date(
+                        mockSubscriptionData.nextBillingDate
+                      ).toLocaleDateString()}
+                    </p>
+                    <p>
+                      Amount: {mockSubscriptionData.currency}{' '}
+                      {mockSubscriptionData.amount}/
+                      {mockSubscriptionData.billingCycle}
+                    </p>
+                  </div>
+
+                  {mockSubscriptionData.currentUsage /
+                    mockSubscriptionData.usageLimit >
+                    0.8 && (
+                    <div className="flex items-center gap-2 p-3 bg-yellow-50 dark:bg-yellow-950 rounded-lg">
+                      <Zap className="h-4 w-4 text-yellow-600" />
+                      <span className="text-sm text-yellow-800 dark:text-yellow-200">
+                        You're approaching your usage limit. Consider upgrading.
+                      </span>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </div>
 
           {/* Main Content Tabs */}

@@ -41,6 +41,9 @@
   "dependencies": {
     "@fontsource/inter": "^5.1.1",
     "@hookform/resolvers": "^3.6.0",
+    "i18next": "^23.15.1",
+    "react-i18next": "^15.0.2",
+    "i18next-browser-languagedetector": "^8.0.0",
     "@radix-ui/react-accordion": "^1.1.2",
     "@radix-ui/react-alert-dialog": "^1.0.5",
     "@radix-ui/react-aspect-ratio": "^1.0.3",

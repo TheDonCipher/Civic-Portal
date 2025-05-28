@@ -256,6 +256,202 @@ export const demoUsers = [
   generateUser('admin-1', 'admin'),
 ];
 
+// Demo subscription data for users - Enhanced for Mmogo Impact Ecosystem
+export const demoSubscriptions = {
+  // Motse Platform - Free tier (Citizens)
+  'user-1': {
+    tier: 'motse',
+    status: 'active',
+    amount: 0,
+    currency: 'BWP',
+    billingCycle: 'forever',
+    nextBillingDate: null,
+    usageLimit: 10,
+    currentUsage: 3,
+    autoRenew: false,
+    features: [
+      'Issue reporting (text, photo, GPS, voice)',
+      'Public issue tracking',
+      'Community forums',
+      'Basic notifications',
+      'Local services directory'
+    ],
+    description: 'Free community access - the foundation of our village',
+  },
+  'user-2': {
+    tier: 'motse',
+    status: 'active',
+    amount: 0,
+    currency: 'BWP',
+    billingCycle: 'forever',
+    nextBillingDate: null,
+    usageLimit: 10,
+    currentUsage: 8,
+    autoRenew: false,
+    features: [
+      'Issue reporting (text, photo, GPS, voice)',
+      'Public issue tracking',
+      'Community forums',
+      'Basic notifications',
+      'Local services directory'
+    ],
+    description: 'Free community access - the foundation of our village',
+  },
+
+  // Thusang Community Action Funds
+  'user-3': {
+    tier: 'thusang',
+    status: 'active',
+    amount: 0, // Project-based fees (5-7%)
+    currency: 'BWP',
+    billingCycle: 'project-based',
+    nextBillingDate: null,
+    usageLimit: null,
+    currentUsage: 3, // Projects contributed to
+    autoRenew: false,
+    features: [
+      'All Motse Platform features',
+      'Project crowdfunding participation',
+      'Transparent fund tracking',
+      'Project impact updates',
+      'Recurring thematic fund support',
+      'Community project voting'
+    ],
+    description: 'Campaign-based crowdfunding for community projects',
+    projectsSupported: [
+      'Tlokweng Library Roof Repair - BWP 15,000',
+      'Mogoditshane Ward 3 Streetlights - BWP 8,500',
+      'Gaborone Parks Maintenance Fund - BWP 20/month'
+    ],
+  },
+
+  // Tirisano Mmogo Business Solutions - Community Champion
+  'business-1': {
+    tier: 'tirisano_mmogo',
+    status: 'active',
+    amount: 500,
+    currency: 'BWP',
+    billingCycle: 'monthly',
+    nextBillingDate: '2024-02-15',
+    usageLimit: 50,
+    currentUsage: 12,
+    autoRenew: true,
+    features: [
+      'Community Champion Badge',
+      'Featured directory listing',
+      'Logo on resolved issues',
+      'Community offers promotion',
+      'Monthly Local Pulse Report (5km radius)',
+      'Issue alerts near business premises'
+    ],
+    description: 'Enhanced brand reputation through community support',
+    businessType: 'Community Champion',
+  },
+
+  // Tirisano Mmogo Business Solutions - Corporate Impact Partner
+  'business-2': {
+    tier: 'tirisano_mmogo',
+    status: 'active',
+    amount: 1500,
+    currency: 'BWP',
+    billingCycle: 'monthly',
+    nextBillingDate: '2024-02-10',
+    usageLimit: 100,
+    currentUsage: 34,
+    autoRenew: true,
+    features: [
+      'All Community Champion benefits',
+      'Co-created CSR projects',
+      'Customized data reports',
+      'API access for data integration',
+      'Wider reach branding',
+      'Custom project sponsorship'
+    ],
+    description: 'Corporate partnerships with measurable community impact',
+    businessType: 'Corporate Impact Partner',
+    csrProjects: [
+      'Digital Literacy Drive Fund',
+      'Rural Water Access Initiative'
+    ],
+  },
+
+  // Kgotla+ Governance Solutions - Ward Level
+  'official-finance': {
+    tier: 'kgotla',
+    status: 'active',
+    amount: 750,
+    currency: 'BWP',
+    billingCycle: 'monthly',
+    nextBillingDate: '2024-02-01',
+    usageLimit: 100,
+    currentUsage: 45,
+    autoRenew: true,
+    features: [
+      'Secure ward dashboard',
+      'Direct citizen communication (SMS/in-app)',
+      'Task assignment and tracking',
+      'Basic analytics and reporting',
+      'USSD interface for urgent alerts',
+      'Setswana/English translation'
+    ],
+    description: 'Ward Essentials - Streamlined local governance',
+    governmentLevel: 'Ward Essentials',
+    ward: 'Gaborone Central Ward',
+  },
+  'official-health': {
+    tier: 'kgotla',
+    status: 'active',
+    amount: 2800,
+    currency: 'BWP',
+    billingCycle: 'monthly',
+    nextBillingDate: '2024-02-01',
+    usageLimit: 200,
+    currentUsage: 67,
+    autoRenew: true,
+    features: [
+      'All Ward Essentials features',
+      'Cross-ward issue overview',
+      'Resource coordination tools',
+      'Advanced analytics and trends',
+      'Budget utilization tracking',
+      'Custom reporting tools',
+      'District-level planning'
+    ],
+    description: 'District Command - Cross-ward coordination and analytics',
+    governmentLevel: 'District Command',
+    district: 'South East District',
+  },
+
+  // Tlhaloso Data & Insights Services
+  'admin-1': {
+    tier: 'tlhaloso',
+    status: 'active',
+    amount: 2000,
+    currency: 'BWP',
+    billingCycle: 'monthly',
+    nextBillingDate: '2024-02-01',
+    usageLimit: null,
+    currentUsage: 15, // Reports generated
+    autoRenew: true,
+    features: [
+      'Thematic Intelligence Reports',
+      'Custom data projects',
+      'Developer API access',
+      'Aggregated national dashboards',
+      'Policy impact simulation',
+      'Cross-district benchmarking',
+      'Anonymized data insights'
+    ],
+    description: 'Premium analytics for strategic decision-making',
+    serviceType: 'Data & Insights Premium',
+    reportsGenerated: [
+      'State of Water Access in Central District',
+      'Road Safety Hotspots & Trends in Gaborone',
+      'Youth Employment Patterns Analysis'
+    ],
+  },
+};
+
 // Issue categories mapped to departments
 export const issueCategories = {
   Infrastructure: 'transport-infrastructure',
@@ -898,5 +1094,21 @@ export const getDemoDepartmentData = (departmentId: string) => {
     ...department,
     issues: departmentIssues,
     stats: departmentStats,
+  };
+};
+
+// Helper function to get demo subscription data for a user
+export const getDemoSubscriptionData = (userId: string) => {
+  return demoSubscriptions[userId] || {
+    tier: 'motse',
+    status: 'active',
+    amount: 0,
+    currency: 'BWP',
+    billingCycle: 'forever',
+    nextBillingDate: null,
+    usageLimit: 10,
+    currentUsage: 0,
+    autoRenew: false,
+    features: ['Issue reporting and tracking', 'Community forums', 'Public progress visualization', 'Basic notifications'],
   };
 };

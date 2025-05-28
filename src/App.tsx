@@ -83,6 +83,19 @@ const ConsentManagement = React.lazy(
 const PricingPage = React.lazy(
   () => import('./components/pricing/PricingPage')
 );
+const SubscriptionDashboard = React.lazy(
+  () => import('./components/subscription/SubscriptionDashboard')
+);
+const ThusangSubscriptionPage = React.lazy(
+  () => import('./components/subscription/ThusangSubscriptionPage')
+);
+const SubscriptionUpgrade = React.lazy(
+  () => import('./components/subscription/SubscriptionUpgrade')
+);
+const SubscriptionTierPage = React.lazy(
+  () => import('./components/subscription/SubscriptionTierPage')
+);
+const MmogoMockupsPage = React.lazy(() => import('./pages/MmogoMockupsPage'));
 
 function App() {
   const { user, profile, isLoading } = useAuth();
@@ -234,6 +247,16 @@ function App() {
                 </Suspense>
               }
             />
+            <Route
+              path="/demo/mmogo-ecosystem"
+              element={
+                <Suspense
+                  fallback={<ComponentLoader name="Mmogo Ecosystem Mockups" />}
+                >
+                  <MmogoMockupsPage />
+                </Suspense>
+              }
+            />
 
             {/* Static pages */}
             <Route path="/about" element={<AboutPage />} />
@@ -243,6 +266,48 @@ function App() {
               element={
                 <Suspense fallback={<ComponentLoader name="Pricing" />}>
                   <PricingPage />
+                </Suspense>
+              }
+            />
+
+            {/* Subscription routes */}
+            <Route
+              path="/subscription"
+              element={
+                <Suspense
+                  fallback={<ComponentLoader name="Subscription Dashboard" />}
+                >
+                  <SubscriptionDashboard />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/subscription/thusang"
+              element={
+                <Suspense
+                  fallback={<ComponentLoader name="Thusang Projects" />}
+                >
+                  <ThusangSubscriptionPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/subscription/:tier"
+              element={
+                <Suspense
+                  fallback={<ComponentLoader name="Subscription Tier" />}
+                >
+                  <SubscriptionTierPage />
+                </Suspense>
+              }
+            />
+            <Route
+              path="/subscription/upgrade"
+              element={
+                <Suspense
+                  fallback={<ComponentLoader name="Subscription Upgrade" />}
+                >
+                  <SubscriptionUpgrade />
                 </Suspense>
               }
             />

@@ -37,11 +37,22 @@ import {
   Settings,
   RefreshCw,
   Shield,
+  Crown,
+  Star,
+  Lightbulb,
+  Network,
+  DollarSign,
+  Target,
+  Award,
+  Coins,
 } from 'lucide-react';
 import { departments } from '@/lib/demoData';
 import PageTitle from '@/components/common/PageTitle';
 import IssueDetailDialog from '@/components/issues/IssueDetailDialog';
 import { UIIssue } from '@/types/enhanced';
+import SubscriptionStatusIndicator from '@/components/subscription/SubscriptionStatusIndicator';
+import ThusangContributionWidget from '@/components/subscription/ThusangContributionWidget';
+import TirisanoPartnershipDisplay from '@/components/subscription/TirisanoPartnershipDisplay';
 
 interface DemoIssue {
   id: string;
@@ -538,6 +549,143 @@ const DemoStakeholderDashboard: React.FC = () => {
               onClick={() => setActiveTab('resolved')}
             />
           </div>
+
+          {/* Kgotla+ Governance Integration */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="mt-8"
+          >
+            <Card className="bg-gradient-to-br from-yellow-50 to-orange-50 dark:from-yellow-950/30 dark:to-orange-950/30 border-yellow-200 dark:border-yellow-800">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-yellow-100 dark:bg-yellow-900/50 rounded-lg">
+                      <Crown className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-xl text-yellow-900 dark:text-yellow-100">
+                        Kgotla+ Governance Tools (Demo)
+                      </CardTitle>
+                      <p className="text-yellow-700 dark:text-yellow-300 mt-1">
+                        Enhanced government efficiency through subscription
+                        features
+                      </p>
+                    </div>
+                  </div>
+                  <SubscriptionStatusIndicator
+                    tier="kgotla"
+                    status="active"
+                    variant="compact"
+                    tierLevel="ward"
+                    showMmogoContext={true}
+                  />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid md:grid-cols-3 gap-6">
+                  {/* Subscription Benefits */}
+                  <div className="space-y-4">
+                    <h4 className="font-semibold text-yellow-800 dark:text-yellow-200 flex items-center gap-2">
+                      <Award className="h-4 w-4" />
+                      Ward Essentials Features
+                    </h4>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-sm">
+                        <CheckCircle className="h-4 w-4 text-green-500" />
+                        <span className="text-gray-700 dark:text-gray-300">
+                          Secure ward dashboard
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <CheckCircle className="h-4 w-4 text-green-500" />
+                        <span className="text-gray-700 dark:text-gray-300">
+                          Direct citizen communication
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <CheckCircle className="h-4 w-4 text-green-500" />
+                        <span className="text-gray-700 dark:text-gray-300">
+                          Task assignment & tracking
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <CheckCircle className="h-4 w-4 text-green-500" />
+                        <span className="text-gray-700 dark:text-gray-300">
+                          Advanced analytics
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Performance Metrics */}
+                  <div className="space-y-4">
+                    <h4 className="font-semibold text-yellow-800 dark:text-yellow-200 flex items-center gap-2">
+                      <BarChart3 className="h-4 w-4" />
+                      Efficiency Gains
+                    </h4>
+                    <div className="space-y-3">
+                      <div className="p-3 bg-white dark:bg-gray-900 rounded-lg border">
+                        <div className="text-lg font-bold text-green-600">
+                          60%
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          Faster Resolution
+                        </div>
+                      </div>
+                      <div className="p-3 bg-white dark:bg-gray-900 rounded-lg border">
+                        <div className="text-lg font-bold text-blue-600">
+                          85%
+                        </div>
+                        <div className="text-sm text-muted-foreground">
+                          Citizen Satisfaction
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* ROI Information */}
+                  <div className="space-y-4">
+                    <h4 className="font-semibold text-yellow-800 dark:text-yellow-200 flex items-center gap-2">
+                      <DollarSign className="h-4 w-4" />
+                      Investment & ROI
+                    </h4>
+                    <div className="space-y-2">
+                      <div className="p-3 bg-white dark:bg-gray-900 rounded-lg border">
+                        <div className="text-sm font-medium text-yellow-700 dark:text-yellow-300">
+                          BWP 750/month
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          Ward Essentials Tier
+                        </div>
+                      </div>
+                      <div className="text-xs text-green-600 dark:text-green-400">
+                        ROI: 3x through efficiency gains
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-6 p-4 bg-yellow-50 dark:bg-yellow-950/30 rounded-lg border border-yellow-200 dark:border-yellow-800">
+                  <div className="flex items-start gap-3">
+                    <Lightbulb className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mt-0.5 flex-shrink-0" />
+                    <div>
+                      <h4 className="text-sm font-medium text-yellow-800 dark:text-yellow-200 mb-1">
+                        Demo Mode - Kgotla+ Integration
+                      </h4>
+                      <p className="text-xs text-yellow-700 dark:text-yellow-300">
+                        In the real application, government officials access
+                        enhanced analytics, cross-ward coordination tools, and
+                        policy impact simulation through subscription tiers.
+                        This demo shows basic Ward Essentials features.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </motion.div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">

@@ -340,9 +340,7 @@ export const IssueProvider: React.FC<IssueProviderProps> = ({
         type: 'status',
         author: {
           name: profile.full_name || 'User',
-          avatar:
-            profile.avatar_url ||
-            `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}`,
+          avatar: '', // Will be dynamically fetched by component
         },
         author_id: user.id,
       };

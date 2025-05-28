@@ -72,6 +72,19 @@ Cypress.Commands.add(
   },
 );
 
+// Language switching commands
+Cypress.Commands.add('setLanguage', (language: 'en' | 'tn') => {
+  cy.window().then((win) => {
+    win.localStorage.setItem('i18nextLng', language);
+  });
+});
+
+Cypress.Commands.add('switchToLanguage', (language: 'English' | 'Setswana') => {
+  cy.get('[aria-label*="Current language"]').click();
+  cy.contains(language).click();
+  cy.wait(500); // Wait for language change to take effect
+});
+
 // Declare global Cypress namespace to add custom commands
 declare global {
   namespace Cypress {
@@ -88,6 +101,8 @@ declare global {
         description: string,
         category: string,
       ): Chainable<void>;
+      setLanguage(language: 'en' | 'tn'): Chainable<void>;
+      switchToLanguage(language: 'English' | 'Setswana'): Chainable<void>;
     }
   }
 }

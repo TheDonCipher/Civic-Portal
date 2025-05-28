@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -12,10 +13,15 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { LanguageSwitcher } from '@/components/common/LanguageSwitcher';
 import { useAuth } from '@/lib/auth';
 import { useToast } from '@/components/ui/use-toast';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { ConsentStatusIndicator } from '@/components/auth/ConsentStatusBanner';
+import {
+  QuickSubscriptionInfo,
+  useSubscriptionStatus,
+} from '@/components/subscription/SubscriptionStatusIndicator';
 import {
   getUserDisplayName,
   getUserAvatarUrl,
@@ -36,6 +42,7 @@ import {
   Users,
   Play,
   Plus,
+  CreditCard,
 } from 'lucide-react';
 import AuthDialog from '../auth/AuthDialog';
 
@@ -49,54 +56,63 @@ const Header = ({ onCreateIssue, onSearch }: HeaderProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
+  const { t } = useTranslation('ui');
   const [isAuthDialogOpen, setIsAuthDialogOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  // Check if we're in demo mode
+  const isDemoMode =
+    location.search.includes('demo=true') ||
+    location.pathname.startsWith('/demo');
+
+  // Get subscription status
+  const { tier, status } = useSubscriptionStatus(profile?.role, isDemoMode);
 
   const handleSignOut = async () => {
     try {
       await signOut();
       toast({
-        title: 'Signed out successfully',
-        description: 'You have been signed out of your account.',
+        title: t('auth.signedOutSuccessfully'),
+        description: t('auth.signedOutDescription'),
         variant: 'default',
       });
       navigate('/');
     } catch (error) {
       toast({
-        title: 'Error',
-        description: 'Failed to sign out. Please try again.',
+        title: t('auth.signInError'),
+        description: t('auth.signInErrorDescription'),
         variant: 'destructive',
       });
     }
   };
 
-  const isDemoMode =
-    location.search.includes('demo=true') ||
-    location.pathname.startsWith('/demo');
-
   const getNavLinks = () => {
     if (user && !isDemoMode) {
       return [
-        { href: '/', label: 'Home', icon: Home },
-        { href: `/user/${user.id}`, label: 'Dashboard', icon: User },
-        { href: `/user/${user.id}/issues`, label: 'Issues', icon: FileText },
-        { href: '/reports', label: 'Reports', icon: BarChart3 },
+        { href: '/', label: t('nav.home'), icon: Home },
+        { href: `/user/${user.id}`, label: t('nav.dashboard'), icon: User },
+        {
+          href: `/user/${user.id}/issues`,
+          label: t('nav.issues'),
+          icon: FileText,
+        },
+        { href: '/reports', label: t('nav.reports'), icon: BarChart3 },
       ];
     } else {
       return [
-        { href: '/', label: 'Home', icon: Home },
+        { href: '/', label: t('nav.home'), icon: Home },
         {
           href: isDemoMode ? '/demo/issues' : '/issues',
-          label: 'Issues',
+          label: t('nav.issues'),
           icon: FileText,
         },
         {
           href: isDemoMode ? '/demo/reports' : '/reports',
-          label: 'Reports',
+          label: t('nav.reports'),
           icon: BarChart3,
         },
-        { href: '/about', label: 'About', icon: Users },
-        { href: '/faq', label: 'FAQ', icon: FileText },
+        { href: '/about', label: t('nav.about'), icon: Users },
+        { href: '/faq', label: t('nav.faq'), icon: FileText },
       ];
     }
   };
@@ -170,6 +186,11 @@ const Header = ({ onCreateIssue, onSearch }: HeaderProps) => {
               </Button>
             )}
 
+            {/* Language Switcher */}
+            <div className="hidden sm:block">
+              <LanguageSwitcher />
+            </div>
+
             {/* Theme Toggle */}
             <div className="hidden sm:block">
               <ThemeToggle />
@@ -192,15 +213,25 @@ const Header = ({ onCreateIssue, onSearch }: HeaderProps) => {
                 {isDemoMode ? (
                   <>
                     <Globe className="h-4 w-4 mr-2" />
-                    My Dashboard
+                    {t('buttons.myDashboard')}
                   </>
                 ) : (
                   <>
                     <Play className="h-4 w-4 mr-2" />
-                    Try Demo
+                    {t('buttons.tryDemo')}
                   </>
                 )}
               </Button>
+            )}
+
+            {/* Subscription Status for authenticated users */}
+            {user && (
+              <QuickSubscriptionInfo
+                tier={tier}
+                status={status}
+                compact={true}
+                onClick={() => navigate('/subscription')}
+              />
             )}
 
             {/* Notification Bell for authenticated users */}
@@ -250,28 +281,32 @@ const Header = ({ onCreateIssue, onSearch }: HeaderProps) => {
                     onClick={() => navigate(`/user/${user.id}`)}
                   >
                     <User className="mr-2 h-4 w-4" />
-                    <span>Dashboard</span>
+                    <span>{t('nav.dashboard')}</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem
                     onClick={() => navigate(`/user/${user.id}/profile`)}
                   >
                     <Settings className="mr-2 h-4 w-4" />
-                    <span>Profile Settings</span>
+                    <span>{t('profile.settings')}</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/subscription')}>
+                    <CreditCard className="mr-2 h-4 w-4" />
+                    <span>Subscription</span>
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => onCreateIssue?.()}>
                     <Plus className="mr-2 h-4 w-4" />
-                    <span>Report Issue</span>
+                    <span>{t('buttons.createIssue')}</span>
                   </DropdownMenuItem>
                   {profile?.role === 'official' || profile?.role === 'admin' ? (
                     <DropdownMenuItem onClick={() => navigate('/stakeholder')}>
                       <BarChart3 className="mr-2 h-4 w-4" />
-                      <span>Stakeholder Dashboard</span>
+                      <span>{t('profile.stakeholderDashboard')}</span>
                     </DropdownMenuItem>
                   ) : null}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={handleSignOut}>
                     <LogOut className="mr-2 h-4 w-4" />
-                    <span>Sign out</span>
+                    <span>{t('auth.signOut')}</span>
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -281,7 +316,7 @@ const Header = ({ onCreateIssue, onSearch }: HeaderProps) => {
                 className="touch-target"
                 size="sm"
               >
-                Sign In
+                {t('auth.signIn')}
               </Button>
             )}
 
@@ -355,21 +390,29 @@ const Header = ({ onCreateIssue, onSearch }: HeaderProps) => {
                   {isDemoMode && user ? (
                     <>
                       <Globe className="h-5 w-5 mr-3" />
-                      My Dashboard
+                      {t('buttons.myDashboard')}
                     </>
                   ) : (
                     <>
                       <Play className="h-5 w-5 mr-3" />
-                      Try Demo
+                      {t('buttons.tryDemo')}
                     </>
                   )}
                 </Button>
               </div>
 
+              {/* Language Switcher for Mobile */}
+              <div className="border-t pt-3 mt-3 flex items-center justify-between px-4">
+                <span className="text-sm font-medium text-muted-foreground">
+                  {t('language.english')} / {t('language.setswana')}
+                </span>
+                <LanguageSwitcher size="sm" />
+              </div>
+
               {/* Theme Toggle for Mobile */}
               <div className="border-t pt-3 mt-3 flex items-center justify-between px-4">
                 <span className="text-sm font-medium text-muted-foreground">
-                  Theme
+                  {t('theme.toggleTheme')}
                 </span>
                 <ThemeToggle />
               </div>

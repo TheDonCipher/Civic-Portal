@@ -48,6 +48,38 @@ export const clearCache = (keyPattern?: string) => {
   }
 };
 
+// Invalidate cache entries by pattern and return count
+export const invalidateCachePattern = (pattern: string): number => {
+  if (!pattern) {
+    console.warn("Invalid cache pattern", pattern);
+    return 0;
+  }
+
+  const keysToDelete: string[] = [];
+  cache.forEach((_, key) => {
+    if (key.includes(pattern)) {
+      keysToDelete.push(key);
+    }
+  });
+
+  keysToDelete.forEach(key => {
+    cache.delete(key);
+    console.log(`Cache invalidated: ${key}`);
+  });
+
+  return keysToDelete.length;
+};
+
+// Invalidate specific user cache
+export const invalidateUserCache = (userId: string): number => {
+  if (!userId) {
+    console.warn("Invalid user ID for cache invalidation", userId);
+    return 0;
+  }
+
+  return invalidateCachePattern(`user_${userId}`);
+};
+
 // Debounce function to limit the rate of function calls
 export const debounce = <F extends (...args: any[]) => any>(
   func: F,

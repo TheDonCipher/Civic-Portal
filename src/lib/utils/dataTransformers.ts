@@ -43,8 +43,7 @@ export const transformers = {
       date: safeCreatedAt, // Always a string
       author: {
         name: issue.profiles?.full_name || (issue as any).author_name || 'Unknown User',
-        avatar: issue.profiles?.avatar_url || (issue as any).author_avatar ||
-                `https://api.dicebear.com/7.x/avataaars/svg?seed=${issue.author_id}`
+        avatar: issue.profiles?.avatar_url || '' // Will be dynamically fetched by getUserAvatarUrl
       },
       author_id: issue.author_id,
       thumbnail: (issue as any).thumbnail || (issue as any).thumbnails?.[0] || '',

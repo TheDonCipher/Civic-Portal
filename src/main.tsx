@@ -6,6 +6,7 @@ import '@fontsource/inter/500.css';
 import '@fontsource/inter/600.css';
 import '@fontsource/inter/700.css';
 import './index.css';
+import './lib/i18n'; // Import to initialize i18next configuration
 import { BrowserRouter } from 'react-router-dom';
 import { AuthProvider } from './providers/AuthProvider';
 import { ThemeProvider } from './providers/ThemeProvider';
@@ -46,15 +47,23 @@ if (!rootElement) {
 } else {
   ReactDOM.createRoot(rootElement).render(
     <React.StrictMode>
-      <BrowserRouter basename={basename}>
-        <ThemeProvider defaultTheme="light">
-          <AuthProvider>
-            <DemoProvider>
-              <App />
-            </DemoProvider>
-          </AuthProvider>
-        </ThemeProvider>
-      </BrowserRouter>
+      <React.Suspense
+        fallback={
+          <div className="flex items-center justify-center min-h-screen">
+            Loading...
+          </div>
+        }
+      >
+        <BrowserRouter basename={basename}>
+          <ThemeProvider defaultTheme="light">
+            <AuthProvider>
+              <DemoProvider>
+                <App />
+              </DemoProvider>
+            </AuthProvider>
+          </ThemeProvider>
+        </BrowserRouter>
+      </React.Suspense>
     </React.StrictMode>
   );
 }

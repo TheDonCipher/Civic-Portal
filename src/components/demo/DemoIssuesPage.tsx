@@ -31,9 +31,7 @@ const DemoIssuesPage: React.FC = () => {
       // Author is already formatted by DemoProvider
       author: issue.author || {
         name: issue.author_name || 'Unknown',
-        avatar:
-          issue.author_avatar ||
-          `https://api.dicebear.com/7.x/avataaars/svg?seed=${issue.author_id}`,
+        avatar: issue.author_avatar || '', // Will be dynamically fetched by getUserAvatarUrl
       },
       author_id: issue.author_id,
       thumbnail: issue.thumbnail || '',

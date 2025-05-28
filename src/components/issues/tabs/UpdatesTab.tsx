@@ -47,7 +47,12 @@ export const UpdatesTab: React.FC<UpdatesTabProps> = ({
   useEffect(() => {
     const fetchUpdates = async () => {
       try {
-        if (isDemoMode) {
+        // Check if we should use demo mode - either explicitly in demo mode or if issue ID looks like demo data
+        const shouldUseDemoMode =
+          isDemoMode ||
+          (typeof issueId === 'string' && issueId.startsWith('issue-'));
+
+        if (shouldUseDemoMode) {
           // Use demo data
           const issueUpdates = demoUpdates
             .filter((update) => update.issue_id === issueId)
@@ -71,6 +76,22 @@ export const UpdatesTab: React.FC<UpdatesTabProps> = ({
             );
 
           setUpdates(issueUpdates);
+          setIsLoading(false);
+          return;
+        }
+
+        // Validate issue ID format for database queries
+        if (!issueId || typeof issueId !== 'string') {
+          throw new Error('Invalid issue ID provided');
+        }
+
+        // Check if issue ID looks like a UUID (basic validation)
+        const uuidRegex =
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+        if (!uuidRegex.test(issueId)) {
+          console.warn('Issue ID does not appear to be a valid UUID:', issueId);
+          // If it's not a UUID and not demo mode, show empty state instead of erroring
+          setUpdates([]);
           setIsLoading(false);
           return;
         }
@@ -120,7 +141,12 @@ export const UpdatesTab: React.FC<UpdatesTabProps> = ({
       } catch (error) {
         console.error('Error fetching updates:', error);
         handleApiError(error, 'UpdatesTab', 'fetchUpdates');
-        if (!isDemoMode) {
+
+        // Only show error toast for real database errors, not demo mode issues
+        const shouldUseDemoMode =
+          isDemoMode ||
+          (typeof issueId === 'string' && issueId.startsWith('issue-'));
+        if (!shouldUseDemoMode) {
           toast({
             title: 'Error',
             description: `Failed to load updates: ${
@@ -136,8 +162,14 @@ export const UpdatesTab: React.FC<UpdatesTabProps> = ({
 
     fetchUpdates();
 
-    // Subscribe to real-time updates only in non-demo mode
-    if (!isDemoMode) {
+    // Subscribe to real-time updates only for valid database mode
+    const shouldUseDemoMode =
+      isDemoMode ||
+      (typeof issueId === 'string' && issueId.startsWith('issue-'));
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+    if (!shouldUseDemoMode && issueId && uuidRegex.test(issueId)) {
       const subscription = supabase
         .channel(`updates-${issueId}`)
         .on(
@@ -159,7 +191,7 @@ export const UpdatesTab: React.FC<UpdatesTabProps> = ({
       };
     }
 
-    // Return empty cleanup function for demo mode
+    // Return empty cleanup function for demo mode or invalid IDs
     return () => {};
   }, [issueId, toast, isDemoMode]);
 

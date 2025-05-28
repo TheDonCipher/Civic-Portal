@@ -1,5 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
@@ -13,10 +18,16 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuth } from '@/lib/auth';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/lib/supabase';
+import { cn } from '@/lib/utils';
+import { getUserAvatarUrl, getUserInitials } from '@/lib/utils/userUtils';
 import type { UIIssue } from '@/types/enhanced';
 import { CommentsTab } from './tabs/CommentsTab';
 import { UpdatesTab } from './tabs/UpdatesTab';
 import { SolutionsTab } from './tabs/SolutionsTab';
+import ThusangContributionWidget from '@/components/subscription/ThusangContributionWidget';
+import TirisanoPartnershipDisplay from '@/components/subscription/TirisanoPartnershipDisplay';
+import { SubscriptionFeatureGate } from '@/components/subscription/SubscriptionStatusIndicator';
+import { useDemoMode } from '@/providers/DemoProvider';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   AlertDialog,
@@ -47,6 +58,12 @@ import {
   Clock,
   CheckCircle,
   Circle,
+  Star,
+  Coins,
+  Crown,
+  TrendingUp,
+  Network,
+  Heart,
 } from 'lucide-react';
 
 interface IssueDetailDialogProps {
@@ -72,6 +89,7 @@ const IssueDetailDialog = ({
 }: IssueDetailDialogProps) => {
   const { user, profile } = useAuth();
   const { toast } = useToast();
+  const { isDemoMode } = useDemoMode();
   const [activeTab, setActiveTab] = useState(initialTab);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isLiked, setIsLiked] = useState(false);
@@ -79,6 +97,20 @@ const IssueDetailDialog = ({
   const [isBookmarked, setIsBookmarked] = useState(false);
   const [localVotes, setLocalVotes] = useState(issue?.votes || 0);
   const [localWatchers, setLocalWatchers] = useState(issue?.watchers || 0);
+
+  // Enhanced funding data for Mmogo integration
+  const hasThusangFunding =
+    isDemoMode && (issue?.status === 'open' || issue?.status === 'in-progress');
+  const fundingAmount = hasThusangFunding
+    ? Math.floor(Math.random() * 15000) + 5000
+    : 0;
+  const goalAmount = hasThusangFunding
+    ? Math.floor(Math.random() * 25000) + 15000
+    : 20000;
+  const fundingProgress = hasThusangFunding
+    ? (fundingAmount / goalAmount) * 100
+    : 0;
+  const isWellFunded = fundingProgress > 60;
 
   // Track actual counts from tab components
   const [actualCounts, setActualCounts] = useState({
@@ -351,6 +383,15 @@ const IssueDetailDialog = ({
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-5xl max-h-[90vh] p-0 flex flex-col overflow-hidden">
+        {/* Hidden accessibility elements for screen readers */}
+        <DialogTitle className="sr-only">
+          {issue?.title || 'Issue Details'}
+        </DialogTitle>
+        <DialogDescription className="sr-only">
+          {issue?.description ||
+            'View and interact with issue details, comments, updates, and solutions.'}
+        </DialogDescription>
+
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -440,11 +481,14 @@ const IssueDetailDialog = ({
                 <div className="flex items-center gap-3">
                   <Avatar className="h-8 w-8 ring-2 ring-background">
                     <AvatarImage
-                      src={issue?.author?.avatar}
-                      alt={issue?.author?.name}
+                      src={getUserAvatarUrl({
+                        id: issue?.author_id,
+                        avatar_url: issue?.author?.avatar,
+                      })}
+                      alt={issue?.author?.name || 'User'}
                     />
                     <AvatarFallback className="text-sm">
-                      {issue?.author?.name?.charAt(0) || '?'}
+                      {getUserInitials({ full_name: issue?.author?.name })}
                     </AvatarFallback>
                   </Avatar>
                   <div>
@@ -624,6 +668,102 @@ const IssueDetailDialog = ({
                     </div>
                   </div>
                 </div>
+
+                {/* Enhanced Funding Information */}
+                {hasThusangFunding && (
+                  <div className="space-y-4">
+                    <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+                      Community Funding
+                    </h3>
+                    <div className="space-y-3">
+                      <div
+                        className={cn(
+                          'p-4 rounded-lg border-2 transition-all duration-300',
+                          isWellFunded
+                            ? 'bg-green-50/50 border-green-200 dark:bg-green-950/20 dark:border-green-800'
+                            : 'bg-blue-50/50 border-blue-200 dark:bg-blue-950/20 dark:border-blue-800'
+                        )}
+                      >
+                        <div className="flex items-center gap-2 mb-3">
+                          <Star
+                            className={cn(
+                              'h-4 w-4',
+                              isWellFunded ? 'text-green-600' : 'text-blue-600'
+                            )}
+                          />
+                          <p className="text-xs font-medium text-muted-foreground">
+                            Thusang Project Status
+                          </p>
+                        </div>
+
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center">
+                            <span className="text-sm font-medium">
+                              Progress
+                            </span>
+                            <span
+                              className={cn(
+                                'text-sm font-bold',
+                                isWellFunded
+                                  ? 'text-green-600'
+                                  : 'text-blue-600'
+                              )}
+                            >
+                              {Math.round(fundingProgress)}%
+                            </span>
+                          </div>
+
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div
+                              className={cn(
+                                'h-2 rounded-full transition-all duration-500',
+                                isWellFunded ? 'bg-green-500' : 'bg-blue-500'
+                              )}
+                              style={{
+                                width: `${Math.min(fundingProgress, 100)}%`,
+                              }}
+                            />
+                          </div>
+
+                          <div className="flex justify-between text-xs text-muted-foreground">
+                            <span>BWP {fundingAmount.toLocaleString()}</span>
+                            <span>BWP {goalAmount.toLocaleString()}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="p-3 bg-background rounded-lg border border-border/50">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Heart className="h-3 w-3 text-red-500" />
+                            <p className="text-xs font-medium text-muted-foreground">
+                              Contributors
+                            </p>
+                          </div>
+                          <p className="text-lg font-bold text-foreground">
+                            {isDemoMode
+                              ? Math.floor(Math.random() * 100) + 20
+                              : 0}
+                          </p>
+                        </div>
+
+                        <div className="p-3 bg-background rounded-lg border border-border/50">
+                          <div className="flex items-center gap-2 mb-1">
+                            <Clock className="h-3 w-3 text-orange-500" />
+                            <p className="text-xs font-medium text-muted-foreground">
+                              Days Left
+                            </p>
+                          </div>
+                          <p className="text-lg font-bold text-foreground">
+                            {isDemoMode
+                              ? Math.floor(Math.random() * 45) + 15
+                              : 30}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -636,7 +776,12 @@ const IssueDetailDialog = ({
               >
                 {/* Enhanced Tab Navigation */}
                 <div className="flex-shrink-0 px-6 pt-6 pb-4 bg-background">
-                  <TabsList className="grid w-full grid-cols-3 bg-muted/30 h-12 p-1">
+                  <TabsList
+                    className={cn(
+                      'grid w-full bg-muted/30 h-12 p-1',
+                      hasThusangFunding ? 'grid-cols-5' : 'grid-cols-3'
+                    )}
+                  >
                     <TabsTrigger
                       value="comments"
                       className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm transition-all duration-200 rounded-md font-medium"
@@ -676,6 +821,44 @@ const IssueDetailDialog = ({
                         {actualCounts.solutions}
                       </Badge>
                     </TabsTrigger>
+
+                    {/* Enhanced Mmogo Ecosystem Tabs */}
+                    {hasThusangFunding && (
+                      <>
+                        <TabsTrigger
+                          value="funding"
+                          className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm transition-all duration-200 rounded-md font-medium"
+                        >
+                          <Star className="h-4 w-4" />
+                          <span className="hidden sm:inline">Thusang</span>
+                          <Badge
+                            variant="secondary"
+                            className={cn(
+                              'ml-1 text-xs',
+                              isWellFunded
+                                ? 'bg-green-100 text-green-800 dark:bg-green-950/50 dark:text-green-400'
+                                : 'bg-blue-100 text-blue-800 dark:bg-blue-950/50 dark:text-blue-400'
+                            )}
+                          >
+                            {Math.round(fundingProgress)}%
+                          </Badge>
+                        </TabsTrigger>
+
+                        <TabsTrigger
+                          value="partnerships"
+                          className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm transition-all duration-200 rounded-md font-medium"
+                        >
+                          <Network className="h-4 w-4" />
+                          <span className="hidden sm:inline">Tirisano</span>
+                          <Badge
+                            variant="secondary"
+                            className="ml-1 text-xs bg-purple-100 text-purple-800 dark:bg-purple-950/50 dark:text-purple-400"
+                          >
+                            {isDemoMode ? '3' : '0'}
+                          </Badge>
+                        </TabsTrigger>
+                      </>
+                    )}
                   </TabsList>
                 </div>
 
@@ -755,6 +938,335 @@ const IssueDetailDialog = ({
                       )}
                     </AnimatePresence>
                   </TabsContent>
+
+                  {/* Enhanced Community Funding Tab */}
+                  {hasThusangFunding && (
+                    <TabsContent
+                      value="funding"
+                      className="px-6 pb-6 m-0 data-[state=inactive]:hidden"
+                    >
+                      <AnimatePresence mode="wait">
+                        {activeTab === 'funding' && (
+                          <motion.div
+                            key="funding"
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.2 }}
+                            className="space-y-6"
+                          >
+                            {/* Enhanced Thusang Community Action Fund */}
+                            <div>
+                              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                                <Star className="h-5 w-5 text-blue-600" />
+                                Thusang Community Action Fund
+                              </h3>
+                              <ThusangContributionWidget
+                                issueId={issue.id}
+                                issueTitle={issue.title}
+                                issueLocation={issue.constituency}
+                                currentFunding={fundingAmount}
+                                goalAmount={goalAmount}
+                                contributorsCount={
+                                  isDemoMode
+                                    ? Math.floor(Math.random() * 100) + 20
+                                    : 0
+                                }
+                                daysLeft={
+                                  isDemoMode
+                                    ? Math.floor(Math.random() * 45) + 15
+                                    : 30
+                                }
+                                variant="detailed"
+                                showProgress={true}
+                              />
+                            </div>
+
+                            {/* Community Impact Metrics */}
+                            <div className="bg-gradient-to-r from-blue-50 to-green-50 dark:from-blue-950/30 dark:to-green-950/30 p-6 rounded-lg border border-blue-200 dark:border-blue-800">
+                              <h4 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                                <Heart className="h-5 w-5 text-blue-600" />
+                                Community Impact
+                              </h4>
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="text-center">
+                                  <div className="text-2xl font-bold text-blue-600">
+                                    {isDemoMode
+                                      ? Math.floor(Math.random() * 50) + 20
+                                      : 0}
+                                  </div>
+                                  <div className="text-sm text-muted-foreground">
+                                    Contributors
+                                  </div>
+                                </div>
+                                <div className="text-center">
+                                  <div className="text-2xl font-bold text-green-600">
+                                    BWP{' '}
+                                    {isDemoMode
+                                      ? (fundingAmount / 1000).toFixed(1)
+                                      : '0'}
+                                    k
+                                  </div>
+                                  <div className="text-sm text-muted-foreground">
+                                    Raised So Far
+                                  </div>
+                                </div>
+                                <div className="text-center">
+                                  <div className="text-2xl font-bold text-purple-600">
+                                    {isDemoMode
+                                      ? Math.floor(Math.random() * 10) + 5
+                                      : 0}
+                                  </div>
+                                  <div className="text-sm text-muted-foreground">
+                                    Days Remaining
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Subscription Feature Gate for Advanced Analytics */}
+                            <SubscriptionFeatureGate
+                              requiredTier={['kgotla', 'tlhaloso']}
+                              userTier={
+                                profile?.role === 'official'
+                                  ? 'kgotla'
+                                  : 'motse'
+                              }
+                              userStatus="active"
+                              fallbackMessage="Advanced funding analytics and cross-project insights are available with Kgotla+ or Tlhaloso subscriptions."
+                              featureName="Advanced Funding Analytics"
+                              variant="banner"
+                              onUpgradeClick={() =>
+                                (window.location.href = '/pricing')
+                              }
+                            >
+                              <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/30 dark:to-purple-950/30 p-6 rounded-lg border border-blue-200 dark:border-blue-800">
+                                <h4 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                                  <TrendingUp className="h-5 w-5 text-blue-600" />
+                                  Funding Analytics Dashboard
+                                </h4>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                  <div className="text-center">
+                                    <div className="text-2xl font-bold text-blue-600">
+                                      BWP 45,000
+                                    </div>
+                                    <div className="text-sm text-muted-foreground">
+                                      Total Raised This Month
+                                    </div>
+                                  </div>
+                                  <div className="text-center">
+                                    <div className="text-2xl font-bold text-green-600">
+                                      12
+                                    </div>
+                                    <div className="text-sm text-muted-foreground">
+                                      Projects Funded
+                                    </div>
+                                  </div>
+                                  <div className="text-center">
+                                    <div className="text-2xl font-bold text-purple-600">
+                                      340
+                                    </div>
+                                    <div className="text-sm text-muted-foreground">
+                                      Community Contributors
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </SubscriptionFeatureGate>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </TabsContent>
+                  )}
+
+                  {/* Enhanced Tirisano Business Partnerships Tab */}
+                  {hasThusangFunding && (
+                    <TabsContent
+                      value="partnerships"
+                      className="px-6 pb-6 m-0 data-[state=inactive]:hidden"
+                    >
+                      <AnimatePresence mode="wait">
+                        {activeTab === 'partnerships' && (
+                          <motion.div
+                            key="partnerships"
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.2 }}
+                            className="space-y-6"
+                          >
+                            {/* Business Partnership Section */}
+                            <div>
+                              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                                <Building className="h-5 w-5 text-purple-600" />
+                                Tirisano Mmogo Business Partners
+                              </h3>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {/* Demo business partners */}
+                                <TirisanoPartnershipDisplay
+                                  partner={{
+                                    id: 'demo-partner-1',
+                                    name: 'Botswana Craft Centre',
+                                    tier: 'champion',
+                                    description:
+                                      'Supporting local artisans and promoting Botswana culture.',
+                                    location: 'Gaborone, Botswana',
+                                    joinedDate: '2023-06-15',
+                                    sponsoredProjects: 8,
+                                    communityImpact: '500+ artisans supported',
+                                    currentOffers: [
+                                      '15% discount for community members on traditional crafts',
+                                      'Free craft workshops for youth during school holidays',
+                                    ],
+                                    featuredPlacement: true,
+                                  }}
+                                  variant="card"
+                                  showContactInfo={false}
+                                  showMetrics={true}
+                                />
+
+                                <TirisanoPartnershipDisplay
+                                  partner={{
+                                    id: 'demo-partner-2',
+                                    name: 'Gaborone Motors',
+                                    tier: 'impact_partner',
+                                    description:
+                                      'Leading automotive dealer supporting community transportation.',
+                                    location: 'Gaborone, Botswana',
+                                    joinedDate: '2023-03-20',
+                                    sponsoredProjects: 12,
+                                    communityImpact: '1000+ families helped',
+                                    currentOffers: [
+                                      'Free vehicle safety inspections for community members',
+                                    ],
+                                    featuredPlacement: false,
+                                  }}
+                                  variant="card"
+                                  showContactInfo={false}
+                                  showMetrics={true}
+                                />
+
+                                <TirisanoPartnershipDisplay
+                                  partner={{
+                                    id: 'demo-partner-3',
+                                    name: 'Botswana Beef',
+                                    tier: 'supporter',
+                                    description:
+                                      'Supporting local food security and nutrition programs.',
+                                    location: 'Francistown, Botswana',
+                                    joinedDate: '2023-08-10',
+                                    sponsoredProjects: 5,
+                                    communityImpact: '200+ meals provided',
+                                    currentOffers: [
+                                      'Discounted meat packages for community events',
+                                    ],
+                                    featuredPlacement: false,
+                                  }}
+                                  variant="card"
+                                  showContactInfo={false}
+                                  showMetrics={true}
+                                />
+                              </div>
+                            </div>
+
+                            {/* Partnership Benefits */}
+                            <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-950/30 dark:to-blue-950/30 p-6 rounded-lg border border-purple-200 dark:border-purple-800">
+                              <h4 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                                <Network className="h-5 w-5 text-purple-600" />
+                                Partnership Benefits
+                              </h4>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div className="space-y-3">
+                                  <h5 className="font-medium text-purple-700 dark:text-purple-300">
+                                    For Community
+                                  </h5>
+                                  <ul className="space-y-2 text-sm text-muted-foreground">
+                                    <li className="flex items-center gap-2">
+                                      <CheckCircle className="h-4 w-4 text-green-500" />
+                                      Exclusive discounts and offers
+                                    </li>
+                                    <li className="flex items-center gap-2">
+                                      <CheckCircle className="h-4 w-4 text-green-500" />
+                                      Priority support for local issues
+                                    </li>
+                                    <li className="flex items-center gap-2">
+                                      <CheckCircle className="h-4 w-4 text-green-500" />
+                                      Skills development workshops
+                                    </li>
+                                  </ul>
+                                </div>
+                                <div className="space-y-3">
+                                  <h5 className="font-medium text-purple-700 dark:text-purple-300">
+                                    For Businesses
+                                  </h5>
+                                  <ul className="space-y-2 text-sm text-muted-foreground">
+                                    <li className="flex items-center gap-2">
+                                      <CheckCircle className="h-4 w-4 text-green-500" />
+                                      Enhanced brand visibility
+                                    </li>
+                                    <li className="flex items-center gap-2">
+                                      <CheckCircle className="h-4 w-4 text-green-500" />
+                                      Community engagement metrics
+                                    </li>
+                                    <li className="flex items-center gap-2">
+                                      <CheckCircle className="h-4 w-4 text-green-500" />
+                                      CSR impact documentation
+                                    </li>
+                                  </ul>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Subscription Feature Gate for Business Analytics */}
+                            <SubscriptionFeatureGate
+                              requiredTier={['tirisano', 'tlhaloso']}
+                              userTier="motse"
+                              userStatus="active"
+                              fallbackMessage="Advanced partnership analytics and business insights are available with Tirisano Mmogo Business Solutions or Tlhaloso subscriptions."
+                              featureName="Business Partnership Analytics"
+                              variant="banner"
+                              onUpgradeClick={() =>
+                                (window.location.href = '/pricing')
+                              }
+                            >
+                              <div className="bg-gradient-to-r from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 p-6 rounded-lg border border-purple-200 dark:border-purple-800">
+                                <h4 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                                  <TrendingUp className="h-5 w-5 text-purple-600" />
+                                  Partnership Analytics Dashboard
+                                </h4>
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                  <div className="text-center">
+                                    <div className="text-2xl font-bold text-purple-600">
+                                      BWP 25,000
+                                    </div>
+                                    <div className="text-sm text-muted-foreground">
+                                      Business Investment
+                                    </div>
+                                  </div>
+                                  <div className="text-center">
+                                    <div className="text-2xl font-bold text-blue-600">
+                                      8
+                                    </div>
+                                    <div className="text-sm text-muted-foreground">
+                                      Active Partners
+                                    </div>
+                                  </div>
+                                  <div className="text-center">
+                                    <div className="text-2xl font-bold text-green-600">
+                                      95%
+                                    </div>
+                                    <div className="text-sm text-muted-foreground">
+                                      Community Satisfaction
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </SubscriptionFeatureGate>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </TabsContent>
+                  )}
                 </div>
               </Tabs>
             </div>

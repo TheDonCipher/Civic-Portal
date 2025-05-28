@@ -139,6 +139,9 @@ const ProfileSettings = ({ onUpdate }: ProfileSettingsProps) => {
         'Your profile has been successfully updated.'
       );
 
+      // Trigger profile refresh event for real-time updates
+      window.dispatchEvent(new CustomEvent('refreshProfile'));
+
       if (onUpdate) {
         onUpdate();
       }

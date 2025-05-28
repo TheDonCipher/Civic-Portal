@@ -35,6 +35,7 @@ import {
   getUserAvatarUrl,
   getUserInitials,
 } from '@/lib/utils/userUtils';
+import { SubscriptionFeatureGate } from '@/components/subscription';
 import VerificationPending from '@/components/auth/VerificationPending';
 import MainLayout from '../layout/MainLayout';
 import PageTitle from '../common/PageTitle';
@@ -57,6 +58,7 @@ import {
   Settings,
   RefreshCw,
   Shield,
+  Crown,
 } from 'lucide-react';
 
 interface Issue {
@@ -124,9 +126,7 @@ const convertIssueToUIIssue = (issue: Issue): UIIssue => {
     date: issue.created_at || new Date().toISOString(),
     author: {
       name: issue.author_name || 'Unknown',
-      avatar:
-        issue.author_avatar ||
-        `https://api.dicebear.com/7.x/avataaars/svg?seed=${issue.author_id}`,
+      avatar: issue.author_avatar || '', // Will be dynamically fetched by getUserAvatarUrl
     },
     author_id: issue.author_id,
     thumbnail: issue.thumbnail || '',
@@ -1319,6 +1319,7 @@ const StakeholderDashboard = () => {
           </div>
 
           <TabsContent value="overview" className="space-y-6">
+            {/* Basic Performance Metrics - Available to all */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
@@ -1368,6 +1369,104 @@ const StakeholderDashboard = () => {
                 )}
               </CardContent>
             </Card>
+
+            {/* Advanced Analytics - Kgotla+ Subscription Required */}
+            <SubscriptionFeatureGate
+              requiredTier={['kgotla', 'tlhaloso']}
+              userTier={profile?.role === 'official' ? 'kgotla' : 'motse'}
+              userStatus="active"
+              fallbackMessage="Advanced analytics and detailed performance insights are available with Kgotla+ Local Governance Solutions subscription. Upgrade to access cross-ward coordination, budget utilization tracking, and policy impact simulation tools."
+              featureName="Advanced Analytics & Governance Tools"
+              variant="banner"
+              onUpgradeClick={() => (window.location.href = '/pricing')}
+            >
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Crown className="h-5 w-5 text-yellow-600" />
+                    Advanced Analytics
+                    <Badge variant="outline" className="ml-2">
+                      Kgotla+
+                    </Badge>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid gap-6 md:grid-cols-2">
+                    {/* Trend Analysis */}
+                    <div className="space-y-4">
+                      <h4 className="font-semibold">Trend Analysis</h4>
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm">
+                            Issue Resolution Trend
+                          </span>
+                          <span className="text-sm font-medium text-green-600">
+                            +15% this month
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm">Citizen Satisfaction</span>
+                          <span className="text-sm font-medium text-blue-600">
+                            87% positive
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm">
+                            Response Time Improvement
+                          </span>
+                          <span className="text-sm font-medium text-orange-600">
+                            -2.3 days avg
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Category Breakdown */}
+                    <div className="space-y-4">
+                      <h4 className="font-semibold">Category Performance</h4>
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm">Infrastructure</span>
+                          <div className="flex items-center gap-2">
+                            <div className="w-16 bg-gray-200 rounded-full h-2">
+                              <div
+                                className="bg-blue-600 h-2 rounded-full"
+                                style={{ width: '75%' }}
+                              />
+                            </div>
+                            <span className="text-sm">75%</span>
+                          </div>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm">Public Safety</span>
+                          <div className="flex items-center gap-2">
+                            <div className="w-16 bg-gray-200 rounded-full h-2">
+                              <div
+                                className="bg-green-600 h-2 rounded-full"
+                                style={{ width: '90%' }}
+                              />
+                            </div>
+                            <span className="text-sm">90%</span>
+                          </div>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm">Environment</span>
+                          <div className="flex items-center gap-2">
+                            <div className="w-16 bg-gray-200 rounded-full h-2">
+                              <div
+                                className="bg-yellow-600 h-2 rounded-full"
+                                style={{ width: '60%' }}
+                              />
+                            </div>
+                            <span className="text-sm">60%</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </SubscriptionFeatureGate>
 
             <Card>
               <CardHeader>

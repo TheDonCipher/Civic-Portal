@@ -1,0 +1,149 @@
+{
+  "appTitle": "Lephata la Baagi",
+  "nav": {
+    "home": "Tshimologo",
+    "dashboard": "Boto ya Tsamaiso",
+    "issues": "Dikgang",
+    "reports": "Dipego",
+    "about": "Ka Rona",
+    "faq": "Dipotso tse di Botlhokwa",
+    "pricing": "Ditlhotlhwa"
+  },
+  "buttons": {
+    "login": "Tsena",
+    "logout": "Tswa",
+    "signUp": "Kwala",
+    "submit": "Romela",
+    "cancel": "Khansela",
+    "save": "Boloka",
+    "edit": "Baakanya",
+    "delete": "Phimola",
+    "create": "Dira",
+    "search": "Batla",
+    "filter": "Kgaola",
+    "close": "Tswala",
+    "back": "Boela",
+    "next": "Latelang",
+    "previous": "Pele",
+    "tryDemo": "Leka Demo",
+    "myDashboard": "Boto ya Me",
+    "createIssue": "Dira Kgang",
+    "viewDetails": "Bona Dintlha"
+  },
+  "auth": {
+    "signIn": "Tsena",
+    "signUp": "Kwala",
+    "signOut": "Tswa",
+    "email": "Imeile",
+    "password": "Phasewete",
+    "confirmPassword": "Netefatsa Phasewete",
+    "firstName": "Leina la Ntlha",
+    "lastName": "Leina la Bofelo",
+    "forgotPassword": "O lebetse phasewete?",
+    "resetPassword": "Baakanya Phasewete",
+    "rememberMe": "Nkgopole",
+    "alreadyHaveAccount": "O na le akhaonto?",
+    "dontHaveAccount": "Ga o na akhaonto?",
+    "signedOutSuccessfully": "O tswile ka katlego",
+    "signedOutDescription": "O tswile mo akhaontong ya gago.",
+    "signInError": "Phoso",
+    "signInErrorDescription": "Go palelwe go tswa. Ka kopo leka gape.",
+    "dialogTitle": "Lephata la Baagi la Botswana",
+    "signInDescription": "Tsena go begela dikgang le go nna karolo ya setšhaba",
+    "signUpDescription": "Nna karolo ya setšhaba sa dijithale sa Botswana",
+    "resetPasswordDescription": "Re tla go thusa go bona akhaonto ya gago gape",
+    "betaLabel": "Beta"
+  },
+  "greetings": {
+    "welcome": "O Amogelesegile mo Lephateng la Baagi!",
+    "welcomeBack": "O amogelesegile gape!"
+  },
+  "footer": {
+    "description": "Sethala sa baagi go begela le go latela dikgang tsa motse fa ba dirisana le boemedi ba puso.",
+    "quickLinks": "Dikgokagano tse di Bonako",
+    "legal": "Molao",
+    "contact": "Ikgolagane le Rona",
+    "location": "Gaborone, Botswana",
+    "whatsapp": "+267 72977535 (WhatsApp)",
+    "email": "contact@civicportal.gov.bw",
+    "allRightsReserved": "Ditshwanelo tsotlhe di sireletsegile.",
+    "version": "Phetolelo",
+    "privacyPolicy": "Pholisi ya Sephiri",
+    "termsOfService": "Melawana ya Tirelo",
+    "support": "Thuso"
+  },
+  "theme": {
+    "light": "Lesedi",
+    "dark": "Lefifi",
+    "system": "Tsamaiso",
+    "toggleTheme": "Fetola setlhogo",
+    "currentTheme": "Setlhogo sa jaana"
+  },
+  "language": {
+    "english": "Sekgoa",
+    "setswana": "Setswana",
+    "switchToEnglish": "Fetolela go Sekgoa",
+    "switchToSetswana": "Fetolela go Setswana"
+  },
+  "issueStatuses": {
+    "open": "E Buletswe",
+    "in_progress": "E Tsweletse",
+    "resolved": "E Rarabololitswe",
+    "closed": "E Tswaletswe"
+  },
+  "issuePriorities": {
+    "low": "E Kwa Tlase",
+    "medium": "E Mahareng",
+    "high": "E Kwa Godimo",
+    "urgent": "E Potlakile"
+  },
+  "common": {
+    "loading": "E Loda...",
+    "error": "Phoso",
+    "success": "Katlego",
+    "warning": "Temoso",
+    "info": "Tshedimosetso",
+    "yes": "Ee",
+    "no": "Nnyaa",
+    "ok": "Go Siame",
+    "confirm": "Netefatsa",
+    "retry": "Leka Gape",
+    "refresh": "Ntšhafatsa"
+  },
+  "demo": {
+    "modeActive": "Demo Mode e Bereka",
+    "exploring": "O sekaseka phetolelo ya demo"
+  },
+  "profile": {
+    "settings": "Dithulaganyo tsa Profaele",
+    "stakeholderDashboard": "Boto ya Boemedi",
+    "reportIssue": "Begela Kgang"
+  },
+  "forms": {
+    "title": "Setlhogo",
+    "description": "Tlhaloso",
+    "category": "Mofuta",
+    "department": "Lefapha",
+    "location": "Lefelo",
+    "constituency": "Kgaolo ya Boemedi",
+    "images": "Ditshwantsho",
+    "selectCategory": "Tlhopha mofuta",
+    "selectDepartment": "Tlhopha lefapha",
+    "selectConstituency": "Tlhopha kgaolo ya boemedi",
+    "required": "Tshimo e e tlhokegang",
+    "optional": "Ga e a tlhokafala",
+    "uploadImages": "Tsenya Ditshwantsho",
+    "dragDropImages": "Gogela le go bea ditshwantsho mo, kgotsa tobetsa go tlhopha",
+    "maxFileSize": "Bogolo jo bo kgolo: 5MB ka tshwantsho",
+    "supportedFormats": "Mefuta e e amogelesegang: JPEG, PNG, GIF, WebP"
+  },
+  "dialogs": {
+    "createIssue": "Begela Kgang e Ntšha",
+    "editProfile": "Baakanya Profaele",
+    "confirmDelete": "Netefatsa go Phimola",
+    "areYouSure": "A o netefetse?",
+    "thisActionCannotBeUndone": "Tiro e ga e ka kgonege go boelwa morago.",
+    "deleteIssue": "Phimola Kgang",
+    "updateProgress": "Ntšhafatsa Tswelelopele"
+  }
+}

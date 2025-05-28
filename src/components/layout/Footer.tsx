@@ -1,10 +1,12 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { getAppInfo } from '@/lib/utils/info';
 import { Github, Mail, MapPin, Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const Footer = () => {
+  const { t } = useTranslation('ui');
   const info = getAppInfo();
   const currentYear = new Date().getFullYear();
 
@@ -13,10 +15,9 @@ const Footer = () => {
       <div className="max-w-[1800px] mx-auto px-6">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold">{info.name}</h3>
+            <h3 className="text-lg font-semibold">{t('appTitle')}</h3>
             <p className="text-muted-foreground text-sm">
-              A platform for citizens to report and track civic issues while
-              engaging with government stakeholders.
+              {t('footer.description')}
             </p>
             <div className="flex items-center space-x-4">
               <Button variant="ghost" size="icon" asChild>
@@ -33,14 +34,14 @@ const Footer = () => {
           </div>
 
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Quick Links</h3>
+            <h3 className="text-lg font-semibold">{t('footer.quickLinks')}</h3>
             <ul className="space-y-2">
               <li>
                 <Link
                   to="/"
                   className="text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  Home
+                  {t('nav.home')}
                 </Link>
               </li>
               <li>
@@ -48,7 +49,7 @@ const Footer = () => {
                   to="/issues"
                   className="text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  Issues
+                  {t('nav.issues')}
                 </Link>
               </li>
               <li>
@@ -56,7 +57,7 @@ const Footer = () => {
                   to="/reports"
                   className="text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  Reports
+                  {t('nav.reports')}
                 </Link>
               </li>
               <li>
@@ -64,7 +65,7 @@ const Footer = () => {
                   to="/pricing"
                   className="text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  Pricing
+                  {t('nav.pricing')}
                 </Link>
               </li>
               <li>
@@ -72,21 +73,21 @@ const Footer = () => {
                   to="/about"
                   className="text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  About
+                  {t('nav.about')}
                 </Link>
               </li>
             </ul>
           </div>
 
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Resources</h3>
+            <h3 className="text-lg font-semibold">{t('footer.legal')}</h3>
             <ul className="space-y-2">
               <li>
                 <Link
                   to="/faq"
                   className="text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  FAQ
+                  {t('nav.faq')}
                 </Link>
               </li>
               <li>
@@ -94,7 +95,7 @@ const Footer = () => {
                   to="/privacy"
                   className="text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  Privacy Policy
+                  {t('footer.privacyPolicy')}
                 </Link>
               </li>
               <li>
@@ -102,7 +103,7 @@ const Footer = () => {
                   to="/terms"
                   className="text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  Terms of Service
+                  {t('footer.termsOfService')}
                 </Link>
               </li>
               <li>
@@ -117,11 +118,11 @@ const Footer = () => {
           </div>
 
           <div className="space-y-4">
-            <h3 className="text-lg font-semibold">Contact</h3>
+            <h3 className="text-lg font-semibold">{t('footer.contact')}</h3>
             <ul className="space-y-2">
               <li className="flex items-center gap-2 text-muted-foreground">
                 <MapPin className="h-4 w-4" />
-                <span>Gaborone, Botswana</span>
+                <span>{t('footer.location')}</span>
               </li>
               <li className="flex items-center gap-2 text-muted-foreground">
                 <Phone className="h-4 w-4" />
@@ -131,12 +132,12 @@ const Footer = () => {
                   rel="noopener noreferrer"
                   className="hover:text-foreground transition-colors"
                 >
-                  +267 72977535 (WhatsApp)
+                  {t('footer.whatsapp')}
                 </a>
               </li>
               <li className="flex items-center gap-2 text-muted-foreground">
                 <Mail className="h-4 w-4" />
-                <span>contact@civicportal.gov.bw</span>
+                <span>{t('footer.email')}</span>
               </li>
             </ul>
           </div>
@@ -144,9 +145,12 @@ const Footer = () => {
 
         <div className="border-t border-border mt-8 pt-8 text-center text-sm text-muted-foreground">
           <p>
-            &copy; {currentYear} {info.name}. All rights reserved.
+            &copy; {currentYear} {t('appTitle')}.{' '}
+            {t('footer.allRightsReserved')}
           </p>
-          <p className="mt-1">Version {info.version}</p>
+          <p className="mt-1">
+            {t('footer.version')} {info.version}
+          </p>
         </div>
       </div>
     </footer>

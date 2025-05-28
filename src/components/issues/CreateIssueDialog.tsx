@@ -430,6 +430,8 @@ const CreateIssueDialog = ({
       }
 
       // Create the issue in the database with proper error handling
+      // Note: We no longer store author_name and author_avatar directly in the database
+      // Instead, we rely on the profiles table join for dynamic avatar fetching
       const issuePayload = {
         title: sanitizedData.title,
         description: sanitizedData.description,
@@ -438,10 +440,6 @@ const CreateIssueDialog = ({
         constituency: sanitizedData.constituency,
         department_id: sanitizedData.department_id || null,
         author_id: user.id,
-        author_name: profile.full_name || profile.username || 'Anonymous User',
-        author_avatar:
-          profile.avatar_url ||
-          `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}`,
         status: 'open',
         thumbnail: thumbnails[0], // Main thumbnail for backward compatibility
         watchers_count: 1, // Start with 1 watcher (the creator)

@@ -454,6 +454,41 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         });
       }
 
+      // Invalidate user cache and trigger profile refresh events
+      try {
+        // Import cache invalidation function
+        const { invalidateUserCache } = await import(
+          '@/lib/utils/performanceUtils'
+        );
+
+        // Clear user cache
+        const invalidatedCount = invalidateUserCache(user.id);
+        console.log(
+          `Invalidated ${invalidatedCount} cache entries for user ${user.id}`
+        );
+
+        // Clear localStorage cache as well
+        if (typeof window !== 'undefined' && window.localStorage) {
+          const keys = Object.keys(localStorage);
+          keys.forEach((key) => {
+            if (key.includes(`user_${user.id}`) || key.includes('user_cache')) {
+              localStorage.removeItem(key);
+            }
+          });
+        }
+
+        // Trigger profile refresh event for other components
+        window.dispatchEvent(
+          new CustomEvent('profileUpdated', {
+            detail: { userId: user.id, updatedData: sanitizedData },
+          })
+        );
+
+        console.log('Profile updated and cache invalidated');
+      } catch (cacheError) {
+        console.warn('Failed to invalidate cache:', cacheError);
+      }
+
       return { error: null };
     } catch (error) {
       console.error('Update profile error:', error);
@@ -487,6 +522,21 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       console.error('Error refreshing profile:', error);
     }
   };
+
+  // Listen for profile refresh events
+  useEffect(() => {
+    const handleRefreshProfile = () => {
+      if (user) {
+        console.log('Profile refresh event received');
+        getProfile(user.id);
+      }
+    };
+
+    window.addEventListener('refreshProfile', handleRefreshProfile);
+    return () => {
+      window.removeEventListener('refreshProfile', handleRefreshProfile);
+    };
+  }, [user]);
 
   // Set up session refresh timer
   useEffect(() => {

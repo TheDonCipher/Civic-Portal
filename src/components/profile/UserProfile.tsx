@@ -4,9 +4,22 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Plus, Mail, MapPin, Calendar, Settings } from 'lucide-react';
+import {
+  Plus,
+  Mail,
+  MapPin,
+  Calendar,
+  Settings,
+  Crown,
+  CreditCard,
+} from 'lucide-react';
 import IssueGrid from '../issues/IssueGrid';
 import ProfileSettings from './ProfileSettings';
+import {
+  SubscriptionStatusIndicator,
+  QuickSubscriptionInfo,
+} from '@/components/subscription';
+import { useDemoMode } from '@/providers/DemoProvider';
 import { getUserInitials, getUserRoleDisplay } from '@/lib/utils/userUtils';
 import type { Issue } from '../issues/IssueGrid';
 import { useAuth } from '@/lib/auth';
@@ -41,7 +54,32 @@ export const UserProfile = ({
     settingsMode ? 'settings' : 'created'
   );
   const { user: authUser } = useAuth ? useAuth() : { user: null };
+  const { isDemoMode } = useDemoMode();
   const isCurrentUser = Boolean(authUser?.id && user.isRealUser);
+
+  // Mock subscription data for demo/development
+  const mockSubscriptionData = {
+    tier:
+      user.role === 'official'
+        ? 'kgotla'
+        : user.role === 'admin'
+        ? 'tlhaloso'
+        : user.role === 'business'
+        ? 'tirisano'
+        : 'motse',
+    status: 'active' as const,
+    nextBillingDate: '2024-02-01',
+    amount:
+      user.role === 'official'
+        ? 750
+        : user.role === 'admin'
+        ? 2000
+        : user.role === 'business'
+        ? 500
+        : 0,
+    currency: 'BWP',
+    billingCycle: user.role === 'citizen' ? 'forever' : 'monthly',
+  };
 
   // Process user issues to ensure no duplicates
   const userWithIssues = {
@@ -86,18 +124,26 @@ export const UserProfile = ({
                 {getUserInitials({ full_name: userWithIssues.name })}
               </AvatarFallback>
             </Avatar>
-            <div className="space-y-2">
+            <div className="space-y-2 flex-1">
               <div className="space-y-1">
                 <h2 className="text-2xl font-bold" data-testid="user-name">
                   {userWithIssues.name}
                 </h2>
-                <Badge
-                  variant="secondary"
-                  className="text-sm"
-                  data-testid="user-role"
-                >
-                  {getUserRoleDisplay({ role: userWithIssues.role as any })}
-                </Badge>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge
+                    variant="secondary"
+                    className="text-sm"
+                    data-testid="user-role"
+                  >
+                    {getUserRoleDisplay({ role: userWithIssues.role as any })}
+                  </Badge>
+                  {/* Subscription Tier Badge */}
+                  <SubscriptionStatusIndicator
+                    tier={mockSubscriptionData.tier as any}
+                    status={mockSubscriptionData.status}
+                    variant="compact"
+                  />
+                </div>
               </div>
               <div className="flex flex-col sm:flex-row gap-4 text-sm text-muted-foreground">
                 <div
@@ -117,6 +163,20 @@ export const UserProfile = ({
                 </div>
               </div>
             </div>
+
+            {/* Subscription Quick Info - Only for current user */}
+            {isCurrentUser && (
+              <div className="md:ml-auto">
+                <QuickSubscriptionInfo
+                  tier={mockSubscriptionData.tier as any}
+                  status={mockSubscriptionData.status}
+                  nextBillingDate={mockSubscriptionData.nextBillingDate}
+                  amount={mockSubscriptionData.amount}
+                  currency={mockSubscriptionData.currency}
+                  onManageClick={() => (window.location.href = '/subscription')}
+                />
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -149,9 +209,18 @@ export const UserProfile = ({
                 </>
               )}
               {isCurrentUser && !settingsMode && (
-                <TabsTrigger value="settings" data-testid="settings-tab">
-                  Settings
-                </TabsTrigger>
+                <>
+                  <TabsTrigger
+                    value="subscription"
+                    data-testid="subscription-tab"
+                  >
+                    <Crown className="h-4 w-4 mr-2" />
+                    Subscription
+                  </TabsTrigger>
+                  <TabsTrigger value="settings" data-testid="settings-tab">
+                    Settings
+                  </TabsTrigger>
+                </>
               )}
               {settingsMode && (
                 <TabsTrigger value="settings" data-testid="settings-tab">
@@ -258,9 +327,93 @@ export const UserProfile = ({
             )}
 
             {isCurrentUser && (
-              <TabsContent value="settings" data-testid="settings-content">
-                <ProfileSettings onUpdate={() => setActiveTab('created')} />
-              </TabsContent>
+              <>
+                <TabsContent
+                  value="subscription"
+                  data-testid="subscription-content"
+                >
+                  <div className="space-y-6">
+                    {/* Current Subscription Status */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Crown className="h-5 w-5" />
+                          Current Subscription
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <SubscriptionStatusIndicator
+                          tier={mockSubscriptionData.tier as any}
+                          status={mockSubscriptionData.status}
+                          variant="detailed"
+                          showUpgradePrompt={
+                            mockSubscriptionData.tier === 'motse'
+                          }
+                          onUpgradeClick={() =>
+                            (window.location.href = '/pricing')
+                          }
+                        />
+                      </CardContent>
+                    </Card>
+
+                    {/* Billing Information */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <CreditCard className="h-5 w-5" />
+                          Billing Information
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="text-sm font-medium text-muted-foreground">
+                              Next Billing Date
+                            </label>
+                            <p className="text-lg font-semibold">
+                              {new Date(
+                                mockSubscriptionData.nextBillingDate
+                              ).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <div>
+                            <label className="text-sm font-medium text-muted-foreground">
+                              Amount
+                            </label>
+                            <p className="text-lg font-semibold">
+                              {mockSubscriptionData.currency}{' '}
+                              {mockSubscriptionData.amount}
+                              <span className="text-sm text-muted-foreground ml-1">
+                                /{mockSubscriptionData.billingCycle}
+                              </span>
+                            </p>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            onClick={() =>
+                              (window.location.href = '/subscription')
+                            }
+                          >
+                            Manage Subscription
+                          </Button>
+                          <Button
+                            variant="outline"
+                            onClick={() => (window.location.href = '/pricing')}
+                          >
+                            View Plans
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="settings" data-testid="settings-content">
+                  <ProfileSettings onUpdate={() => setActiveTab('created')} />
+                </TabsContent>
+              </>
             )}
           </Tabs>
         </CardContent>

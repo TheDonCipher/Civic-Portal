@@ -21,6 +21,7 @@ import UserConsentDetailDialog from './UserConsentDetailDialog';
 import ConsentBulkActions from './ConsentBulkActions';
 import SystemDebugPanel from './SystemDebugPanel';
 import AdminNotificationSender from './AdminNotificationSender';
+import AdminSubscriptionPanel from './AdminSubscriptionPanel';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -1212,9 +1213,10 @@ const AdminPage: React.FC = () => {
 
         {/* Admin Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="users">User Management</TabsTrigger>
             <TabsTrigger value="departments">Departments</TabsTrigger>
+            <TabsTrigger value="subscriptions">Subscriptions</TabsTrigger>
             <TabsTrigger value="system">System Overview</TabsTrigger>
           </TabsList>
 
@@ -1531,6 +1533,10 @@ const AdminPage: React.FC = () => {
                 </div>
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="subscriptions" className="space-y-6">
+            <AdminSubscriptionPanel />
           </TabsContent>
 
           <TabsContent value="system" className="space-y-6">

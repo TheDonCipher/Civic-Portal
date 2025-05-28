@@ -280,9 +280,7 @@ const Home = ({ initialIssues = mockIssues }: HomeProps) => {
         date: safeDate.toString(data.created_at),
         author: {
           name: profile.full_name || 'User',
-          avatar:
-            profile.avatar_url ||
-            `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}`,
+          avatar: '', // Will be dynamically fetched by IssueCard component
         },
         author_id: user.id, // Add this required field
         thumbnail:

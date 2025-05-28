@@ -1,4 +1,3 @@
-import React from 'react';
 import {
   Card,
   CardContent,
@@ -13,15 +12,15 @@ import {
   Heart,
   Users,
   Building2,
-  BarChart3,
   CheckCircle,
   Star,
-  Zap,
-  Shield,
-  Globe,
-  TrendingUp,
-  Handshake,
-  Target,
+  Home,
+  Coins,
+  Crown,
+  Eye,
+  Lightbulb,
+  Network,
+  Smartphone,
 } from 'lucide-react';
 
 const PricingPage = () => {
@@ -32,20 +31,21 @@ const PricingPage = () => {
         <section className="text-center space-y-6 py-12">
           <div className="space-y-4">
             <Badge variant="outline" className="px-4 py-2 text-sm font-medium">
-              <Globe className="w-4 h-4 mr-2" />
-              Empowering Botswana Communities
+              <Network className="w-4 h-4 mr-2" />
+              Mmogo Impact Ecosystem
             </Badge>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight">
-              Building Our Nation,{' '}
+              The{' '}
               <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                Together
-              </span>
+                Mmogo
+              </span>{' '}
+              Impact Ecosystem
             </h1>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-              In the spirit of <em>Botho</em> and <em>Kagisano</em>, our pricing
-              reflects the Ubuntu philosophy: "I am because we are." Every
-              contribution, no matter how small, strengthens our collective
-              voice.
+              From reporting issues to creating solutions. Our ecosystem
+              transforms civic engagement into an{' '}
+              <em>Action & Resolution Platform</em> where value flows through
+              facilitation, solutions, insights, and stakeholder empowerment.
             </p>
           </div>
 
@@ -56,11 +56,10 @@ const PricingPage = () => {
                 <Heart className="w-8 h-8 text-red-500" />
                 <div>
                   <p className="text-lg font-semibold text-blue-900 dark:text-blue-100">
-                    "Motho ke motho ka batho ba bangwe"
+                    "Mmogo" - Together We Build
                   </p>
                   <p className="text-sm text-blue-700 dark:text-blue-300">
-                    A person is a person through other people - Ubuntu
-                    Philosophy
+                    An ecosystem where every contribution creates lasting impact
                   </p>
                 </div>
                 <Heart className="w-8 h-8 text-red-500" />
@@ -69,68 +68,292 @@ const PricingPage = () => {
           </Card>
         </section>
 
-        {/* Pricing Tiers */}
+        {/* Money Flow & Platform Impact Section */}
+        <section className="py-16 bg-gradient-to-br from-green-50 via-blue-50 to-purple-50 dark:from-green-950/20 dark:via-blue-950/20 dark:to-purple-950/20 rounded-2xl">
+          <div className="text-center space-y-8">
+            <div className="space-y-4">
+              <Badge
+                variant="outline"
+                className="px-4 py-2 text-sm font-medium bg-white/80"
+              >
+                <Network className="w-4 h-4 mr-2" />
+                Money Flow & Platform Impact
+              </Badge>
+              <h2 className="text-3xl font-bold">
+                How Your Payments Drive Real Change
+              </h2>
+              <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+                Every payment in the Mmogo Impact Ecosystem directly funds issue
+                resolution, community development, and democratic participation
+                across Botswana.
+              </p>
+            </div>
+
+            {/* Flow Diagram */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 max-w-6xl mx-auto">
+              <Card className="bg-white/90 dark:bg-gray-900/90 backdrop-blur border-2 border-green-200">
+                <CardContent className="p-6 text-center space-y-4">
+                  <div className="w-16 h-16 bg-gradient-to-br from-green-100 to-green-200 rounded-full flex items-center justify-center mx-auto">
+                    <Coins className="w-8 h-8 text-green-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-green-700">
+                      1. Community Contributions
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      Citizens fund Thusang projects (BWP 10-100) with
+                      transparent 5-7% platform fees
+                    </p>
+                  </div>
+                  <div className="text-xs text-green-600 font-medium">
+                    93-95% → Direct Project Funding
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-white/90 dark:bg-gray-900/90 backdrop-blur border-2 border-purple-200">
+                <CardContent className="p-6 text-center space-y-4">
+                  <div className="w-16 h-16 bg-gradient-to-br from-purple-100 to-purple-200 rounded-full flex items-center justify-center mx-auto">
+                    <Building2 className="w-8 h-8 text-purple-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-purple-700">
+                      2. Business Partnerships
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      Tirisano Mmogo subscriptions (BWP 200-1500+) fund
+                      community visibility and CSR projects
+                    </p>
+                  </div>
+                  <div className="text-xs text-purple-600 font-medium">
+                    Enhanced Community Engagement
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-white/90 dark:bg-gray-900/90 backdrop-blur border-2 border-blue-200">
+                <CardContent className="p-6 text-center space-y-4">
+                  <div className="w-16 h-16 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center mx-auto">
+                    <Crown className="w-8 h-8 text-blue-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-blue-700">
+                      3. Government Efficiency
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      Kgotla+ subscriptions (BWP 750-6500) improve citizen
+                      communication and issue resolution
+                    </p>
+                  </div>
+                  <div className="text-xs text-blue-600 font-medium">
+                    60% Faster Resolution Times
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-white/90 dark:bg-gray-900/90 backdrop-blur border-2 border-orange-200">
+                <CardContent className="p-6 text-center space-y-4">
+                  <div className="w-16 h-16 bg-gradient-to-br from-orange-100 to-orange-200 rounded-full flex items-center justify-center mx-auto">
+                    <Lightbulb className="w-8 h-8 text-orange-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-orange-700">
+                      4. Data-Driven Insights
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      Tlhaloso intelligence (BWP 1000+) guides BWP millions in
+                      infrastructure investments
+                    </p>
+                  </div>
+                  <div className="text-xs text-orange-600 font-medium">
+                    Informed Policy Decisions
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Impact Metrics */}
+            <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur rounded-xl p-8 border border-gray-200 dark:border-gray-700">
+              <h3 className="text-xl font-semibold mb-6 text-center">
+                Platform Impact Multiplier
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-green-600 mb-2">
+                    BWP 1
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Community contribution generates <strong>BWP 3-5</strong> in
+                    total community value through government efficiency gains
+                    and business engagement
+                  </p>
+                </div>
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-blue-600 mb-2">
+                    60%
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Average improvement in issue resolution times when
+                    communities, government, and businesses collaborate through
+                    the platform
+                  </p>
+                </div>
+                <div className="text-center">
+                  <div className="text-3xl font-bold text-purple-600 mb-2">
+                    100%
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Transparency in fund allocation - every BWP tracked from
+                    contribution to community impact with photo documentation
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Free Foundation Layer */}
+        <section className="space-y-8 py-12">
+          <div className="text-center space-y-4">
+            <Badge
+              variant="outline"
+              className="px-4 py-2 text-sm font-medium bg-green-50 border-green-200 dark:bg-green-950/30 dark:border-green-800 dark:text-green-300"
+            >
+              <Home className="w-4 h-4 mr-2" />
+              Foundation Layer - Always Free
+            </Badge>
+            <h2 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+              The "Motse" Platform - Our Village
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Universal access for all citizens. The bedrock that ensures
+              everyone can participate in building stronger communities.
+            </p>
+          </div>
+
+          <Card className="bg-gradient-to-r from-green-50 to-blue-50 border-green-200 dark:from-green-950/30 dark:to-blue-950/30 dark:border-green-800">
+            <CardContent className="p-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="text-center space-y-3">
+                  <div className="w-12 h-12 bg-green-100 dark:bg-green-900/50 rounded-full flex items-center justify-center mx-auto">
+                    <Smartphone className="w-6 h-6 text-green-600 dark:text-green-400" />
+                  </div>
+                  <h3 className="font-semibold text-gray-900 dark:text-gray-100">
+                    Easy Reporting
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Text, photo, GPS, voice notes via app and USSD
+                  </p>
+                </div>
+                <div className="text-center space-y-3">
+                  <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/50 rounded-full flex items-center justify-center mx-auto">
+                    <Eye className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <h3 className="font-semibold text-gray-900 dark:text-gray-100">
+                    Public Tracking
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Issue tracking and progress visualization for all
+                  </p>
+                </div>
+                <div className="text-center space-y-3">
+                  <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/50 rounded-full flex items-center justify-center mx-auto">
+                    <Users className="w-6 h-6 text-purple-600 dark:text-purple-400" />
+                  </div>
+                  <h3 className="font-semibold text-gray-900 dark:text-gray-100">
+                    Community Forums
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Discuss local issues with moderated community spaces
+                  </p>
+                </div>
+              </div>
+              <div className="text-center mt-6">
+                <Button
+                  size="lg"
+                  className="bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800 text-white"
+                >
+                  Start Using Motse Platform - Free Forever
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </section>
+
+        {/* Monetization Layers */}
         <section className="space-y-12">
           <div className="text-center space-y-4">
-            <h2 className="text-3xl font-bold">Choose Your Impact Level</h2>
+            <h2 className="text-3xl font-bold">Monetization Layers</h2>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              From individual contributions to institutional partnerships, every
-              level creates meaningful change in our communities.
+              Four specialized layers that create sustainable value while
+              empowering communities, government, businesses, and
+              decision-makers.
             </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {/* Tier 1: Community-Powered Solutions */}
+            {/* Layer 1: "Thusang" Community Action Funds */}
             <Card className="relative border-2 hover:border-green-300 transition-all duration-300 hover:shadow-lg">
               <CardHeader className="text-center space-y-4">
                 <div className="mx-auto w-16 h-16 bg-gradient-to-br from-green-100 to-blue-100 rounded-full flex items-center justify-center">
-                  <Users className="w-8 h-8 text-green-600" />
+                  <Coins className="w-8 h-8 text-green-600" />
                 </div>
                 <div>
-                  <CardTitle className="text-xl">Community Champion</CardTitle>
+                  <CardTitle className="text-xl">
+                    "Thusang" Action Funds
+                  </CardTitle>
                   <CardDescription>
-                    Every Motswana Can Make a Difference
+                    Project-Focused Community Crowdfunding
                   </CardDescription>
                 </div>
                 <div className="space-y-2">
-                  <div className="text-3xl font-bold text-green-600">
-                    BWP 5+
-                  </div>
+                  <div className="text-3xl font-bold text-green-600">5-7%</div>
                   <p className="text-sm text-muted-foreground">
-                    Per contribution • No monthly commitment
+                    Platform fee on successful projects
                   </p>
                 </div>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="text-center mb-4">
                   <p className="text-sm font-medium text-green-700 dark:text-green-300">
-                    Perfect for individual citizens who want to contribute to
-                    their community's development
+                    Empowering citizens to directly fund community solutions
+                    with complete transparency and democratic participation in
+                    project selection
                   </p>
                 </div>
 
                 <div className="space-y-4">
                   <div>
                     <h4 className="font-semibold text-sm mb-2 text-green-700 dark:text-green-300 flex items-center gap-2">
-                      💰 Flexible Contributions
+                      👥 User-Centered Features
                     </h4>
                     <div className="space-y-2 ml-4">
                       <div className="flex items-start gap-2">
                         <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
                         <span className="text-sm">
-                          Contribute BWP 5-50 to any community issue
+                          <strong>Easy Contribution:</strong> BWP 10, 25, 50,
+                          100 or custom amounts via mobile money
                         </span>
                       </div>
                       <div className="flex items-start gap-2">
                         <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
                         <span className="text-sm">
-                          No platform fees for contributions under BWP 50
+                          <strong>Project Voting:</strong> Community votes on
+                          which issues become funded projects
                         </span>
                       </div>
                       <div className="flex items-start gap-2">
                         <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
                         <span className="text-sm">
-                          Orange Money, MyZaka & BTC Smega support
+                          <strong>Progress Tracking:</strong> Real-time updates
+                          with photos and milestone notifications
+                        </span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                        <span className="text-sm">
+                          <strong>Impact Dashboard:</strong> Personal
+                          contribution history and community impact metrics
                         </span>
                       </div>
                     </div>
@@ -138,25 +361,35 @@ const PricingPage = () => {
 
                   <div>
                     <h4 className="font-semibold text-sm mb-2 text-green-700 dark:text-green-300 flex items-center gap-2">
-                      📊 Impact Tracking
+                      🎯 Targeted Project Examples
                     </h4>
                     <div className="space-y-2 ml-4">
                       <div className="flex items-start gap-2">
                         <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
                         <span className="text-sm">
-                          Real-time progress visualization of your contributions
+                          <strong>Infrastructure:</strong> "Repair Tlokweng
+                          Library Roof" - BWP 15,000 goal
                         </span>
                       </div>
                       <div className="flex items-start gap-2">
                         <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
                         <span className="text-sm">
-                          See exactly how your BWP 5 helps fix community issues
+                          <strong>Safety:</strong> "Streetlights for
+                          Mogoditshane Ward 3" - BWP 8,500 goal
                         </span>
                       </div>
                       <div className="flex items-start gap-2">
                         <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
                         <span className="text-sm">
-                          Before/after photos and community testimonials
+                          <strong>Education:</strong> "School Computer Lab
+                          Equipment" - BWP 25,000 goal
+                        </span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                        <span className="text-sm">
+                          <strong>Health:</strong> "Community Clinic Medical
+                          Supplies" - BWP 12,000 goal
                         </span>
                       </div>
                     </div>
@@ -164,25 +397,71 @@ const PricingPage = () => {
 
                   <div>
                     <h4 className="font-semibold text-sm mb-2 text-green-700 dark:text-green-300 flex items-center gap-2">
-                      🏆 Community Recognition
+                      🔄 Recurring Community Funds
                     </h4>
                     <div className="space-y-2 ml-4">
                       <div className="flex items-start gap-2">
                         <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
                         <span className="text-sm">
-                          "Adopt-an-Issue" monthly subscriptions (BWP 8-25)
+                          <strong>Parks & Recreation:</strong> "Gaborone Parks
+                          Maintenance Fund" - BWP 20/month
                         </span>
                       </div>
                       <div className="flex items-start gap-2">
                         <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
                         <span className="text-sm">
-                          Digital guardian certificates for adopted issues
+                          <strong>Water Access:</strong> "Rural Water Access
+                          Fund" - BWP 15/month
                         </span>
                       </div>
                       <div className="flex items-start gap-2">
                         <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
                         <span className="text-sm">
-                          Community leaderboards and social sharing
+                          <strong>Youth Programs:</strong> "Community Sports
+                          Equipment Fund" - BWP 10/month
+                        </span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                        <span className="text-sm">
+                          <strong>Emergency Response:</strong> "Disaster Relief
+                          Preparedness Fund" - BWP 25/month
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="font-semibold text-sm mb-2 text-green-700 dark:text-green-300 flex items-center gap-2">
+                      💰 Democratic Participation Benefits
+                    </h4>
+                    <div className="space-y-2 ml-4">
+                      <div className="flex items-start gap-2">
+                        <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                        <span className="text-sm">
+                          <strong>Voice in Priorities:</strong> Vote on which
+                          community issues receive funding priority
+                        </span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                        <span className="text-sm">
+                          <strong>Transparent Accountability:</strong> Track
+                          every BWP from contribution to completion
+                        </span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                        <span className="text-sm">
+                          <strong>Community Recognition:</strong> Contributor
+                          badges and community impact certificates
+                        </span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                        <span className="text-sm">
+                          <strong>Local Ownership:</strong> Projects managed by
+                          community with government coordination
                         </span>
                       </div>
                     </div>
@@ -192,78 +471,97 @@ const PricingPage = () => {
                 <div className="bg-green-50 dark:bg-green-950/30 p-4 rounded-lg border border-green-200 dark:border-green-800">
                   <div className="text-center">
                     <p className="text-sm text-green-700 dark:text-green-300 font-medium mb-1">
-                      "Your BWP 5 + 47 neighbors = BWP 240"
+                      "BWP 1000 raised = BWP 50 platform fee + BWP 950 to
+                      project"
                     </p>
                     <p className="text-xs text-green-600 dark:text-green-400">
-                      Enough to fix street lights in Mogoditshane!
+                      Transparent fee structure supports portal operations
                     </p>
                   </div>
                 </div>
 
-                <Button className="w-full bg-green-600 hover:bg-green-700 text-white">
-                  Start Contributing Today
+                <Button
+                  className="w-full bg-green-600 hover:bg-green-700 text-white"
+                  onClick={() =>
+                    (window.location.href = '/subscription/thusang')
+                  }
+                >
+                  Fund a Thusang Project
                 </Button>
 
                 <p className="text-xs text-center text-muted-foreground">
-                  No signup required • Contribute anonymously • Cancel anytime
+                  Only pay when projects are successfully funded • Full
+                  transparency
                 </p>
               </CardContent>
             </Card>
 
-            {/* Tier 2: Local Business Integration */}
+            {/* Layer 2: "Tirisano Mmogo" Business & Enterprise Solutions */}
             <Card className="relative border-2 hover:border-purple-300 transition-all duration-300 hover:shadow-lg">
               <CardHeader className="text-center space-y-4">
                 <div className="mx-auto w-16 h-16 bg-gradient-to-br from-purple-100 to-pink-100 rounded-full flex items-center justify-center">
                   <Building2 className="w-8 h-8 text-purple-600" />
                 </div>
                 <div>
-                  <CardTitle className="text-xl">Business Partner</CardTitle>
+                  <CardTitle className="text-xl">
+                    "Tirisano Mmogo" Business Solutions
+                  </CardTitle>
                   <CardDescription>
-                    Grow Your Business While Helping Your Community
+                    Value-Driven Community Partnerships
                   </CardDescription>
                 </div>
                 <div className="space-y-2">
                   <div className="text-3xl font-bold text-purple-600">
-                    BWP 100-500
+                    BWP 200-1500+
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Per month • 3 sponsorship tiers
+                    Per month • 3 partnership tiers
                   </p>
                 </div>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="text-center mb-4">
                   <p className="text-sm font-medium text-purple-700 dark:text-purple-300">
-                    Ideal for local businesses wanting to support their
-                    community while gaining visibility
+                    <strong>Critical for Business Success:</strong> Participate
+                    in civic engagement, build community partnerships, and
+                    demonstrate corporate social responsibility while gaining
+                    valuable market insights
                   </p>
                 </div>
 
                 <div className="space-y-4">
                   <div>
                     <h4 className="font-semibold text-sm mb-2 text-purple-700 dark:text-purple-300 flex items-center gap-2">
-                      🏪 Sponsorship Tiers
+                      🏪 Why Businesses Need Civic Engagement
                     </h4>
                     <div className="space-y-2 ml-4">
                       <div className="flex items-start gap-2">
                         <CheckCircle className="w-4 h-4 text-purple-500 mt-0.5 flex-shrink-0" />
                         <span className="text-sm">
-                          <strong>Spaza Shop (BWP 100/month):</strong> Logo on 1
-                          local issue
+                          <strong>Community Trust:</strong> Build authentic
+                          relationships with local customers through visible
+                          community support
                         </span>
                       </div>
                       <div className="flex items-start gap-2">
                         <CheckCircle className="w-4 h-4 text-purple-500 mt-0.5 flex-shrink-0" />
                         <span className="text-sm">
-                          <strong>Small Business (BWP 250/month):</strong>{' '}
-                          Priority listing + radio mentions
+                          <strong>Market Intelligence:</strong> Understand local
+                          needs, preferences, and emerging opportunities
                         </span>
                       </div>
                       <div className="flex items-start gap-2">
                         <CheckCircle className="w-4 h-4 text-purple-500 mt-0.5 flex-shrink-0" />
                         <span className="text-sm">
-                          <strong>Established Business (BWP 500/month):</strong>{' '}
-                          Featured placement + events
+                          <strong>Competitive Advantage:</strong> Differentiate
+                          through meaningful community partnerships
+                        </span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <CheckCircle className="w-4 h-4 text-purple-500 mt-0.5 flex-shrink-0" />
+                        <span className="text-sm">
+                          <strong>Risk Mitigation:</strong> Early awareness of
+                          local issues that could impact operations
                         </span>
                       </div>
                     </div>
@@ -271,25 +569,33 @@ const PricingPage = () => {
 
                   <div>
                     <h4 className="font-semibold text-sm mb-2 text-purple-700 dark:text-purple-300 flex items-center gap-2">
-                      📢 Marketing Benefits
+                      💼 Partnership Tier Value Propositions
                     </h4>
                     <div className="space-y-2 ml-4">
                       <div className="flex items-start gap-2">
                         <CheckCircle className="w-4 h-4 text-purple-500 mt-0.5 flex-shrink-0" />
                         <span className="text-sm">
-                          Logo placement on sponsored community issues
+                          <strong>Community Supporter (BWP 200/month):</strong>{' '}
+                          Essential visibility with sponsor badge, directory
+                          listing, and basic community recognition
                         </span>
                       </div>
                       <div className="flex items-start gap-2">
                         <CheckCircle className="w-4 h-4 text-purple-500 mt-0.5 flex-shrink-0" />
                         <span className="text-sm">
-                          Monthly mentions on Yarona FM radio
+                          <strong>Community Champion (BWP 500/month):</strong>{' '}
+                          Enhanced marketing with featured placement, local
+                          deals promotion, and monthly pulse reports
                         </span>
                       </div>
                       <div className="flex items-start gap-2">
                         <CheckCircle className="w-4 h-4 text-purple-500 mt-0.5 flex-shrink-0" />
                         <span className="text-sm">
-                          Social media recognition and sharing tools
+                          <strong>
+                            Corporate Impact Partner (BWP 1500+/month):
+                          </strong>{' '}
+                          Strategic CSR alignment with co-created projects, API
+                          access, and comprehensive analytics
                         </span>
                       </div>
                     </div>
@@ -297,25 +603,72 @@ const PricingPage = () => {
 
                   <div>
                     <h4 className="font-semibold text-sm mb-2 text-purple-700 dark:text-purple-300 flex items-center gap-2">
-                      📊 Impact Reporting
+                      📈 Measurable Business Impact
                     </h4>
                     <div className="space-y-2 ml-4">
                       <div className="flex items-start gap-2">
                         <CheckCircle className="w-4 h-4 text-purple-500 mt-0.5 flex-shrink-0" />
                         <span className="text-sm">
-                          Quarterly impact reports with photos and testimonials
+                          <strong>Customer Loyalty:</strong> 73% of consumers
+                          prefer brands that support local communities
                         </span>
                       </div>
                       <div className="flex items-start gap-2">
                         <CheckCircle className="w-4 h-4 text-purple-500 mt-0.5 flex-shrink-0" />
                         <span className="text-sm">
-                          Community reach metrics and engagement data
+                          <strong>Brand Recognition:</strong> Logo visibility on
+                          resolved issues reaches 10,000+ citizens monthly
                         </span>
                       </div>
                       <div className="flex items-start gap-2">
                         <CheckCircle className="w-4 h-4 text-purple-500 mt-0.5 flex-shrink-0" />
                         <span className="text-sm">
-                          Priority access to community events and initiatives
+                          <strong>Market Insights:</strong> Hyperlocal data
+                          worth BWP 5,000+ in traditional market research
+                        </span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <CheckCircle className="w-4 h-4 text-purple-500 mt-0.5 flex-shrink-0" />
+                        <span className="text-sm">
+                          <strong>Employee Engagement:</strong> Staff pride in
+                          company's community impact increases retention
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="font-semibold text-sm mb-2 text-purple-700 dark:text-purple-300 flex items-center gap-2">
+                      🤝 Corporate Social Responsibility Excellence
+                    </h4>
+                    <div className="space-y-2 ml-4">
+                      <div className="flex items-start gap-2">
+                        <CheckCircle className="w-4 h-4 text-purple-500 mt-0.5 flex-shrink-0" />
+                        <span className="text-sm">
+                          <strong>Authentic Impact:</strong> Direct funding of
+                          community projects with transparent outcomes
+                        </span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <CheckCircle className="w-4 h-4 text-purple-500 mt-0.5 flex-shrink-0" />
+                        <span className="text-sm">
+                          <strong>Stakeholder Reporting:</strong> Detailed CSR
+                          impact reports for investors and partners
+                        </span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <CheckCircle className="w-4 h-4 text-purple-500 mt-0.5 flex-shrink-0" />
+                        <span className="text-sm">
+                          <strong>Strategic Alignment:</strong> Co-create
+                          projects that align with business goals and community
+                          needs
+                        </span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <CheckCircle className="w-4 h-4 text-purple-500 mt-0.5 flex-shrink-0" />
+                        <span className="text-sm">
+                          <strong>Long-term Partnerships:</strong> Build lasting
+                          relationships with government and community leaders
                         </span>
                       </div>
                     </div>
@@ -325,25 +678,30 @@ const PricingPage = () => {
                 <div className="bg-purple-50 dark:bg-purple-950/30 p-4 rounded-lg border border-purple-200 dark:border-purple-800">
                   <div className="text-center">
                     <p className="text-sm text-purple-700 dark:text-purple-300 font-medium mb-1">
-                      "Proudly supporting Tlokweng community improvements"
+                      "Enhanced brand reputation + hyperlocal insights"
                     </p>
                     <p className="text-xs text-purple-600 dark:text-purple-400">
-                      Join 50+ local businesses making a difference
+                      Direct community engagement with measurable impact
                     </p>
                   </div>
                 </div>
 
-                <Button className="w-full bg-purple-600 hover:bg-purple-700 text-white">
-                  Become a Community Sponsor
+                <Button
+                  className="w-full bg-purple-600 hover:bg-purple-700 text-white"
+                  onClick={() =>
+                    (window.location.href = '/subscription/tirisano')
+                  }
+                >
+                  Become a Tirisano Mmogo Partner
                 </Button>
 
                 <p className="text-xs text-center text-muted-foreground">
-                  Bank transfer • Cheque • Mobile money • Cancel anytime
+                  Monthly billing • CSR alignment • Measurable community impact
                 </p>
               </CardContent>
             </Card>
 
-            {/* Tier 3: Government Efficiency */}
+            {/* Layer 3: "Kgotla+" Local Governance Solutions */}
             <Card className="relative border-2 border-blue-300 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 hover:shadow-xl transition-all duration-300">
               <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
                 <Badge className="bg-blue-600 text-white px-4 py-1">
@@ -353,58 +711,70 @@ const PricingPage = () => {
               </div>
               <CardHeader className="text-center space-y-4 pt-8">
                 <div className="mx-auto w-16 h-16 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-full flex items-center justify-center">
-                  <Shield className="w-8 h-8 text-blue-600" />
+                  <Crown className="w-8 h-8 text-blue-600" />
                 </div>
                 <div>
                   <CardTitle className="text-xl">
-                    Government Solutions
+                    "Kgotla+" Governance Solutions
                   </CardTitle>
                   <CardDescription>
-                    Transparent Governance for All Levels
+                    Efficiency & Engagement for All Government Levels
                   </CardDescription>
                 </div>
                 <div className="space-y-2">
                   <div className="text-3xl font-bold text-blue-600">
-                    BWP 800-6000
+                    BWP 750-6500
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Per month • Quarterly billing
+                    Per month • Quarterly/Annual billing
                   </p>
                 </div>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="text-center mb-4">
                   <p className="text-sm font-medium text-blue-700 dark:text-blue-300">
-                    Comprehensive tools for ward councilors, district officers,
-                    and national ministries
+                    <strong>Essential for Democratic Governance:</strong>{' '}
+                    Transform citizen communication, ensure transparent
+                    accountability, and achieve measurable improvements in
+                    public service delivery
                   </p>
                 </div>
 
                 <div className="space-y-4">
                   <div>
                     <h4 className="font-semibold text-sm mb-2 text-blue-700 dark:text-blue-300 flex items-center gap-2">
-                      🏛️ Government Tiers
+                      🏛️ Why Government Entities Need These Tools
                     </h4>
                     <div className="space-y-2 ml-4">
                       <div className="flex items-start gap-2">
                         <CheckCircle className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
                         <span className="text-sm">
-                          <strong>Ward Level (BWP 800/month):</strong> 5 users,
-                          basic reporting
+                          <strong>Democratic Transparency:</strong> Citizens
+                          demand real-time visibility into government actions
+                          and progress
                         </span>
                       </div>
                       <div className="flex items-start gap-2">
                         <CheckCircle className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
                         <span className="text-sm">
-                          <strong>District Level (BWP 2500/month):</strong> 25
-                          users, advanced analytics
+                          <strong>Efficient Resource Allocation:</strong>{' '}
+                          Data-driven decisions prevent waste and maximize
+                          impact
                         </span>
                       </div>
                       <div className="flex items-start gap-2">
                         <CheckCircle className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
                         <span className="text-sm">
-                          <strong>National Level (BWP 6000/month):</strong> 100
-                          users, full oversight
+                          <strong>Citizen Trust Building:</strong> Transparent
+                          communication increases public confidence in
+                          government
+                        </span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <CheckCircle className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                        <span className="text-sm">
+                          <strong>Performance Accountability:</strong>{' '}
+                          Measurable outcomes demonstrate effective governance
                         </span>
                       </div>
                     </div>
@@ -412,25 +782,31 @@ const PricingPage = () => {
 
                   <div>
                     <h4 className="font-semibold text-sm mb-2 text-blue-700 dark:text-blue-300 flex items-center gap-2">
-                      📊 Management Tools
+                      📊 Government Tier Solutions
                     </h4>
                     <div className="space-y-2 ml-4">
                       <div className="flex items-start gap-2">
                         <CheckCircle className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
                         <span className="text-sm">
-                          Advanced issue tracking and status management
+                          <strong>Ward Essentials (BWP 750/month):</strong>{' '}
+                          Secure dashboard, direct citizen communication, basic
+                          analytics, and USSD interface for immediate response
                         </span>
                       </div>
                       <div className="flex items-start gap-2">
                         <CheckCircle className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
                         <span className="text-sm">
-                          Performance dashboards with KPI tracking
+                          <strong>District Command (BWP 2800/month):</strong>{' '}
+                          Cross-ward coordination, advanced analytics, budget
+                          utilization tracking, and custom reporting tools
                         </span>
                       </div>
                       <div className="flex items-start gap-2">
                         <CheckCircle className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
                         <span className="text-sm">
-                          Budget allocation and expenditure tracking
+                          <strong>National Oversight (BWP 6500/month):</strong>{' '}
+                          Policy impact simulation, national benchmarking, and
+                          aggregated civic indicators
                         </span>
                       </div>
                     </div>
@@ -438,25 +814,72 @@ const PricingPage = () => {
 
                   <div>
                     <h4 className="font-semibold text-sm mb-2 text-blue-700 dark:text-blue-300 flex items-center gap-2">
-                      🤝 Citizen Engagement
+                      🚀 Proven Efficiency Gains
                     </h4>
                     <div className="space-y-2 ml-4">
                       <div className="flex items-start gap-2">
                         <CheckCircle className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
                         <span className="text-sm">
-                          Direct messaging with automatic translation
+                          <strong>60% Faster Resolution:</strong> Streamlined
+                          workflows reduce average issue resolution time
                         </span>
                       </div>
                       <div className="flex items-start gap-2">
                         <CheckCircle className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
                         <span className="text-sm">
-                          Mobile reports with smartphone camera integration
+                          <strong>85% Citizen Satisfaction:</strong> Transparent
+                          communication increases public approval
                         </span>
                       </div>
                       <div className="flex items-start gap-2">
                         <CheckCircle className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
                         <span className="text-sm">
-                          Transparency-compliant reporting and invoicing
+                          <strong>40% Cost Reduction:</strong> Better
+                          coordination eliminates duplicate efforts and waste
+                        </span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <CheckCircle className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                        <span className="text-sm">
+                          <strong>Real-time Monitoring:</strong> Immediate
+                          alerts prevent small issues from becoming major
+                          problems
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="font-semibold text-sm mb-2 text-blue-700 dark:text-blue-300 flex items-center gap-2">
+                      🤝 Enhanced Democratic Participation
+                    </h4>
+                    <div className="space-y-2 ml-4">
+                      <div className="flex items-start gap-2">
+                        <CheckCircle className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                        <span className="text-sm">
+                          <strong>Bilingual Communication:</strong> Bulk
+                          SMS/in-app messaging with Setswana/English translation
+                        </span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <CheckCircle className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                        <span className="text-sm">
+                          <strong>Inclusive Access:</strong> USSD interface
+                          ensures participation regardless of smartphone access
+                        </span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <CheckCircle className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                        <span className="text-sm">
+                          <strong>Feedback Loops:</strong> Continuous citizen
+                          input improves policy and service delivery
+                        </span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <CheckCircle className="w-4 h-4 text-blue-500 mt-0.5 flex-shrink-0" />
+                        <span className="text-sm">
+                          <strong>Public Accountability:</strong> Open progress
+                          tracking builds trust and demonstrates results
                         </span>
                       </div>
                     </div>
@@ -466,106 +889,182 @@ const PricingPage = () => {
                 <div className="bg-blue-50 dark:bg-blue-950/30 p-4 rounded-lg border border-blue-200 dark:border-blue-800">
                   <div className="text-center">
                     <p className="text-sm text-blue-700 dark:text-blue-300 font-medium mb-1">
-                      "85% faster issue resolution with transparent governance"
+                      "Demonstrable ROI through faster resolution & citizen
+                      satisfaction"
                     </p>
                     <p className="text-xs text-blue-600 dark:text-blue-400">
-                      Trusted by 12+ government departments
+                      Aligned with government budget cycles
                     </p>
                   </div>
                 </div>
 
-                <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
-                  Contact Government Sales
+                <Button
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                  onClick={() =>
+                    (window.location.href = '/subscription/kgotla')
+                  }
+                >
+                  Contact Kgotla+ Sales
                 </Button>
 
                 <p className="text-xs text-center text-muted-foreground">
-                  Formal invoicing • Quarterly billing • Dedicated support
+                  Quarterly/Annual billing • Government procurement • Dedicated
+                  support
                 </p>
               </CardContent>
             </Card>
 
-            {/* Tier 4: Data & Insights */}
+            {/* Layer 4: "Tlhaloso" Data & Insights Services */}
             <Card className="relative border-2 hover:border-orange-300 transition-all duration-300 hover:shadow-lg">
               <CardHeader className="text-center space-y-4">
                 <div className="mx-auto w-16 h-16 bg-gradient-to-br from-orange-100 to-red-100 rounded-full flex items-center justify-center">
-                  <BarChart3 className="w-8 h-8 text-orange-600" />
+                  <Lightbulb className="w-8 h-8 text-orange-600" />
                 </div>
                 <div>
-                  <CardTitle className="text-xl">Data & Insights</CardTitle>
+                  <CardTitle className="text-xl">
+                    "Tlhaloso" Data & Insights
+                  </CardTitle>
                   <CardDescription>
-                    Smart Analytics for Decision Makers
+                    Premium Analytics for Strategic Decision-Making
                   </CardDescription>
                 </div>
                 <div className="space-y-2">
                   <div className="text-3xl font-bold text-orange-600">
-                    BWP 200-1200
+                    BWP 1000+
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Per month • 3 insight levels
+                    Per report/subscription • Custom pricing
                   </p>
                 </div>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="text-center mb-4">
                   <p className="text-sm font-medium text-orange-700 dark:text-orange-300">
-                    Perfect for community leaders, researchers, and decision
-                    makers who need actionable insights
+                    <strong>Transform Decision-Making:</strong> Actionable
+                    intelligence that drives informed business strategy, policy
+                    development, and infrastructure investments worth millions
+                    of BWP
                   </p>
                 </div>
 
                 <div className="space-y-4">
                   <div>
                     <h4 className="font-semibold text-sm mb-2 text-orange-700 dark:text-orange-300 flex items-center gap-2">
-                      📈 Analytics Tiers
+                      💡 Actionable Business Intelligence Examples
                     </h4>
                     <div className="space-y-2 ml-4">
                       <div className="flex items-start gap-2">
                         <CheckCircle className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
                         <span className="text-sm">
-                          <strong>Community Leader (BWP 200/month):</strong>{' '}
-                          Monthly area reports
+                          <strong>Retail Location Analysis:</strong> "Gaborone
+                          Shopping Center Foot Traffic Patterns" - Identify
+                          optimal store locations based on citizen movement data
+                        </span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <CheckCircle className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
+                        <span className="text-sm">
+                          <strong>Service Demand Forecasting:</strong> "Mobile
+                          Money Usage Trends by District" - Predict where to
+                          expand financial services
+                        </span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <CheckCircle className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
+                        <span className="text-sm">
+                          <strong>Market Entry Strategy:</strong> "Rural
+                          Internet Connectivity Gaps" - Guide telecommunications
+                          investment decisions
+                        </span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <CheckCircle className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
+                        <span className="text-sm">
+                          <strong>Supply Chain Optimization:</strong>{' '}
+                          "Transportation Issue Hotspots" - Optimize logistics
+                          routes and warehouse locations
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="font-semibold text-sm mb-2 text-orange-700 dark:text-orange-300 flex items-center gap-2">
+                      🏛️ Government Policy Intelligence Examples
+                    </h4>
+                    <div className="space-y-2 ml-4">
+                      <div className="flex items-start gap-2">
+                        <CheckCircle className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
+                        <span className="text-sm">
+                          <strong>Infrastructure Investment:</strong> "Water
+                          Access Analysis - Central District" guided BWP 2M
+                          borehole placement for maximum community impact
+                        </span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <CheckCircle className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
+                        <span className="text-sm">
+                          <strong>Education Planning:</strong> "School Capacity
+                          vs. Population Growth" - Predict where new schools are
+                          needed 5 years in advance
+                        </span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <CheckCircle className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
+                        <span className="text-sm">
+                          <strong>Healthcare Resource Allocation:</strong>{' '}
+                          "Disease Pattern Mapping" - Optimize clinic locations
+                          and medical supply distribution
+                        </span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <CheckCircle className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
+                        <span className="text-sm">
+                          <strong>Economic Development:</strong> "Youth
+                          Employment Opportunity Mapping" - Target skills
+                          training programs where they're most needed
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="font-semibold text-sm mb-2 text-orange-700 dark:text-orange-300 flex items-center gap-2">
+                      📊 Intelligence Service Offerings
+                    </h4>
+                    <div className="space-y-2 ml-4">
+                      <div className="flex items-start gap-2">
+                        <CheckCircle className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
+                        <span className="text-sm">
+                          <strong>Thematic Reports (BWP 1000/report):</strong>{' '}
+                          Quarterly deep-dive analyses on specific sectors or
+                          geographic areas
                         </span>
                       </div>
                       <div className="flex items-start gap-2">
                         <CheckCircle className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
                         <span className="text-sm">
                           <strong>
-                            Business Intelligence (BWP 500/month):
+                            Custom Data Projects (BWP 5000-50000):
                           </strong>{' '}
-                          Market & community insights
+                          Bespoke research projects tailored to specific
+                          business or policy questions
                         </span>
                       </div>
                       <div className="flex items-start gap-2">
                         <CheckCircle className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
                         <span className="text-sm">
-                          <strong>Government Premium (BWP 1200/month):</strong>{' '}
-                          Policy impact analysis
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <h4 className="font-semibold text-sm mb-2 text-orange-700 dark:text-orange-300 flex items-center gap-2">
-                      📱 Smart Delivery
-                    </h4>
-                    <div className="space-y-2 ml-4">
-                      <div className="flex items-start gap-2">
-                        <CheckCircle className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
-                        <span className="text-sm">
-                          WhatsApp Business integration for instant insights
+                          <strong>Developer API (BWP 2000+/month):</strong>{' '}
+                          Real-time access to aggregated, anonymized datasets
+                          for integration into business systems
                         </span>
                       </div>
                       <div className="flex items-start gap-2">
                         <CheckCircle className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
                         <span className="text-sm">
-                          Simple dashboards with "Top 3 issues" summaries
-                        </span>
-                      </div>
-                      <div className="flex items-start gap-2">
-                        <CheckCircle className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
-                        <span className="text-sm">
-                          Community satisfaction scores and trend analysis
+                          <strong>Predictive Analytics (BWP 10000+):</strong>{' '}
+                          Machine learning models for forecasting trends and
+                          identifying opportunities
                         </span>
                       </div>
                     </div>
@@ -573,26 +1072,35 @@ const PricingPage = () => {
 
                   <div>
                     <h4 className="font-semibold text-sm mb-2 text-orange-700 dark:text-orange-300 flex items-center gap-2">
-                      🎯 Actionable Insights
+                      🔒 Ethical Framework & Privacy Protection
                     </h4>
                     <div className="space-y-2 ml-4">
                       <div className="flex items-start gap-2">
                         <CheckCircle className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
                         <span className="text-sm">
-                          AI-powered recommendations: "Focus on road
-                          maintenance"
+                          <strong>Absolute Privacy:</strong> All data anonymized
+                          and aggregated - no individual identification possible
                         </span>
                       </div>
                       <div className="flex items-start gap-2">
                         <CheckCircle className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
                         <span className="text-sm">
-                          Cross-district comparison and benchmarking
+                          <strong>Community Benefit:</strong> Insights must
+                          demonstrate clear benefit to Botswana's development
                         </span>
                       </div>
                       <div className="flex items-start gap-2">
                         <CheckCircle className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
                         <span className="text-sm">
-                          Policy impact measurement and ROI tracking
+                          <strong>Transparent Usage:</strong> Users informed how
+                          their anonymized data contributes to insights
+                        </span>
+                      </div>
+                      <div className="flex items-start gap-2">
+                        <CheckCircle className="w-4 h-4 text-orange-500 mt-0.5 flex-shrink-0" />
+                        <span className="text-sm">
+                          <strong>Regulatory Compliance:</strong> Full adherence
+                          to Botswana Data Protection Office standards
                         </span>
                       </div>
                     </div>
@@ -602,57 +1110,67 @@ const PricingPage = () => {
                 <div className="bg-orange-50 dark:bg-orange-950/30 p-4 rounded-lg border border-orange-200 dark:border-orange-800">
                   <div className="text-center">
                     <p className="text-sm text-orange-700 dark:text-orange-300 font-medium mb-1">
-                      "Data-driven decisions for community growth"
+                      "Actionable intelligence becomes more valuable as data
+                      pool grows"
                     </p>
                     <p className="text-xs text-orange-600 dark:text-orange-400">
-                      Trusted by 25+ community leaders and researchers
+                      Strict privacy protection with community benefit focus
                     </p>
                   </div>
                 </div>
 
-                <Button className="w-full bg-orange-600 hover:bg-orange-700 text-white">
-                  Get Smart Insights
+                <Button
+                  className="w-full bg-orange-600 hover:bg-orange-700 text-white"
+                  onClick={() =>
+                    (window.location.href = '/subscription/tlhaloso')
+                  }
+                >
+                  Request Tlhaloso Intelligence
                 </Button>
 
                 <p className="text-xs text-center text-muted-foreground">
-                  Email delivery • WhatsApp reports • Export capabilities
+                  Custom consultancy • API access • Academic partnerships
                 </p>
               </CardContent>
             </Card>
           </div>
         </section>
 
-        {/* Impact Stories Section */}
+        {/* Ecosystem Success Stories */}
         <section className="py-16 bg-gradient-to-r from-green-50 to-blue-50 dark:from-green-950/20 dark:to-blue-950/20 rounded-2xl">
           <div className="text-center space-y-8">
             <div className="space-y-4">
-              <h2 className="text-3xl font-bold">Real Impact, Real Stories</h2>
+              <h2 className="text-3xl font-bold">
+                Mmogo Impact Ecosystem in Action
+              </h2>
               <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                See how communities across Botswana are using the Civic Portal
-                to create lasting change
+                Real stories from across the four layers of our ecosystem,
+                showing how each contributes to sustainable community
+                development
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <Card className="bg-white/80 dark:bg-gray-900/80 backdrop-blur">
                 <CardContent className="p-6 text-center space-y-4">
                   <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto">
-                    <TrendingUp className="w-6 h-6 text-green-600" />
+                    <Coins className="w-6 h-6 text-green-600" />
                   </div>
                   <div>
                     <div className="text-2xl font-bold text-green-600">
-                      BWP 2,340
+                      BWP 15,000
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      Raised by Mogoditshane community
+                      Thusang Project: Tlokweng Library Roof
                     </p>
                   </div>
                   <p className="text-sm">
-                    "47 neighbors contributed BWP 5-50 each to fix our street
-                    lights. Now our children walk safely to school."
+                    "Community raised funds with transparent 5% platform fee.
+                    BWP 750 supported portal operations, BWP 14,250 fixed our
+                    library."
                   </p>
                   <p className="text-xs text-muted-foreground font-medium">
-                    - Thabo M., Ward Councilor
+                    - Community Project Success
                   </p>
                 </CardContent>
               </Card>
@@ -660,23 +1178,23 @@ const PricingPage = () => {
               <Card className="bg-white/80 dark:bg-gray-900/80 backdrop-blur">
                 <CardContent className="p-6 text-center space-y-4">
                   <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto">
-                    <Handshake className="w-6 h-6 text-purple-600" />
+                    <Building2 className="w-6 h-6 text-purple-600" />
                   </div>
                   <div>
                     <div className="text-2xl font-bold text-purple-600">
-                      3 Businesses
+                      5 Partners
                     </div>
                     <p className="text-sm text-muted-foreground">
-                      Sponsoring Tlokweng improvements
+                      Intla Business Solutions subscribers
                     </p>
                   </div>
                   <p className="text-sm">
-                    "Local businesses are proud to support community
-                    development. Our BWP 300/month helps maintain the local
-                    park."
+                    "Our BWP 500/month gives us hyperlocal insights and
+                    community recognition. ROI through increased foot traffic is
+                    measurable."
                   </p>
                   <p className="text-xs text-muted-foreground font-medium">
-                    - Sarah K., Business Owner
+                    - Local Business Champion
                   </p>
                 </CardContent>
               </Card>
@@ -684,20 +1202,45 @@ const PricingPage = () => {
               <Card className="bg-white/80 dark:bg-gray-900/80 backdrop-blur">
                 <CardContent className="p-6 text-center space-y-4">
                   <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
-                    <Target className="w-6 h-6 text-blue-600" />
+                    <Crown className="w-6 h-6 text-blue-600" />
                   </div>
                   <div>
-                    <div className="text-2xl font-bold text-blue-600">85%</div>
+                    <div className="text-2xl font-bold text-blue-600">
+                      3 Wards
+                    </div>
                     <p className="text-sm text-muted-foreground">
-                      Faster issue resolution
+                      Using Kgotla+ Governance Solutions
                     </p>
                   </div>
                   <p className="text-sm">
-                    "The government dashboard helps us track and resolve
-                    community issues more efficiently than ever before."
+                    "BWP 750/month transformed our citizen engagement.
+                    Resolution times improved 60% with transparent tracking."
                   </p>
                   <p className="text-xs text-muted-foreground font-medium">
-                    - Ministry of Local Government
+                    - Ward Councilor Pilot Program
+                  </p>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-white/80 dark:bg-gray-900/80 backdrop-blur">
+                <CardContent className="p-6 text-center space-y-4">
+                  <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center mx-auto">
+                    <Lightbulb className="w-6 h-6 text-orange-600" />
+                  </div>
+                  <div>
+                    <div className="text-2xl font-bold text-orange-600">
+                      2 Reports
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Tlhaloso Intelligence delivered
+                    </p>
+                  </div>
+                  <p className="text-sm">
+                    "BWP 1000 'Water Access Analysis' helped prioritize BWP 2M
+                    infrastructure investment. Data-driven policy works."
+                  </p>
+                  <p className="text-xs text-muted-foreground font-medium">
+                    - District Development Committee
                   </p>
                 </CardContent>
               </Card>
@@ -705,68 +1248,182 @@ const PricingPage = () => {
           </div>
         </section>
 
-        {/* Philosophy & Values Section */}
+        {/* Enhanced Mmogo Impact System Benefits Section */}
         <section className="py-16 text-center space-y-12">
           <div className="space-y-6">
-            <h2 className="text-3xl font-bold">Built on Botswana Values</h2>
-            <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-              Our pricing model reflects the core principles that make Botswana
-              strong: unity, democracy, development, and self-reliance.
+            <Badge variant="outline" className="px-4 py-2 text-sm font-medium">
+              <Heart className="w-4 h-4 mr-2" />
+              Mmogo Impact System Benefits
+            </Badge>
+            <h2 className="text-3xl font-bold">
+              The Power of "Mmogo" - Unity in Action
+            </h2>
+            <p className="text-lg text-muted-foreground max-w-4xl mx-auto">
+              "Mmogo" embodies the Setswana principle of unity and togetherness.
+              Our ecosystem creates a virtuous cycle where engaged citizens
+              provide data, which powers solutions and insights, which attract
+              paying stakeholders, whose contributions sustain and expand the
+              platform for greater community benefit across Botswana.
             </p>
           </div>
 
+          {/* Cultural Significance */}
+          <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 rounded-2xl p-8">
+            <h3 className="text-2xl font-semibold mb-6">
+              Cultural Foundation of Civic Engagement
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="space-y-4">
+                <div className="w-16 h-16 bg-gradient-to-br from-red-100 to-orange-100 rounded-full flex items-center justify-center mx-auto">
+                  <Heart className="w-8 h-8 text-red-600" />
+                </div>
+                <div>
+                  <h4 className="text-lg font-semibold text-red-700">
+                    Traditional Kgotla Values
+                  </h4>
+                  <p className="text-sm text-muted-foreground">
+                    Building on Botswana's traditional governance system where
+                    community voices matter, decisions are made collectively,
+                    and transparency is paramount
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div className="w-16 h-16 bg-gradient-to-br from-green-100 to-blue-100 rounded-full flex items-center justify-center mx-auto">
+                  <Users className="w-8 h-8 text-green-600" />
+                </div>
+                <div>
+                  <h4 className="text-lg font-semibold text-green-700">
+                    Ubuntu Philosophy
+                  </h4>
+                  <p className="text-sm text-muted-foreground">
+                    "I am because we are" - fostering collaborative
+                    problem-solving where individual contributions strengthen
+                    the entire community fabric
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div className="w-16 h-16 bg-gradient-to-br from-purple-100 to-pink-100 rounded-full flex items-center justify-center mx-auto">
+                  <Network className="w-8 h-8 text-purple-600" />
+                </div>
+                <div>
+                  <h4 className="text-lg font-semibold text-purple-700">
+                    Modern Democracy
+                  </h4>
+                  <p className="text-sm text-muted-foreground">
+                    Bridging traditional wisdom with digital innovation to
+                    create inclusive, transparent, and effective democratic
+                    participation for all Batswana
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Core Benefits */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             <div className="space-y-4">
-              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
-                <Users className="w-8 h-8 text-blue-600" />
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+                <Home className="w-8 h-8 text-green-600" />
               </div>
               <div>
-                <h3 className="text-xl font-semibold">Kagisano (Unity)</h3>
+                <h3 className="text-xl font-semibold">Universal Access</h3>
                 <p className="text-sm text-muted-foreground">
-                  Every contribution, big or small, strengthens our collective
-                  voice
+                  Free Motse Platform ensures every citizen can participate in
+                  building stronger communities, regardless of economic status
+                  or location
                 </p>
               </div>
             </div>
 
             <div className="space-y-4">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
-                <Shield className="w-8 h-8 text-green-600" />
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
+                <Coins className="w-8 h-8 text-blue-600" />
               </div>
               <div>
-                <h3 className="text-xl font-semibold">
-                  Puso ya Batho (Democracy)
-                </h3>
+                <h3 className="text-xl font-semibold">Transparent Value</h3>
                 <p className="text-sm text-muted-foreground">
-                  Transparent governance with accessible pricing for all levels
+                  Clear fee structures where stakeholders receive distinct,
+                  tangible benefits directly related to their goals while
+                  supporting community development
                 </p>
               </div>
             </div>
 
             <div className="space-y-4">
               <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto">
-                <TrendingUp className="w-8 h-8 text-purple-600" />
+                <Network className="w-8 h-8 text-purple-600" />
               </div>
               <div>
-                <h3 className="text-xl font-semibold">
-                  Tsosoloso (Development)
-                </h3>
+                <h3 className="text-xl font-semibold">Sustainable Growth</h3>
                 <p className="text-sm text-muted-foreground">
-                  Sustainable growth through community-driven solutions
+                  Multiple revenue streams reduce dependency while keeping
+                  community benefit at the core, ensuring long-term platform
+                  sustainability
                 </p>
               </div>
             </div>
 
             <div className="space-y-4">
               <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto">
-                <Zap className="w-8 h-8 text-orange-600" />
+                <Eye className="w-8 h-8 text-orange-600" />
               </div>
               <div>
-                <h3 className="text-xl font-semibold">
-                  Boitekanelo (Self-Reliance)
-                </h3>
+                <h3 className="text-xl font-semibold">Ethical Intelligence</h3>
                 <p className="text-sm text-muted-foreground">
-                  Empowering communities to solve their own challenges
+                  Data insights that improve civic life while maintaining
+                  absolute user privacy, transparency, and benefit to Botswana's
+                  development
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Collaborative Problem-Solving Examples */}
+          <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur rounded-xl p-8 border border-gray-200 dark:border-gray-700">
+            <h3 className="text-2xl font-semibold mb-8">
+              Collaborative Problem-Solving in Action
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="text-center space-y-4">
+                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mx-auto">
+                  <Coins className="w-6 h-6 text-green-600" />
+                </div>
+                <h4 className="font-semibold text-green-700">
+                  Community-Led Solutions
+                </h4>
+                <p className="text-sm text-muted-foreground">
+                  Citizens identify issues → Community funds Thusang projects →
+                  Local businesses provide resources → Government coordinates
+                  implementation → Everyone benefits from improved
+                  infrastructure
+                </p>
+              </div>
+              <div className="text-center space-y-4">
+                <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
+                  <Crown className="w-6 h-6 text-blue-600" />
+                </div>
+                <h4 className="font-semibold text-blue-700">
+                  Government Efficiency
+                </h4>
+                <p className="text-sm text-muted-foreground">
+                  Kgotla+ tools enable faster response times → Citizens see
+                  transparent progress → Trust in government increases → More
+                  civic participation → Better policy outcomes
+                </p>
+              </div>
+              <div className="text-center space-y-4">
+                <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mx-auto">
+                  <Building2 className="w-6 h-6 text-purple-600" />
+                </div>
+                <h4 className="font-semibold text-purple-700">
+                  Business Integration
+                </h4>
+                <p className="text-sm text-muted-foreground">
+                  Businesses gain community visibility → Support local projects
+                  through Tirisano Mmogo → Receive hyperlocal insights → Build
+                  customer loyalty → Contribute to sustainable development
                 </p>
               </div>
             </div>
@@ -789,27 +1446,35 @@ const PricingPage = () => {
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
-                  🚀 How do I get started as a citizen?
+                  🚀 How do I get started with the Mmogo Ecosystem?
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground mb-3">
-                  Getting started is simple and requires no upfront commitment:
+                  Start with the free Motse Platform, then choose your
+                  engagement level:
                 </p>
                 <ul className="text-sm text-muted-foreground space-y-1 ml-4">
                   <li>
-                    • Visit any issue on the platform and click "Contribute"
+                    • <strong>Free Access:</strong> Use Motse Platform for issue
+                    reporting and tracking
                   </li>
                   <li>
-                    • Choose your contribution amount (starting from BWP 5)
+                    • <strong>Thusang Projects:</strong> Fund specific community
+                    projects with transparent fees
                   </li>
-                  <li>• Pay via Orange Money, MyZaka, or BTC Smega</li>
                   <li>
-                    • Track your impact in real-time with photos and updates
+                    • <strong>Business Partnership:</strong> Join Intla
+                    solutions for community visibility
+                  </li>
+                  <li>
+                    • <strong>Government Solutions:</strong> Access Kgotla+ for
+                    efficient governance
                   </li>
                 </ul>
                 <p className="text-sm text-muted-foreground mt-3">
-                  No registration required for contributions under BWP 50!
+                  Everyone starts with free access - no barriers to civic
+                  engagement!
                 </p>
               </CardContent>
             </Card>
@@ -846,28 +1511,34 @@ const PricingPage = () => {
               </CardContent>
             </Card>
 
-            {/* Why BWP 5 */}
+            {/* Thusang Fee Structure */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
-                  💰 Why start at just BWP 5?
+                  💰 How does the Thusang project fee structure work?
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground mb-3">
-                  BWP 5 reflects our Ubuntu philosophy - every Motswana should
-                  be able to contribute to their community's development.
+                  Transparent 5-7% platform fee only on successfully funded
+                  projects:
                 </p>
                 <div className="bg-green-50 dark:bg-green-950/30 p-3 rounded-lg text-sm">
                   <p className="text-green-700 dark:text-green-300 font-medium mb-2">
-                    Real Example:
+                    Example: "Repair Tlokweng Library Roof" - BWP 15,000 goal
                   </p>
                   <p className="text-green-600 dark:text-green-400">
-                    In Mogoditshane, 47 neighbors each contributed BWP 5-50 to
-                    raise BWP 2,340 for street light repairs. Small
-                    contributions, big impact!
+                    • BWP 15,000 raised by community
+                    <br />
+                    • BWP 750 platform fee (5%) supports portal operations
+                    <br />
+                    • BWP 14,250 goes directly to the library roof repair
+                    <br />• Full transparency with photos and progress updates
                   </p>
                 </div>
+                <p className="text-sm text-muted-foreground mt-3">
+                  No fees if project doesn't reach its funding goal!
+                </p>
               </CardContent>
             </Card>
 
@@ -900,35 +1571,37 @@ const PricingPage = () => {
               </CardContent>
             </Card>
 
-            {/* Business Registration */}
+            {/* Intla Business Partnership */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg flex items-center gap-2">
-                  🏪 Do I need business registration for sponsorship?
+                  🏪 What are the Intla Business Partnership requirements?
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <p className="text-muted-foreground mb-3">
-                  Requirements depend on your sponsorship level:
+                  Requirements depend on your Intla partnership tier:
                 </p>
                 <div className="space-y-3 text-sm text-muted-foreground">
                   <div>
-                    <strong>Spaza Shop (BWP 100/month):</strong> No formal
-                    registration required. Perfect for informal businesses.
+                    <strong>Community Supporter (BWP 200/month):</strong> Basic
+                    business registration. Get sponsor badge and directory
+                    listing.
                   </div>
                   <div>
-                    <strong>Small Business (BWP 250/month):</strong> CIPA
-                    registration recommended for tax benefits and radio
-                    mentions.
+                    <strong>Community Champion (BWP 500/month):</strong> CIPA
+                    registration recommended. Featured visibility and local
+                    deals promotion.
                   </div>
                   <div>
-                    <strong>Established Business (BWP 500/month):</strong> VAT
-                    registration required for formal invoicing and event
-                    participation.
+                    <strong>Corporate Impact Partner (BWP 1500+/month):</strong>{' '}
+                    VAT registration required. Co-created CSR projects and API
+                    access.
                   </div>
                 </div>
                 <p className="text-sm text-purple-600 mt-3 font-medium">
-                  💡 We can help connect you with CIPA registration services
+                  💡 All tiers include hyperlocal insights and measurable
+                  community impact
                 </p>
               </CardContent>
             </Card>
@@ -1053,11 +1726,12 @@ const PricingPage = () => {
             <CardContent className="p-12 space-y-6">
               <div className="space-y-4">
                 <h2 className="text-3xl font-bold">
-                  Ready to Make a Difference?
+                  Ready to Join the Mmogo Impact Ecosystem?
                 </h2>
                 <p className="text-xl opacity-90 max-w-2xl mx-auto">
-                  Join thousands of Batswana who are already building stronger
-                  communities through the Civic Portal.
+                  Start with free access to the Motse Platform, then choose your
+                  level of engagement in building stronger communities across
+                  Botswana.
                 </p>
               </div>
 
@@ -1067,19 +1741,20 @@ const PricingPage = () => {
                   variant="secondary"
                   className="bg-white text-blue-600 hover:bg-gray-100"
                 >
-                  Start with BWP 5
+                  Start with Free Motse Platform
                 </Button>
                 <Button
                   size="lg"
                   variant="outline"
                   className="border-white text-white hover:bg-white/10"
                 >
-                  Contact Sales Team
+                  Explore Partnership Options
                 </Button>
               </div>
 
               <p className="text-sm opacity-75">
-                No setup fees • Cancel anytime • 30-day money-back guarantee
+                Free foundation layer • Transparent fees • Sustainable community
+                impact
               </p>
             </CardContent>
           </Card>
